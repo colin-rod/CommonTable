@@ -11,7 +11,11 @@
     "type-check": "turbo run type-check",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules/.cache",
+    "types:check": "pnpm --filter @commontable/types type-check",
+    "api:check": "pnpm --filter @commontable/api-client type-check",
+    "web:dev": "pnpm --filter @commontable/web dev",
+    "web:build": "pnpm --filter @commontable/web build"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

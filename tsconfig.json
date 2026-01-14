@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@commontable/types": ["./packages/types/src"],
+      "@commontable/api-client": ["./packages/api-client/src"]
+    }
+  }
+}
