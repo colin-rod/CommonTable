@@ -1,0 +1,28 @@
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  production-placeholder:
+    name: Production Deployment Placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log deployment placeholder
+        run: |
+          echo "🚀 Production Deployment Placeholder"
+          echo ""
+          echo "This workflow is a placeholder for future Vercel production deployments."
+          echo ""
+          echo "Planned features:"
+          echo "  - Automatic production deployment on push to main"
+          echo "  - Supabase migration execution"
+          echo "  - Environment variable validation"
+          echo "  - Deployment status notifications"
+          echo ""
+          echo "Status: Not yet implemented"

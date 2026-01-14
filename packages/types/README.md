@@ -40,7 +40,9 @@ This package uses branded types for IDs to prevent mixing different entity types
 type RecipeId = string & { __brand: 'RecipeId' };
 type UserId = string & { __brand: 'UserId' };
 
-function getRecipe(id: RecipeId): Promise<Recipe> { /* ... */ }
+function getRecipe(id: RecipeId): Promise<Recipe> {
+  /* ... */
+}
 
 const recipeId = 'abc123' as RecipeId;
 const userId = 'user456' as UserId;
@@ -56,6 +58,7 @@ getRecipe(userId); // TypeScript error: Type 'UserId' is not assignable to 'Reci
 ## TypeScript Configuration
 
 This package uses strict TypeScript mode with:
+
 - `strict: true`
 - `noUncheckedIndexedAccess: true`
 - `noImplicitReturns: true`

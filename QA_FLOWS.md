@@ -20,6 +20,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: New user can create an account
 
 #### Steps
+
 1. [ ] Navigate to `/signup` page
 2. [ ] Enter valid email (e.g., `test+${timestamp}@example.com`)
 3. [ ] Enter strong password (min 8 characters)
@@ -30,12 +31,14 @@ This document contains critical user flows for manual testing before each releas
 8. [ ] Verify user session created (refresh page, still logged in)
 
 #### Expected Results
+
 - ✅ Account created in Supabase Auth
 - ✅ Confirmation email sent
 - ✅ User redirected after email confirmation
 - ✅ Session persisted across page refreshes
 
 #### Error Cases to Test
+
 - [ ] Invalid email format (e.g., `notanemail`)
 - [ ] Weak password (e.g., `123`)
 - [ ] Duplicate email (sign up with same email twice)
@@ -48,6 +51,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: Existing user can log in
 
 #### Steps
+
 1. [ ] Navigate to `/login` page
 2. [ ] Enter valid email
 3. [ ] Enter correct password
@@ -56,12 +60,14 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify session persisted (refresh page, still logged in)
 
 #### Expected Results
+
 - ✅ User authenticated
 - ✅ Redirected to dashboard
 - ✅ Session cookie set
 - ✅ Session persists across page refreshes
 
 #### Error Cases to Test
+
 - [ ] Invalid email (email not in database)
 - [ ] Wrong password
 - [ ] Empty email or password
@@ -74,6 +80,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can log out and session is cleared
 
 #### Steps
+
 1. [ ] Log in as valid user
 2. [ ] Click "Logout" button
 3. [ ] Verify redirected to `/login` page
@@ -82,6 +89,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify redirected back to `/login`
 
 #### Expected Results
+
 - ✅ User logged out
 - ✅ Session cookie cleared
 - ✅ Protected routes inaccessible
@@ -94,6 +102,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can reset forgotten password
 
 #### Steps
+
 1. [ ] Navigate to `/login` page
 2. [ ] Click "Forgot password" link
 3. [ ] Enter valid email
@@ -107,12 +116,14 @@ This document contains critical user flows for manual testing before each releas
 11. [ ] Verify login successful
 
 #### Expected Results
+
 - ✅ Reset email sent
 - ✅ Reset link valid
 - ✅ Password updated in Supabase Auth
 - ✅ Can log in with new password
 
 #### Error Cases to Test
+
 - [ ] Email not in database (should still show success message for security)
 - [ ] Expired reset link (test after token expiry time)
 - [ ] Weak new password
@@ -126,6 +137,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: New user can create their first household
 
 #### Steps
+
 1. [ ] Log in as new user (no household yet)
 2. [ ] Complete onboarding flow (if exists)
 3. [ ] Enter household name (e.g., "Smith Family")
@@ -134,6 +146,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify user is admin of household (check `household_members` table)
 
 #### Expected Results
+
 - ✅ Household created in database
 - ✅ User added as admin
 - ✅ Household ID set in user context
@@ -146,6 +159,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: Admin can invite new member to household
 
 #### Steps
+
 1. [ ] Log in as household admin
 2. [ ] Navigate to household settings or members page
 3. [ ] Click "Invite Member" button
@@ -158,12 +172,14 @@ This document contains critical user flows for manual testing before each releas
 10. [ ] Verify invitee appears in household members list
 
 #### Expected Results
+
 - ✅ Invitation created in database
 - ✅ Invitation email sent
 - ✅ Invitee can accept invitation
 - ✅ Invitee added to household as member (not admin)
 
 #### Error Cases to Test
+
 - [ ] Non-admin tries to invite member (should fail)
 - [ ] Invite already-existing member (should show error)
 
@@ -174,6 +190,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User in multiple households can switch between them
 
 #### Steps
+
 1. [ ] User belongs to at least 2 households
 2. [ ] Log in
 3. [ ] Verify currently in Household A
@@ -184,6 +201,7 @@ This document contains critical user flows for manual testing before each releas
 8. [ ] Verify recipes from Household B ARE visible
 
 #### Expected Results
+
 - ✅ Household context switches
 - ✅ Data isolation enforced (RLS policies work)
 - ✅ Only current household's data displayed
@@ -197,6 +215,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can create a new recipe
 
 #### Steps
+
 1. [ ] Log in and navigate to `/recipes`
 2. [ ] Click "Add Recipe" button
 3. [ ] Fill in recipe details:
@@ -216,12 +235,14 @@ This document contains critical user flows for manual testing before each releas
 7. [ ] Verify all fields display correctly
 
 #### Expected Results
+
 - ✅ Recipe created in database
 - ✅ Initial version created (version_number = 1)
 - ✅ Recipe visible in list
 - ✅ Recipe detail page displays correctly
 
 #### Error Cases to Test
+
 - [ ] Empty title (should show validation error)
 - [ ] No ingredients (should show validation error)
 - [ ] No steps (should show validation error)
@@ -233,6 +254,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can edit a recipe, creating a new version
 
 #### Steps
+
 1. [ ] Open existing recipe (e.g., "Pasta Carbonara")
 2. [ ] Click "Edit" or "Improve Recipe" button
 3. [ ] Modify ingredients (e.g., change bacon to pancetta)
@@ -243,6 +265,7 @@ This document contains critical user flows for manual testing before each releas
 8. [ ] Verify previous version accessible in version history
 
 #### Expected Results
+
 - ✅ New recipe version created
 - ✅ `current_version_id` updated to new version
 - ✅ Previous version still in database
@@ -255,6 +278,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can delete a recipe
 
 #### Steps
+
 1. [ ] Open recipe detail page
 2. [ ] Click "Delete Recipe" button
 3. [ ] Verify confirmation dialog appears
@@ -264,11 +288,13 @@ This document contains critical user flows for manual testing before each releas
 7. [ ] Verify 404 or "Recipe not found" message displayed
 
 #### Expected Results
+
 - ✅ Recipe deleted from database (soft or hard delete)
 - ✅ Recipe not visible in list
 - ✅ Recipe detail page returns 404
 
 #### Error Cases to Test
+
 - [ ] Non-owner tries to delete recipe (should fail if ownership rules exist)
 
 ---
@@ -278,6 +304,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can view previous versions of a recipe
 
 #### Steps
+
 1. [ ] Open recipe with multiple versions (e.g., "Pasta Carbonara" v2)
 2. [ ] Navigate to version history or "View History" button
 3. [ ] Verify all versions displayed (v1, v2)
@@ -286,6 +313,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] (Optional) Compare v1 and v2 side-by-side
 
 #### Expected Results
+
 - ✅ All versions displayed
 - ✅ Can view previous versions
 - ✅ Previous versions are read-only (cannot edit)
@@ -297,6 +325,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can fork a recipe to create a new recipe
 
 #### Steps
+
 1. [ ] Open existing recipe (e.g., "Pasta Carbonara")
 2. [ ] Click "Fork Recipe" button
 3. [ ] Modify title (e.g., "Pasta Carbonara (Spicy)")
@@ -307,6 +336,7 @@ This document contains critical user flows for manual testing before each releas
 8. [ ] (Optional) Verify fork relationship visible (if tracked)
 
 #### Expected Results
+
 - ✅ New recipe created
 - ✅ Original recipe unchanged
 - ✅ Fork metadata stored (if tracked in `recipe_forks` table)
@@ -320,6 +350,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can add a recipe to the meal calendar
 
 #### Steps
+
 1. [ ] Navigate to `/calendar` page
 2. [ ] Click on a future date
 3. [ ] Select recipe from list (e.g., "Pasta Carbonara")
@@ -328,6 +359,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify recipe appears on calendar on selected date
 
 #### Expected Results
+
 - ✅ Calendar entry created in database
 - ✅ Recipe displayed on calendar
 - ✅ Correct date and meal slot
@@ -339,6 +371,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can reschedule a calendar entry
 
 #### Steps
+
 1. [ ] Navigate to `/calendar` page
 2. [ ] Locate existing calendar entry
 3. [ ] **Option A (Drag-Drop)**: Drag entry to new date
@@ -347,6 +380,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify entry removed from old date
 
 #### Expected Results
+
 - ✅ Calendar entry updated in database
 - ✅ Entry appears on new date
 - ✅ Entry removed from old date
@@ -358,6 +392,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can remove a recipe from the calendar
 
 #### Steps
+
 1. [ ] Navigate to `/calendar` page
 2. [ ] Click on calendar entry
 3. [ ] Click "Delete" or "Remove" button
@@ -366,6 +401,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify entry removed from calendar
 
 #### Expected Results
+
 - ✅ Calendar entry deleted from database
 - ✅ Entry not visible on calendar
 
@@ -376,6 +412,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can mark a calendar entry as cooked
 
 #### Steps
+
 1. [ ] Navigate to `/calendar` page
 2. [ ] Click on today's calendar entry
 3. [ ] Click "Mark as Cooked" button
@@ -384,6 +421,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] (Optional) Rating prompt displayed
 
 #### Expected Results
+
 - ✅ `recipes.last_cooked_at` updated
 - ✅ Cooking event created
 - ✅ Calendar entry marked as cooked
@@ -397,6 +435,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: App works offline and syncs when back online
 
 #### Steps
+
 1. [ ] Load app while online
 2. [ ] Navigate to `/recipes` page
 3. [ ] **Disconnect network** (turn off Wi-Fi or enable airplane mode)
@@ -408,12 +447,14 @@ This document contains critical user flows for manual testing before each releas
 9. [ ] Verify changes synced to Supabase automatically
 
 #### Expected Results
+
 - ✅ App loads offline (from service worker cache)
 - ✅ Recipe data accessible offline (from IndexedDB)
 - ✅ Mutations queued while offline
 - ✅ Queued mutations synced when online
 
 #### Error Cases to Test
+
 - [ ] Network disconnects mid-operation (during recipe creation)
 
 ---
@@ -423,6 +464,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can install PWA on mobile or desktop
 
 #### Steps
+
 1. [ ] Visit app in Chrome or Safari
 2. [ ] Look for "Add to Home Screen" or "Install" prompt
 3. [ ] Click "Install" button
@@ -432,6 +474,7 @@ This document contains critical user flows for manual testing before each releas
 7. [ ] Verify app icon and name correct
 
 #### Expected Results
+
 - ✅ PWA installable
 - ✅ App launches in standalone mode
 - ✅ Correct icon and name displayed
@@ -445,12 +488,14 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: Changes on one device appear on another device
 
 #### Steps
+
 1. [ ] **Device A**: Create recipe "Test Recipe"
 2. [ ] Wait for sync (should be automatic)
 3. [ ] **Device B**: Open app or refresh page
 4. [ ] Verify "Test Recipe" appears on Device B
 
 #### Expected Results
+
 - ✅ Changes on Device A synced to Supabase
 - ✅ Device B pulls changes from Supabase
 - ✅ Recipe visible on both devices
@@ -462,6 +507,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: Conflicts are detected and resolved when same recipe edited on multiple devices
 
 #### Steps
+
 1. [ ] **Device A**: Go offline
 2. [ ] **Device A**: Edit recipe "Pasta Carbonara" (change ingredient to "500g pasta")
 3. [ ] **Device B**: Go offline
@@ -472,6 +518,7 @@ This document contains critical user flows for manual testing before each releas
 8. [ ] Verify conflict resolution strategy applied (e.g., last-write-wins, manual merge UI)
 
 #### Expected Results
+
 - ✅ Conflict detected when both devices sync
 - ✅ Conflict resolution strategy applied
 - ✅ Final state consistent across both devices
@@ -485,6 +532,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can search for recipes by title or ingredients
 
 #### Steps
+
 1. [ ] Navigate to `/recipes` page
 2. [ ] Enter search term in search bar (e.g., "pasta")
 3. [ ] Verify results filtered in real-time
@@ -493,11 +541,13 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify navigated to recipe detail page
 
 #### Expected Results
+
 - ✅ Search filters results in real-time
 - ✅ Only matching recipes displayed
 - ✅ Can click result to view detail
 
 #### Edge Cases to Test
+
 - [ ] Search with no results (e.g., "xyz123")
 - [ ] Search with special characters (e.g., "pasta & bacon")
 
@@ -508,6 +558,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: User can filter recipes by category or metadata
 
 #### Steps
+
 1. [ ] Navigate to `/recipes` page
 2. [ ] Apply filter (e.g., "Recently Cooked" or "Favorites")
 3. [ ] Verify filtered results displayed
@@ -516,6 +567,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify all recipes displayed again
 
 #### Expected Results
+
 - ✅ Filters apply correctly
 - ✅ Only matching recipes displayed
 - ✅ Clearing filter shows all recipes
@@ -529,6 +581,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: App handles network errors gracefully
 
 #### Steps
+
 1. [ ] Start creating a recipe
 2. [ ] **Disconnect network** mid-operation
 3. [ ] Click "Save Recipe" button
@@ -540,6 +593,7 @@ This document contains critical user flows for manual testing before each releas
 9. [ ] Verify recipe saved successfully
 
 #### Expected Results
+
 - ✅ Error message displayed
 - ✅ Error message is calm and neutral
 - ✅ Retry option available
@@ -552,6 +606,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: App validates user input and shows helpful errors
 
 #### Steps
+
 1. [ ] Navigate to "Add Recipe" page
 2. [ ] Leave title field empty
 3. [ ] Click "Save Recipe" button
@@ -563,6 +618,7 @@ This document contains critical user flows for manual testing before each releas
 9. [ ] Verify recipe saved successfully
 
 #### Expected Results
+
 - ✅ Validation error displayed
 - ✅ Error message is short and neutral
 - ✅ Form not submitted when invalid
@@ -574,11 +630,13 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: App handles missing resources gracefully
 
 #### Steps
+
 1. [ ] Navigate to non-existent recipe (e.g., `/recipes/invalid-id-123`)
 2. [ ] Verify "Recipe not found" message displayed
 3. [ ] Verify user can navigate back (browser back button or "Go Back" link)
 
 #### Expected Results
+
 - ✅ 404 message displayed
 - ✅ Message is calm and neutral
 - ✅ User can navigate back
@@ -592,6 +650,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: App performs well with large datasets
 
 #### Steps
+
 1. [ ] Create or seed database with 100+ recipes
 2. [ ] Navigate to `/recipes` page
 3. [ ] Verify page loads in <2 seconds
@@ -601,6 +660,7 @@ This document contains critical user flows for manual testing before each releas
 7. [ ] Verify search results appear in <500ms
 
 #### Expected Results
+
 - ✅ Page loads quickly even with large datasets
 - ✅ Smooth scrolling
 - ✅ Fast search
@@ -614,6 +674,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: App is fully navigable via keyboard
 
 #### Steps
+
 1. [ ] Navigate to `/recipes` page
 2. [ ] Use **Tab** key to navigate through UI
 3. [ ] Verify focus indicators visible on all interactive elements
@@ -621,6 +682,7 @@ This document contains critical user flows for manual testing before each releas
 5. [ ] Verify all actions accessible via keyboard
 
 #### Expected Results
+
 - ✅ All interactive elements focusable
 - ✅ Focus indicators visible
 - ✅ All actions accessible via keyboard
@@ -632,6 +694,7 @@ This document contains critical user flows for manual testing before each releas
 **Objective**: App is usable with screen readers
 
 #### Steps
+
 1. [ ] Enable screen reader (VoiceOver on macOS/iOS, TalkBack on Android)
 2. [ ] Navigate to `/recipes` page
 3. [ ] Verify recipe titles announced correctly
@@ -640,6 +703,7 @@ This document contains critical user flows for manual testing before each releas
 6. [ ] Verify buttons have descriptive labels
 
 #### Expected Results
+
 - ✅ All content announced correctly
 - ✅ Buttons have descriptive labels
 - ✅ Screen reader can navigate all content
@@ -651,6 +715,7 @@ This document contains critical user flows for manual testing before each releas
 **Total Flows**: 28
 
 **Critical Flows** (must pass before release):
+
 - Authentication (Flows 1-4)
 - Create Recipe (Flow 8)
 - View Recipe (part of Flow 8)
@@ -658,6 +723,7 @@ This document contains critical user flows for manual testing before each releas
 - Offline Mode (Flow 17)
 
 **Nice-to-Have Flows** (can defer if time-constrained):
+
 - Fork Recipe (Flow 12)
 - Conflict Resolution (Flow 20)
 - Screen Reader Compatibility (Flow 28)

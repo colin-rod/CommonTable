@@ -1,5 +1,5 @@
-import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@commontable/types';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Browser-safe Supabase client
 // Uses NEXT_PUBLIC_* variables only (anon key, RLS enforced)

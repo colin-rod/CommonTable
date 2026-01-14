@@ -5,13 +5,17 @@ export class AppError extends Error {
     message: string,
     public code: string,
     public statusCode: number = 500,
-    public metadata?: Record<string, unknown>
+    public metadata?: Record<string, unknown>,
   ) {
     super(message);
     this.name = this.constructor.name;
-    // captureStackTrace is Node.js specific - use type assertion
+    // captureStackTrace is Node.js specific
     if ('captureStackTrace' in Error) {
-      (Error as any).captureStackTrace(this, this.constructor);
+      (
+        Error as {
+          captureStackTrace(targetObject: object, constructorOpt?: Function): void;
+        }
+      ).captureStackTrace(this, this.constructor);
     }
   }
 }

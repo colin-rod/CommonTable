@@ -19,10 +19,7 @@ import { createClient } from '@commontable/api-client';
 const supabase = createClient();
 
 // Use the client
-const { data, error } = await supabase
-  .from('recipes')
-  .select('*')
-  .eq('household_id', householdId);
+const { data, error } = await supabase.from('recipes').select('*').eq('household_id', householdId);
 ```
 
 ### Extending BaseService
@@ -33,11 +30,7 @@ import type { Recipe, RecipeId } from '@commontable/api-client';
 
 export class RecipeService extends BaseService {
   async getById(id: RecipeId): Promise<Recipe> {
-    const { data, error } = await this.supabase
-      .from('recipes')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await this.supabase.from('recipes').select('*').eq('id', id).single();
 
     if (error) throw error;
     if (!data) throw new NotFoundError('Recipe', id);
@@ -100,6 +93,7 @@ See [apps/web/.env.example](../../apps/web/.env.example) for example configurati
 ## TypeScript Configuration
 
 This package uses strict TypeScript mode with:
+
 - `strict: true`
 - `noUncheckedIndexedAccess: true`
 - `noImplicitReturns: true`

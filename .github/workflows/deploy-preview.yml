@@ -1,0 +1,24 @@
+name: Deploy Preview
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  preview-placeholder:
+    name: Preview Deployment Placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## 🚀 Preview Deployment Placeholder\n\nThis workflow is a placeholder for future Vercel preview deployments.\n\n**Planned features:**\n- Automatic preview deployment on PR\n- Preview URL comment on PR\n- Environment variable injection\n- Supabase migration preview\n\n**Status:** Not yet implemented'
+            })

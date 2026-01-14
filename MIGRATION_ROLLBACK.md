@@ -77,12 +77,14 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER;
 **Format**: `{number}_{descriptive_name}.sql`
 
 **Examples**:
+
 - `001_initial_schema.sql`
 - `002_rls_policies.sql`
 - `003_add_recipe_forks.sql`
 - `004_add_search_tsvector.sql`
 
 **Down Migrations**: `{number}_{descriptive_name}_down.sql`
+
 - `003_add_recipe_forks_down.sql`
 
 ### 3. Transaction Safety
@@ -340,6 +342,7 @@ git push origin main
 Before applying any migration to production, complete this checklist:
 
 ### Pre-Migration
+
 - [ ] Migration written with idempotent patterns (uses `IF NOT EXISTS`, `IF EXISTS`, etc.)
 - [ ] Down migration created and tested
 - [ ] Migration tested locally with `supabase migration up` and `down`
@@ -349,11 +352,13 @@ Before applying any migration to production, complete this checklist:
 - [ ] Production backup created (verify backup completed)
 
 ### Migration Execution
+
 - [ ] Migration applied to production (`supabase db push` or CI/CD)
 - [ ] Migration logs reviewed (no errors)
 - [ ] Smoke tests passed (see [RELEASE_CHECKLIST.md](./RELEASE_CHECKLIST.md))
 
 ### Post-Migration
+
 - [ ] Production health check passed (15-minute monitoring)
 - [ ] Error rates within acceptable limits (<1% error rate)
 - [ ] Performance metrics stable (p95 response time <500ms)
@@ -367,6 +372,7 @@ Before applying any migration to production, complete this checklist:
 ### Scenario 1: Adding a New Table
 
 **Migration**:
+
 ```sql
 -- 005_add_recipe_forks.sql
 CREATE TABLE IF NOT EXISTS recipe_forks (
@@ -400,6 +406,7 @@ CREATE POLICY recipe_forks_household_isolation ON recipe_forks
 ```
 
 **Down Migration**:
+
 ```sql
 -- 005_add_recipe_forks_down.sql
 DROP TABLE IF EXISTS recipe_forks;
@@ -408,6 +415,7 @@ DROP TABLE IF EXISTS recipe_forks;
 ### Scenario 2: Adding a Column
 
 **Migration**:
+
 ```sql
 -- 006_add_recipe_tags.sql
 DO $$
@@ -426,6 +434,7 @@ CREATE INDEX IF NOT EXISTS idx_recipes_tags
 ```
 
 **Down Migration**:
+
 ```sql
 -- 006_add_recipe_tags_down.sql
 DROP INDEX IF EXISTS idx_recipes_tags;
@@ -435,6 +444,7 @@ ALTER TABLE recipes DROP COLUMN IF EXISTS tags;
 ### Scenario 3: Adding RLS Policies
 
 **Migration**:
+
 ```sql
 -- 007_add_admin_only_policy.sql
 CREATE POLICY household_members_admin_only ON household_members
@@ -451,6 +461,7 @@ CREATE POLICY household_members_admin_only ON household_members
 ```
 
 **Down Migration**:
+
 ```sql
 -- 007_add_admin_only_policy_down.sql
 DROP POLICY IF EXISTS household_members_admin_only ON household_members;
@@ -459,6 +470,7 @@ DROP POLICY IF EXISTS household_members_admin_only ON household_members;
 ### Scenario 4: Data Migration
 
 **Migration**:
+
 ```sql
 -- 008_migrate_old_ingredient_format.sql
 -- Example: Migrate from TEXT to JSONB
@@ -484,6 +496,7 @@ WHERE ingredients_jsonb IS NULL AND ingredients_text IS NOT NULL;
 ```
 
 **Down Migration**:
+
 ```sql
 -- 008_migrate_old_ingredient_format_down.sql
 -- Restore old column from new column
@@ -500,6 +513,7 @@ ALTER TABLE recipe_versions DROP COLUMN IF EXISTS ingredients_jsonb;
 **Problem**: Migration partially applied, left database in inconsistent state
 
 **Solution**:
+
 1. **If Supabase transaction failed**: Supabase automatically rolls back failed migrations
 2. **If manual migration failed**:
 
@@ -534,19 +548,23 @@ In case of migration emergency:
 After any rollback, complete a post-mortem:
 
 ### What Happened?
+
 - [ ] Describe the issue
 - [ ] Timeline of events
 - [ ] Impact on users
 
 ### Root Cause
+
 - [ ] Why did the migration fail?
 - [ ] What was overlooked?
 
 ### Resolution
+
 - [ ] How was it resolved?
 - [ ] How long did it take?
 
 ### Preventive Measures
+
 - [ ] What can we do to prevent this in the future?
 - [ ] Update checklist or procedures
 - [ ] Add automated tests
@@ -567,6 +585,7 @@ After any rollback, complete a post-mortem:
 **Migration Safety = Idempotency + Testing + Backups + Rollback Plan**
 
 Never skip:
+
 1. Idempotent migration patterns
 2. Down migrations
 3. Local testing

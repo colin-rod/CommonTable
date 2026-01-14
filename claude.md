@@ -5,6 +5,7 @@
 **CommonTable** is a shared household recipe book that helps families plan meals, improve recipes over time, and preserve what they love to cook — together.
 
 ### Tech Stack
+
 - **Monorepo**: Turborepo with pnpm workspaces
 - **Web**: Next.js 15 (App Router) + TypeScript + Material UI (M3)
 - **Mobile**: Deferred to Phase 2 (React Native + Expo)
@@ -42,18 +43,21 @@
 #### What Requires Tests FIRST
 
 **Services & Business Logic** (100% TDD required):
+
 - All service methods (`RecipeService`, `CalendarService`, etc.)
 - Sync engine logic (`push.ts`, `pull.ts`, `conflicts.ts`)
 - Utility functions (unit conversion, ingredient parsing, etc.)
 - Database functions and triggers (test with local Supabase)
 
 **React Components** (Pragmatic TDD):
+
 - Business logic in custom hooks (strict TDD)
 - Component behavior (user interactions, conditional rendering)
 - Form validation logic
 - UI can be tested with React Testing Library or visually
 
 **Edge Functions** (TDD via integration tests):
+
 - Input validation
 - Business logic
 - Error handling
@@ -70,7 +74,7 @@ describe('RecipeService', () => {
       title: 'Pasta Carbonara',
       servings: 4,
       ingredients: [{ name: 'pasta', quantity: 400, unit: 'g' }],
-      steps: [{ position: 1, text: 'Boil pasta' }]
+      steps: [{ position: 1, text: 'Boil pasta' }],
     });
 
     expect(recipe.id).toBeDefined();
@@ -124,8 +128,12 @@ class RecipeService {
     });
   }
 
-  private async insertRecipe(tx, id, data, versionId) { /* ... */ }
-  private async createInitialVersion(tx, recipeId, versionId, data) { /* ... */ }
+  private async insertRecipe(tx, id, data, versionId) {
+    /* ... */
+  }
+  private async createInitialVersion(tx, recipeId, versionId, data) {
+    /* ... */
+  }
 }
 
 // Run test: STILL PASSES
@@ -225,13 +233,13 @@ function handleSync(state: SyncState) {
 
 ```typescript
 // BAD
-function getRecipe(id: string): Promise<Recipe> { }
+function getRecipe(id: string): Promise<Recipe> {}
 
 // GOOD
 type RecipeId = string & { __brand: 'RecipeId' };
 type UserId = string & { __brand: 'UserId' };
 
-function getRecipe(id: RecipeId): Promise<Recipe> { }
+function getRecipe(id: RecipeId): Promise<Recipe> {}
 
 // Usage
 const recipeId = 'abc123' as RecipeId;
@@ -290,6 +298,7 @@ function getMealIcon(slot: MealSlot): IconName {
 #### 6. Zod for Runtime Validation
 
 Use Zod schemas for:
+
 - Form validation
 - API request/response validation
 - Edge Function input validation
@@ -300,15 +309,23 @@ import { z } from 'zod';
 const CreateRecipeSchema = z.object({
   title: z.string().min(1).max(200),
   servings: z.number().int().positive().optional(),
-  ingredients: z.array(z.object({
-    name: z.string().min(1),
-    quantity: z.number().positive().optional(),
-    unit: z.string().optional(),
-  })).min(1),
-  steps: z.array(z.object({
-    position: z.number().int().positive(),
-    text: z.string().min(1),
-  })).min(1),
+  ingredients: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        quantity: z.number().positive().optional(),
+        unit: z.string().optional(),
+      }),
+    )
+    .min(1),
+  steps: z
+    .array(
+      z.object({
+        position: z.number().int().positive(),
+        text: z.string().min(1),
+      }),
+    )
+    .min(1),
 });
 
 type CreateRecipeInput = z.infer<typeof CreateRecipeSchema>;
@@ -335,21 +352,27 @@ This project follows an **extremely strict** Material Design 3 design system. Th
 #### 1. Allowed MUI Components ONLY
 
 **Layout & Structure**:
+
 - `Container`, `Box`, `Stack`, `Divider`
 
 **Surfaces**:
+
 - `Paper`, `Card`, `CardContent`
 
 **Lists** (Primary Pattern):
+
 - `List`, `ListItem`, `ListItemButton`, `ListItemText`
 
 **Inputs**:
+
 - `TextField`, `Select`, `Checkbox`, `Radio`
 
 **Actions**:
+
 - `Button`
 
 **Feedback**:
+
 - `Dialog`, `Snackbar`, `CircularProgress`
 
 **Any component not listed above is FORBIDDEN** without updating DESIGN_SYSTEM.md first.
@@ -381,6 +404,7 @@ This project follows an **extremely strict** Material Design 3 design system. Th
 ```
 
 **Button Rules**:
+
 - **Only ONE primary button per screen**
 - Primary buttons must contain text (no icon-only primary buttons)
 - Button labels must be verbs (e.g., "Add recipe", "Save changes", "Delete")
@@ -414,6 +438,7 @@ import { Typography } from '@mui/material';
 ```
 
 **Typography Rules**:
+
 - Max **3 typography variants per screen**
 - Line height ≥ 1.4
 - Hierarchy via size and weight, **not color**
@@ -447,6 +472,7 @@ import { Box, Stack } from '@mui/material';
 ```
 
 **Spacing Rules**:
+
 - Vertical spacing prioritized over horizontal
 - No arbitrary spacing (must align to 4, 8, 16, 24, 32, 48)
 - Use `Stack` with `spacing` prop for consistent gaps
@@ -480,6 +506,7 @@ theme.palette.action.hover
 ```
 
 **Color Rules**:
+
 - No gradients
 - No transparency overlays
 - No more than **one accent color** (`primary`) per screen
@@ -502,6 +529,7 @@ theme.palette.action.hover
 ```
 
 **Elevation Rules**:
+
 - Use **low elevation only**
 - Elevation > 2 is forbidden in MVP
 
@@ -534,10 +562,10 @@ export const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2',  // Material Blue
+      main: '#1976d2', // Material Blue
     },
     background: {
-      default: '#fafafa',  // Warm neutral, not pure white
+      default: '#fafafa', // Warm neutral, not pure white
       paper: '#ffffff',
     },
     text: {
@@ -576,7 +604,7 @@ export const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          textTransform: 'none',  // No ALL CAPS
+          textTransform: 'none', // No ALL CAPS
           fontWeight: 500,
         },
       },
@@ -588,6 +616,7 @@ export const theme = createTheme({
 ### Prohibited Patterns (DESIGN_SYSTEM.md)
 
 Explicitly **FORBIDDEN**:
+
 - ❌ Using non-approved MUI components
 - ❌ Adding button variants beyond the 3 allowed
 - ❌ Adding new colors outside the theme
@@ -615,6 +644,7 @@ Explicitly **FORBIDDEN**:
 ```
 
 **Rules**:
+
 - No emojis
 - No jokes
 - No playful language
@@ -655,6 +685,7 @@ export default function RecipesPage() {
 ```
 
 **Rules**:
+
 - Single primary content column
 - No competing primary actions
 - No complex grid layouts in MVP
@@ -686,6 +717,7 @@ function RecipeList({ recipes }: { recipes: Recipe[] }) {
 ```
 
 **List Rules**:
+
 - Lists are vertically stacked
 - Each row contains:
   - Primary text (required)
@@ -726,6 +758,7 @@ function RecipeForm({ onSubmit }: RecipeFormProps) {
 ```
 
 **Form Rules**:
+
 - Labels must always be visible
 - Placeholders are not labels
 - Errors appear only after user interaction
@@ -761,6 +794,7 @@ export type AllowedSpacing = 0.5 | 1 | 2 | 3 | 4 | 6;  // Maps to 4, 8, 16, 24, 
 ### Default Decision Rules
 
 When uncertain:
+
 1. Reduce visual noise
 2. Reduce options
 3. Prefer text over icons
@@ -1195,7 +1229,7 @@ export class AppError extends Error {
     message: string,
     public code: string,
     public statusCode: number = 500,
-    public metadata?: Record<string, any>
+    public metadata?: Record<string, any>,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -1241,11 +1275,7 @@ export class SyncError extends AppError {
 export class RecipeService {
   async getById(id: RecipeId): Promise<Recipe> {
     try {
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase.from('recipes').select('*').eq('id', id).single();
 
       if (error) throw error;
       if (!data) throw new NotFoundError('Recipe', id);
@@ -1331,10 +1361,10 @@ serve(async (req) => {
     // Auth check
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Validate input
@@ -1344,24 +1374,23 @@ serve(async (req) => {
     // Fetch and parse recipe
     const recipe = await fetchAndParseRecipe(url);
 
-    return new Response(
-      JSON.stringify({ data: recipe }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ data: recipe }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('recipe-import error:', error);
 
     if (error instanceof z.ZodError) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid input', details: error.errors }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ error: 'Invalid input', details: error.errors }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
 ```
@@ -1408,11 +1437,12 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   Check as ConfirmIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
 } from '@mui/icons-material';
 ```
 
 ### Icon Usage Rules (DESIGN_SYSTEM.md)
+
 - **Prefer text over icons**: Never use icon-only primary actions
 - **Icon-only buttons are forbidden** for primary actions
 - Icons can be used for secondary actions or as decorative elements
@@ -1547,7 +1577,7 @@ describe('recipe-import Edge Function', () => {
   it('should return 400 for invalid URL', async () => {
     const req = new Request('http://localhost', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer test-token' },
+      headers: { Authorization: 'Bearer test-token' },
       body: JSON.stringify({ url: 'not-a-url' }),
     });
 
@@ -1573,6 +1603,7 @@ Use Conventional Commits:
 ```
 
 **Types**:
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `test`: Adding tests (TDD red/green commits)
@@ -1581,6 +1612,7 @@ Use Conventional Commits:
 - `chore`: Tooling, dependencies
 
 **Examples**:
+
 ```
 test(recipe-service): add failing test for create recipe with version
 
@@ -1600,11 +1632,13 @@ test(sync-engine): add test for concurrent edit conflict resolution
 Before submitting PR:
 
 **TDD & Testing**:
+
 - [ ] All tests written BEFORE implementation (TDD)
 - [ ] All tests passing
 - [ ] Test coverage meets requirements (services 100%, components 80%+)
 
 **TypeScript**:
+
 - [ ] No `any` types (use `unknown` if needed)
 - [ ] TypeScript strict mode compliance
 - [ ] Zod schemas for validation
@@ -1612,6 +1646,7 @@ Before submitting PR:
 - [ ] Readonly types where applicable
 
 **MUI & Design System**:
+
 - [ ] Only approved MUI components used (see DESIGN_SYSTEM.md)
 - [ ] Only allowed button variants (3 variants only)
 - [ ] Only allowed typography variants (h5, h6, body1, body2)
@@ -1624,11 +1659,13 @@ Before submitting PR:
 - [ ] Content tone is calm and neutral
 
 **Database**:
+
 - [ ] Migrations are idempotent
 - [ ] RLS policies tested
 - [ ] Proper indexes on foreign keys and common queries
 
 **Code Quality**:
+
 - [ ] Error handling implemented
 - [ ] No console.log (use proper logging)
 - [ ] Custom hooks for complex logic
@@ -1645,6 +1682,7 @@ CommonTable requires Supabase credentials configured via environment variables.
 #### 1. Create Local Environment File
 
 Copy the example file:
+
 ```bash
 cd apps/web
 cp .env.example .env.local
@@ -1668,6 +1706,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...your-service-role-key
 ```
 
 ⚠️ **Security Warning**:
+
 - `NEXT_PUBLIC_*` variables are exposed to the browser
 - `SUPABASE_SERVICE_ROLE_KEY` is SERVER-ONLY and bypasses Row Level Security
 - Never commit `.env.local` to version control
@@ -1675,6 +1714,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...your-service-role-key
 #### 3. Client vs Server Usage
 
 **Browser/Client Components** (`apps/web/lib/supabase/client.ts`):
+
 ```typescript
 import { createClient } from '@/lib/supabase/client';
 
@@ -1682,6 +1722,7 @@ const supabase = createClient(); // Uses anon key, RLS enforced
 ```
 
 **Server Components/Actions** (`apps/web/lib/supabase/server.ts`):
+
 ```typescript
 import { createClient } from '@/lib/supabase/server';
 
@@ -1689,6 +1730,7 @@ const supabase = await createClient(); // Uses anon key with cookies, RLS enforc
 ```
 
 **Admin Operations** (use sparingly):
+
 ```typescript
 import { createAdminClient } from '@/lib/supabase/server';
 
@@ -1792,6 +1834,7 @@ pnpm lint:fix
 ## Questions?
 
 Refer to:
+
 - [Implementation Plan](/Users/colinrodrigues/.claude/plans/misty-drifting-giraffe.md)
 - [Architecture Document](Technical Architecture Plan.md)
 - Linear Issues for detailed task breakdown

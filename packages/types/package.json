@@ -11,8 +11,13 @@
     }
   },
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf dist node_modules .turbo"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf dist node_modules .turbo coverage"
   },
   "dependencies": {
     "zod": "^3.24.0"

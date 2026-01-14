@@ -24,7 +24,7 @@ export function validateSpacing(value: number): AllowedSpacing {
     return value as AllowedSpacing;
   }
   throw new Error(
-    `Invalid spacing value: ${value}. Allowed values: ${allowed.join(', ')} (maps to 4, 8, 16, 24, 32, 48px)`
+    `Invalid spacing value: ${value}. Allowed values: ${allowed.join(', ')} (maps to 4, 8, 16, 24, 32, 48px)`,
   );
 }
 
@@ -35,6 +35,6 @@ export function validateElevation(value: number): AllowedElevation {
     return value as AllowedElevation;
   }
   throw new Error(
-    `Invalid elevation value: ${value}. Allowed values: ${allowed.join(', ')} (elevation > 2 forbidden in MVP)`
+    `Invalid elevation value: ${value}. Allowed values: ${allowed.join(', ')} (elevation > 2 forbidden in MVP)`,
   );
 }

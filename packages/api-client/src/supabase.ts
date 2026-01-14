@@ -1,5 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@commontable/types';
+import { createClient } from '@supabase/supabase-js';
+
 import { getEnv } from './env';
 
 // Client-side Supabase client (browser-safe)
@@ -7,10 +8,7 @@ import { getEnv } from './env';
 export function createSupabaseClient() {
   const env = getEnv();
 
-  return createClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  return createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
 
 // Server-side admin client (service role key)
@@ -23,14 +21,10 @@ export function createSupabaseAdminClient() {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for admin operations');
   }
 
-  return createClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  return createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }

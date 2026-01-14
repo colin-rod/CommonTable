@@ -9,8 +9,8 @@ export default function HomePage() {
 
         {/* Page Description - body1 per DESIGN_SYSTEM.md */}
         <Typography variant="body1">
-          A shared household recipe book that helps families plan meals, improve
-          recipes over time, and preserve what they love to cook — together.
+          A shared household recipe book that helps families plan meals, improve recipes over time,
+          and preserve what they love to cook — together.
         </Typography>
 
         {/* Secondary content - body2 per DESIGN_SYSTEM.md */}

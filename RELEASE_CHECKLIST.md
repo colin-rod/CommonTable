@@ -7,6 +7,7 @@ This checklist ensures every CommonTable release meets quality, security, and re
 ## Pre-Release Phase
 
 ### Code Quality
+
 - [ ] All Linear issues for milestone completed and verified
 - [ ] All PRs merged to `main` branch
 - [ ] Code review checklist completed for all PRs
@@ -26,6 +27,7 @@ This checklist ensures every CommonTable release meets quality, security, and re
 ## Database Migration Validation
 
 ### Migration Quality
+
 - [ ] All new migrations are idempotent (use `IF NOT EXISTS` patterns)
 - [ ] Down migrations created for all up migrations
 - [ ] Migrations tested locally with Supabase CLI
@@ -35,6 +37,7 @@ This checklist ensures every CommonTable release meets quality, security, and re
 - [ ] Database backup created before migration
 
 **Migration Testing Commands:**
+
 ```bash
 # Test up migration
 supabase migration up
@@ -51,6 +54,7 @@ supabase db test
 ## Environment Configuration
 
 ### Production Environment
+
 - [ ] Environment variables validated with Zod schema
 - [ ] Production environment variables configured in deployment platform
 - [ ] Supabase credentials verified (anon key, service role key)
@@ -58,6 +62,7 @@ supabase db test
 - [ ] Edge Functions deployed and tested
 
 **Verify Environment:**
+
 ```bash
 # Check environment variables
 pnpm run env:check
@@ -71,12 +76,14 @@ pnpm run db:health-check
 ## Testing & QA
 
 ### Automated Testing
+
 - [ ] All unit tests passing (100% coverage for services/utils)
 - [ ] All integration tests passing
 - [ ] E2E tests passing (Playwright when implemented)
 - [ ] Smoke tests passing in staging environment
 
 ### Manual QA
+
 - [ ] Manual QA flows completed (see [QA_FLOWS.md](./QA_FLOWS.md))
 - [ ] Cross-browser testing completed:
   - [ ] Chrome (latest)
@@ -89,6 +96,7 @@ pnpm run db:health-check
 - [ ] Performance audit completed (Lighthouse score ≥ 90)
 
 **Performance Testing:**
+
 ```bash
 # Run Lighthouse audit
 pnpm run lighthouse
@@ -102,6 +110,7 @@ pnpm run analyze
 ## Security & Compliance
 
 ### Security Validation
+
 - [ ] No hardcoded secrets in codebase
 - [ ] RLS policies enforce household isolation
 - [ ] Authentication flows tested:
@@ -114,6 +123,7 @@ pnpm run analyze
 - [ ] XSS prevention validated (no `dangerouslySetInnerHTML`, proper escaping)
 
 **Security Audit:**
+
 ```bash
 # Check for hardcoded secrets
 pnpm run security:audit
@@ -127,6 +137,7 @@ supabase db test
 ## Deployment Preparation
 
 ### Release Documentation
+
 - [ ] Version number updated in `package.json` (semantic versioning)
 - [ ] Changelog updated with user-facing changes (`CHANGELOG.md`)
 - [ ] Release notes drafted
@@ -135,6 +146,7 @@ supabase db test
 - [ ] On-call rotation scheduled (post-launch monitoring)
 
 **Versioning Guidelines:**
+
 - **Major (1.0.0)**: Breaking changes, major features
 - **Minor (0.1.0)**: New features, backward compatible
 - **Patch (0.0.1)**: Bug fixes, backward compatible
@@ -144,6 +156,7 @@ supabase db test
 ## Deployment
 
 ### Production Deployment
+
 - [ ] Database migrations applied in production
 - [ ] Web app deployed to production
 - [ ] Edge Functions deployed to production
@@ -152,6 +165,7 @@ supabase db test
 - [ ] Error monitoring active (Sentry or equivalent)
 
 **Deployment Commands:**
+
 ```bash
 # Apply migrations
 supabase db push
@@ -168,6 +182,7 @@ supabase functions deploy
 ## Post-Release Validation
 
 ### Production Health Check
+
 - [ ] Production health checks passing (15 minutes post-deploy)
 - [ ] Key user flows tested in production:
   - [ ] Sign up / Login
@@ -180,6 +195,7 @@ supabase functions deploy
 - [ ] Rollback plan ready (if issues arise)
 
 **Monitoring:**
+
 ```bash
 # Check error rates
 pnpm run monitor:errors
@@ -193,6 +209,7 @@ pnpm run monitor:performance
 ## Communication
 
 ### Release Announcement
+
 - [ ] Release notes published to users
 - [ ] Team notified of release completion
 - [ ] Support team briefed on new features/changes
@@ -217,23 +234,25 @@ See [MIGRATION_ROLLBACK.md](./MIGRATION_ROLLBACK.md) for detailed instructions.
 
 ## Release Sign-Off
 
-**Release Manager:** _____________________ **Date:** _________
+**Release Manager:** ****\*\*****\_****\*\***** **Date:** \***\*\_\*\***
 
-**Engineering Lead:** _____________________ **Date:** _________
+**Engineering Lead:** ****\*\*****\_****\*\***** **Date:** \***\*\_\*\***
 
-**Product Owner:** _____________________ **Date:** _________
+**Product Owner:** ****\*\*****\_****\*\***** **Date:** \***\*\_\*\***
 
 ---
 
 ## Appendix
 
 ### Related Documentation
+
 - [Definition of Done](./DEFINITION_OF_DONE.md)
 - [QA Flows](./QA_FLOWS.md)
 - [Migration & Rollback Procedures](./MIGRATION_ROLLBACK.md)
 - [Development Guide](./claude.md)
 
 ### Support Contacts
+
 - **On-Call Engineer**: [Slack channel or phone]
 - **DevOps**: [Contact info]
 - **Product Owner**: [Contact info]

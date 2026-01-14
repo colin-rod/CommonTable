@@ -15,6 +15,7 @@ Material Design is used as a base, but **only a restricted subset is allowed**.
 ## 1. Core Philosophy
 
 This app should feel like a **Google product used at home**:
+
 - Calm
 - Familiar
 - Predictable
@@ -39,10 +40,12 @@ If a user notices the design, it is likely too loud.
 ## 3. Material Design Usage Rules
 
 ### 3.1 Material Version
+
 - Use **Material Design 3 (M3)** defaults via MUI
 - Do not mix M2 and M3 patterns
 
 ### 3.2 Custom Styling Rules
+
 - All styling must come from:
   - MUI theme tokens
   - Spacing system
@@ -59,6 +62,7 @@ If a user notices the design, it is likely too loud.
 Use Material color roles only.
 
 Required roles:
+
 - `background.default`
 - `background.paper`
 - `primary.main`
@@ -68,10 +72,12 @@ Required roles:
 - `error.main`
 
 Optional:
+
 - `action.disabled`
 - `action.hover`
 
 #### Color Rules
+
 - No gradients
 - No transparency overlays
 - No more than **one accent color** (`primary`) per screen
@@ -84,6 +90,7 @@ Optional:
 ### 4.2 Typography
 
 #### Font
+
 - Single font family (Material default, e.g. Roboto)
 - No decorative fonts
 - No italics
@@ -92,14 +99,15 @@ Optional:
 
 Only these variants may be used:
 
-| Variant | Usage |
-|------|------|
-| `h5` | Page titles |
-| `h6` | Section headers |
-| `body1` | Primary content |
+| Variant | Usage                    |
+| ------- | ------------------------ |
+| `h5`    | Page titles              |
+| `h6`    | Section headers          |
+| `body1` | Primary content          |
 | `body2` | Secondary / meta content |
 
 Rules:
+
 - Max **3 typography variants per screen**
 - Line height ≥ `1.4`
 - Hierarchy via size and weight, not color
@@ -109,10 +117,12 @@ Rules:
 ### 4.3 Shape & Elevation
 
 #### Shape
+
 - Use theme `shape.borderRadius`
 - No custom radius values
 
 #### Elevation
+
 - Use **low elevation only**
 - Allowed elevations: `0`, `1`, `2`
 - Elevation > `2` is forbidden in MVP
@@ -122,12 +132,14 @@ Rules:
 ## 5. Spacing System
 
 ### 5.1 Base Unit
+
 - 8px spacing system
 
 Allowed values only:
 4, 8, 16, 24, 32, 48
 
 ### 5.2 Rules
+
 - Vertical spacing prioritized over horizontal
 - No arbitrary spacing
 - Layout must align to spacing scale
@@ -146,6 +158,7 @@ All pages must follow this order:
 4. Optional secondary content
 
 Rules:
+
 - Single primary content column
 - No competing primary actions
 - No complex grid layouts in MVP
@@ -158,32 +171,38 @@ Rules:
 Only the following components may be used:
 
 ### Layout & Structure
+
 - `Container`
 - `Box`
 - `Stack`
 - `Divider`
 
 ### Surfaces
+
 - `Paper`
 - `Card`
 - `CardContent`
 
 ### Lists (Primary Pattern)
+
 - `List`
 - `ListItem`
 - `ListItemButton`
 - `ListItemText`
 
 ### Inputs
+
 - `TextField`
 - `Select`
 - `Checkbox`
 - `Radio`
 
 ### Actions
+
 - `Button`
 
 ### Feedback
+
 - `Dialog`
 - `Snackbar`
 - `CircularProgress`
@@ -209,6 +228,7 @@ Any component not listed here is **forbidden** without updating this document.
    - `color="error"`
 
 ### Button Rules
+
 - Only **one Primary button per screen**
 - Primary buttons must contain text
 - Icon-only primary buttons are forbidden
@@ -219,6 +239,7 @@ Any component not listed here is **forbidden** without updating this document.
 ## 9. Forms & Inputs
 
 Rules:
+
 - Labels must always be visible
 - Placeholders are not labels
 - Errors appear only after user interaction
@@ -233,6 +254,7 @@ Avoid dense forms. Prefer one task per screen.
 Lists are the backbone of the app.
 
 Rules:
+
 - Lists are vertically stacked
 - Each row contains:
   - Primary text
@@ -246,7 +268,9 @@ Rules:
 ## 11. States & Interaction
 
 ### Required States
+
 All interactive components must support:
+
 - Default
 - Hover
 - Active
@@ -255,6 +279,7 @@ All interactive components must support:
 - Error
 
 Rules:
+
 - State changes are subtle and clear
 - Animations limited to opacity and transform
 - No playful or attention-grabbing motion
@@ -264,23 +289,27 @@ Rules:
 ## 12. Content & Tone
 
 ### Voice
+
 - Calm
 - Neutral
 - Practical
 - Slightly warm
 
 Rules:
+
 - No emojis
 - No jokes
 - No playful language
 
 Example:
+
 - ❌ “Oops! Something went wrong 😅”
 - ✅ “Couldn’t save the recipe. Try again.”
 
 ---
 
 ### Empty States
+
 - One sentence maximum
 - One clear action
 - No illustrations in MVP
@@ -290,12 +319,14 @@ Example:
 ## 13. Accessibility (Baseline)
 
 Required:
+
 - Sufficient color contrast
 - Tap targets ≥ 44px
 - Visible keyboard focus
 - Clear error messages
 
 Out of scope for MVP:
+
 - Full WCAG documentation
 - Advanced screen reader optimization
 
@@ -304,6 +335,7 @@ Out of scope for MVP:
 ## 14. Prohibited Patterns
 
 Explicitly forbidden:
+
 - Using non-approved MUI components
 - Adding button variants
 - Adding new colors outside the theme
@@ -316,6 +348,7 @@ Explicitly forbidden:
 ## 15. Default Decision Rules
 
 When uncertain:
+
 1. Reduce visual noise
 2. Reduce options
 3. Prefer text over icons
