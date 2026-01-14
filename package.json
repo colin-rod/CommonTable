@@ -18,6 +18,13 @@
     "api:check": "pnpm --filter @commontable/api-client type-check",
     "web:dev": "pnpm --filter @commontable/web dev",
     "web:build": "pnpm --filter @commontable/web build",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:migrate": "supabase migration new",
+    "db:push": "supabase db push",
+    "db:pull": "supabase db pull",
+    "db:types": "supabase gen types typescript --local > packages/types/src/database.types.ts",
     "prepare": "husky"
   },
   "devDependencies": {
