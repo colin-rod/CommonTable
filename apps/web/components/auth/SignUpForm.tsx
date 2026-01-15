@@ -10,6 +10,7 @@ import { useForm, Controller } from 'react-hook-form';
 interface SignUpFormProps {
   onSubmit: (data: SignUpInput) => Promise<void>;
   error?: Error | null;
+  success?: boolean;
 }
 
 /**
@@ -21,7 +22,7 @@ interface SignUpFormProps {
  * - Material Design 3 approved components only
  * - Calm neutral tone, no emojis
  */
-export function SignUpForm({ onSubmit, error }: SignUpFormProps) {
+export function SignUpForm({ onSubmit, error, success }: SignUpFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -54,6 +55,13 @@ export function SignUpForm({ onSubmit, error }: SignUpFormProps) {
     <Stack component="form" onSubmit={handleSubmit(handleFormSubmit)} spacing={3}>
       {/* Page Title */}
       <Typography variant="h5">Create account</Typography>
+
+      {/* Success Display - Show after successful signup */}
+      {success && (
+        <Alert severity="info" variant="outlined">
+          Account created. Check your email to verify your account.
+        </Alert>
+      )}
 
       {/* Error Display */}
       {error && (

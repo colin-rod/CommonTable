@@ -1,4 +1,9 @@
-import { ValidationError, UnauthorizedError, ConflictError } from '@commontable/types';
+import {
+  ValidationError,
+  UnauthorizedError,
+  ConflictError,
+  EmailVerificationError,
+} from '@commontable/types';
 import type { SupabaseClient, AuthError } from '@supabase/supabase-js';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
@@ -76,6 +81,7 @@ function createMockSupabaseClient(): SupabaseClient {
       updateUser: vi.fn(),
       getSession: vi.fn(),
       getUser: vi.fn(),
+      resend: vi.fn(),
     },
     from: vi.fn(),
     rpc: vi.fn(),
@@ -493,6 +499,49 @@ describe('AuthService', () => {
       const result = await authService.getCurrentUser();
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('should resend verification email successfully', async () => {
+      vi.mocked(mockSupabase.auth.resend).mockResolvedValue({
+        data: {},
+        error: null,
+      } as never);
+
+      await expect(authService.resendVerificationEmail('john@example.com')).resolves.not.toThrow();
+
+      expect(mockSupabase.auth.resend).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'john@example.com',
+      });
+    });
+
+    it('should throw EmailVerificationError on failure', async () => {
+      const mockError: MockAuthError = {
+        message: 'Email rate limit exceeded',
+        name: 'AuthError',
+        status: 429,
+      };
+
+      vi.mocked(mockSupabase.auth.resend).mockResolvedValue({
+        data: {},
+        error: mockError as AuthError,
+      } as never);
+
+      await expect(authService.resendVerificationEmail('john@example.com')).rejects.toThrow(
+        EmailVerificationError,
+      );
+      await expect(authService.resendVerificationEmail('john@example.com')).rejects.toThrow(
+        'Email rate limit exceeded',
+      );
+    });
+
+    it('should throw ValidationError for invalid email', async () => {
+      await expect(authService.resendVerificationEmail('not-an-email')).rejects.toThrow(
+        ValidationError,
+      );
+      expect(mockSupabase.auth.resend).not.toHaveBeenCalled();
     });
   });
 });

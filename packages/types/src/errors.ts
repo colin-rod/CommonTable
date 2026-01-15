@@ -49,3 +49,9 @@ export class SyncError extends AppError {
     super(message, 'SYNC_ERROR', 500, metadata);
   }
 }
+
+export class EmailVerificationError extends AppError {
+  constructor(message: string, metadata?: Record<string, unknown>) {
+    super(message, 'EMAIL_VERIFICATION_ERROR', 400, metadata);
+  }
+}

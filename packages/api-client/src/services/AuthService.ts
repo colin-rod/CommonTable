@@ -8,6 +8,7 @@ import {
   UnauthorizedError,
   ConflictError,
   AppError,
+  EmailVerificationError,
 } from '@commontable/types';
 import type {
   SignUpInput,
@@ -363,6 +364,27 @@ export class AuthService {
         email: session.user.email ?? '',
       },
     };
+  }
+
+  /**
+   * Resend verification email to user
+   *
+   * @throws ValidationError - Invalid email format
+   * @throws EmailVerificationError - Resend failed
+   */
+  async resendVerificationEmail(email: string): Promise<void> {
+    // Validate email format
+    const EmailSchema = z.string().email();
+    const validated = this.validate(EmailSchema, email, 'Invalid email format');
+
+    const { error } = await this.supabase.auth.resend({
+      type: 'signup',
+      email: validated,
+    });
+
+    if (error) {
+      throw new EmailVerificationError(error.message);
+    }
   }
 
   /**

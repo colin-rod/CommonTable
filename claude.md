@@ -1217,6 +1217,168 @@ $$ LANGUAGE plpgsql;
 
 ---
 
+## Email Verification and Password Reset
+
+### Email Confirmations
+
+**Email confirmations are ENABLED** in `supabase/config.toml`. Users must verify their email address before signing in.
+
+#### Configuration
+
+```toml
+# supabase/config.toml (line 173)
+enable_confirmations = true
+```
+
+#### Email Flow
+
+1. **User signs up** - Account created, verification email sent
+2. **Verification email sent** - User receives email with confirmation link
+3. **User clicks link** - Redirected to `/auth/confirm`
+4. **Email confirmed** - Supabase automatically exchanges token for session
+5. **Redirected to dashboard** - User can now access the app
+
+#### Custom Email Templates
+
+Custom HTML email templates are configured in `supabase/templates/`:
+
+**Confirmation Email** (`supabase/templates/confirm.html`):
+
+- Subject: "Confirm your CommonTable account"
+- Material Design 3 styling (calm, neutral tone)
+- Single CTA button: "Confirm Email"
+- Expires in 1 hour
+
+**Password Reset Email** (`supabase/templates/reset_password.html`):
+
+- Subject: "Reset your CommonTable password"
+- Material Design 3 styling
+- Single CTA button: "Reset Password"
+- Expires in 1 hour
+
+**Template Requirements**:
+
+- Responsive HTML/CSS
+- Material Design 3 color palette (#1976d2 primary)
+- Calm, neutral tone (no emojis)
+- Plain text alternative (not yet implemented in MVP)
+
+#### Email Verification Components
+
+**EmailConfirmation Component** (`apps/web/components/auth/EmailConfirmation.tsx`):
+
+- Displays verification status (verifying, success, error)
+- Auto-redirects to dashboard on success (2 seconds)
+- Error handling for expired/invalid tokens
+- Material Design 3 compliant
+
+**Email Confirmation Page** (`apps/web/app/auth/confirm/page.tsx`):
+
+- Server component that receives error params from Supabase
+- Passes error to EmailConfirmation client component
+- Token exchange handled automatically by Supabase Auth
+
+#### Resend Verification Email
+
+**ResendVerificationForm Component** (`apps/web/components/auth/ResendVerificationForm.tsx`):
+
+- Allows users to request a new verification email
+- Email validation with Zod
+- Shows success message after sending
+- Material Design 3 compliant
+
+**AuthService Method**:
+
+```typescript
+async resendVerificationEmail(email: string): Promise<void> {
+  const EmailSchema = z.string().email();
+  const validated = this.validate(EmailSchema, email, 'Invalid email format');
+
+  const { error } = await this.supabase.auth.resend({
+    type: 'signup',
+    email: validated,
+  });
+
+  if (error) {
+    throw new EmailVerificationError(error.message);
+  }
+}
+```
+
+#### Sign-Up Flow Changes
+
+**Before (email confirmations disabled)**:
+
+- User signs up → Auto-signed in → Redirected to dashboard
+
+**After (email confirmations enabled)**:
+
+- User signs up → Verification message shown → User must verify email before signing in
+
+**SignUpForm Updates**:
+
+- Added `success` prop to show verification message
+- Displays: "Account created. Check your email to verify your account."
+- No auto-redirect to dashboard
+
+#### Error Handling
+
+**EmailVerificationError** (added to `packages/types/src/errors.ts`):
+
+```typescript
+export class EmailVerificationError extends AppError {
+  constructor(message: string, metadata?: Record<string, unknown>) {
+    super(message, 'EMAIL_VERIFICATION_ERROR', 400, metadata);
+  }
+}
+```
+
+**Error Scenarios**:
+
+1. **Expired Token** - Show "Verification link expired. Request a new one."
+2. **Already Verified** - Show "Email already verified. Sign in to continue."
+3. **Invalid Token** - Show "Invalid verification link. Contact support."
+
+#### Testing Email Flows Locally
+
+**Inbucket** (local email testing tool):
+
+1. Start Supabase: `pnpm supabase:start`
+2. Open Inbucket: http://127.0.0.1:54324
+3. Sign up with any email (e.g., `test@example.com`)
+4. Check Inbucket for verification email
+5. Click verification link to confirm email
+
+**Email Rate Limiting** (local development):
+
+- 2 emails per hour (configured in `supabase/config.toml`)
+- Prevents spam during testing
+- Production may have different limits
+
+#### Pages and Routes
+
+| Route                       | Purpose                                           |
+| --------------------------- | ------------------------------------------------- |
+| `/auth/signup`              | User registration with email verification message |
+| `/auth/login`               | User login (requires verified email)              |
+| `/auth/confirm`             | Email confirmation redirect target                |
+| `/auth/resend-verification` | Resend verification email form                    |
+| `/auth/forgot-password`     | Request password reset email                      |
+| `/auth/reset-password`      | Reset password with email token                   |
+
+#### Password Reset Flow
+
+**Already Implemented** (no changes):
+
+1. User requests reset → Email sent
+2. User clicks link → Redirected to `/auth/reset-password`
+3. Token validated automatically → User sets new password
+4. Password updated → Redirected to login
+
+**Custom Template**: Uses `supabase/templates/reset_password.html`
+
+---
+
 ## Error Handling Conventions
 
 ### Error Types
@@ -1747,6 +1909,50 @@ Set environment variables in your deployment platform (Vercel, Netlify, etc.).
 ### Environment Validation
 
 The app validates required environment variables at startup using Zod schemas (`packages/api-client/src/env.ts`). Missing or invalid variables will throw errors during build/runtime.
+
+### Local Development Infrastructure
+
+**IMPORTANT: This project does NOT use Docker for local development.**
+
+- **Supabase Local Development**: Use the remote Supabase project directly (no local Docker instance)
+- **Edge Functions Development**: Deploy and test Edge Functions against the remote Supabase project
+- **Database Migrations**: Apply migrations directly to the remote development environment
+
+#### Why No Docker?
+
+This project relies on the Supabase hosted service for development to:
+
+- Avoid Docker dependency and local resource overhead
+- Simplify onboarding (no Docker Desktop required)
+- Ensure development environment matches production
+- Leverage Supabase's managed services (Auth, Storage, Realtime)
+
+#### Edge Functions Development Workflow
+
+Since we don't run Supabase locally, Edge Functions development follows this workflow:
+
+1. **Develop locally** - Write Edge Function code in `supabase/functions/`
+2. **Deploy to dev environment** - Test against remote Supabase project
+3. **Test via API** - Call deployed function endpoints with curl/Postman
+4. **Iterate** - Make changes and redeploy
+
+**Commands:**
+
+```bash
+# Deploy Edge Function to development environment
+pnpm functions:deploy <function-name>
+
+# View Edge Function logs
+supabase functions logs <function-name>
+
+# Test deployed function
+curl -X POST https://<project-ref>.supabase.co/functions/v1/<function-name> \
+  -H "Authorization: Bearer <anon-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"your": "data"}'
+```
+
+**Note:** The `pnpm functions:serve` command will NOT work without Docker. All Edge Function testing must be done against the remote development environment.
 
 ---
 

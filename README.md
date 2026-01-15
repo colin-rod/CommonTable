@@ -234,7 +234,56 @@ pnpm db:push
 - Test migrations locally before pushing to remote
 - Always provide rollback strategy
 
-#### 9. Troubleshooting
+#### 9. Testing Email Flows Locally
+
+**Email confirmations are ENABLED** in `supabase/config.toml`. Users must verify their email before signing in.
+
+**Inbucket** (local email testing):
+
+```bash
+# Start local Supabase (includes Inbucket)
+pnpm db:start
+
+# Inbucket will be available at:
+# http://127.0.0.1:54324
+```
+
+**Testing email verification**:
+
+1. Start Supabase and web app:
+
+   ```bash
+   pnpm db:start
+   pnpm web:dev
+   ```
+
+2. Sign up with any email (e.g., `test@example.com`)
+3. Open Inbucket: [http://127.0.0.1:54324](http://127.0.0.1:54324)
+4. Find the verification email in your inbox
+5. Click "Confirm Email" link in the email
+6. You'll be redirected to `/auth/confirm` and then to dashboard
+
+**Email flows to test**:
+
+- Sign up → verification email sent
+- Click verification link → email confirmed
+- Try to login before verification → blocked with error message
+- Resend verification email → new email sent
+- Password reset → reset email sent
+
+**Email rate limiting** (local):
+
+- 2 emails per hour (configured in `supabase/config.toml`)
+- Prevents spam during testing
+
+**Custom email templates** (Material Design 3):
+
+- Confirmation email: `supabase/templates/confirm.html`
+- Password reset: `supabase/templates/reset_password.html`
+
+See [CLAUDE.md - Email Verification](./CLAUDE.md#email-verification-and-password-reset) for full documentation.
+
+#### 10. Troubleshooting
 
 **Local Supabase won't start**:
 
