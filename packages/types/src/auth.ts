@@ -1,19 +1,30 @@
 import { z } from 'zod';
 
-import type { UserId, HouseholdId } from './models';
+import type { UserId, HouseholdId, ProfileId, AuthUserId, InvitationId } from './models';
 
 // =============================================================================
 // Domain Types
 // =============================================================================
 
 /**
+ * Member type: authenticated (with email/password) or managed (no auth, e.g., kids)
+ */
+export type MemberType = 'authenticated' | 'managed';
+
+/**
  * User profile extending auth.users
  * Maps to public.profiles table
+ *
+ * Supports two types of users:
+ * - Authenticated: Have auth.users record, can log in independently
+ * - Managed: No auth.users record, added by admins (e.g., kids)
  */
 export interface Profile {
-  readonly id: UserId;
+  readonly id: ProfileId;
+  readonly auth_user_id: AuthUserId | null;
   readonly display_name: string;
   readonly avatar_url: string | null;
+  readonly member_type: MemberType;
   readonly created_at: string;
   readonly updated_at: string;
 }
@@ -32,12 +43,46 @@ export interface Household {
 /**
  * Household membership with role
  * Maps to public.household_members table
+ *
+ * Note: user_id now references profiles.id (not auth.users.id)
+ * This allows both authenticated and managed users to be members
  */
 export interface HouseholdMember {
   readonly household_id: HouseholdId;
-  readonly user_id: UserId;
+  readonly user_id: ProfileId;
   readonly role: 'admin' | 'member';
   readonly joined_at: string;
+}
+
+/**
+ * Household member with full profile data
+ * Used for displaying member lists with profile information
+ */
+export interface HouseholdMemberWithProfile extends HouseholdMember {
+  readonly profile: Profile;
+}
+
+/**
+ * Invitation status
+ */
+export type InvitationStatus = 'pending' | 'accepted' | 'declined' | 'expired';
+
+/**
+ * Household invitation for email-based member invites
+ * Maps to public.household_invitations table
+ */
+export interface HouseholdInvitation {
+  readonly id: InvitationId;
+  readonly household_id: HouseholdId;
+  readonly inviter_profile_id: ProfileId;
+  readonly invitee_email: string;
+  readonly role: 'admin' | 'member';
+  readonly status: InvitationStatus;
+  readonly token: string;
+  readonly invited_at: string;
+  readonly accepted_at: string | null;
+  readonly created_at: string;
+  readonly updated_at: string;
 }
 
 /**

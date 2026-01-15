@@ -6,31 +6,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.1';
   };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       calendar_entries: {
@@ -139,6 +114,63 @@ export type Database = {
           },
         ];
       };
+      household_invitations: {
+        Row: {
+          accepted_at: string | null;
+          created_at: string;
+          household_id: string;
+          id: string | null;
+          invited_at: string;
+          invitee_email: string;
+          inviter_profile_id: string;
+          role: string;
+          status: string;
+          token: string;
+          updated_at: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          created_at?: string;
+          household_id: string;
+          id?: string | null;
+          invited_at?: string;
+          invitee_email: string;
+          inviter_profile_id: string;
+          role?: string;
+          status?: string;
+          token: string;
+          updated_at?: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          created_at?: string;
+          household_id?: string;
+          id?: string | null;
+          invited_at?: string;
+          invitee_email?: string;
+          inviter_profile_id?: string;
+          role?: string;
+          status?: string;
+          token?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'household_invitations_household_id_fkey';
+            columns: ['household_id'];
+            isOneToOne: false;
+            referencedRelation: 'households';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'household_invitations_inviter_profile_id_fkey';
+            columns: ['inviter_profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       household_members: {
         Row: {
           household_id: string;
@@ -166,6 +198,13 @@ export type Database = {
             referencedRelation: 'households';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'household_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
         ];
       };
       households: {
@@ -191,24 +230,30 @@ export type Database = {
       };
       profiles: {
         Row: {
+          auth_user_id: string | null;
           avatar_url: string | null;
           created_at: string;
           display_name: string;
           id: string;
+          member_type: string;
           updated_at: string;
         };
         Insert: {
+          auth_user_id?: string | null;
           avatar_url?: string | null;
           created_at?: string;
           display_name: string;
-          id: string;
+          id?: string;
+          member_type?: string;
           updated_at?: string;
         };
         Update: {
+          auth_user_id?: string | null;
           avatar_url?: string | null;
           created_at?: string;
           display_name?: string;
           id?: string;
+          member_type?: string;
           updated_at?: string;
         };
         Relationships: [];
@@ -355,6 +400,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_household_on_signup: {
+        Args: { p_display_name: string; p_user_id: string };
+        Returns: undefined;
+      };
       create_recipe_with_version: {
         Args: {
           p_cook_time_minutes: number;
@@ -398,6 +447,8 @@ export type Database = {
         }[];
       };
       get_user_household_id: { Args: never; Returns: string };
+      get_user_household_role: { Args: never; Returns: string };
+      get_user_profile_id: { Args: never; Returns: string };
       is_household_admin: { Args: never; Returns: boolean };
       is_household_admin_of: {
         Args: { household_id: string };
@@ -544,9 +595,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
