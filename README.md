@@ -67,67 +67,54 @@ pnpm format:check     # Check formatting
 # Cleanup
 pnpm clean            # Remove build artifacts and caches
 
-# Database (Supabase)
-pnpm db:start         # Start local Supabase (Docker required)
-pnpm db:stop          # Stop local Supabase
-pnpm db:reset         # Reset DB, run migrations, and seed data
+# Database (Supabase Remote)
 pnpm db:migrate       # Create new migration file
-pnpm db:push          # Push local migrations to remote
-pnpm db:pull          # Pull remote migrations to local
-pnpm db:types         # Generate TypeScript types from schema
+pnpm db:push          # Push migrations to remote Supabase
+pnpm db:pull          # Pull remote schema to local migrations
+pnpm db:types         # Generate TypeScript types from remote schema
 ```
 
 ### Supabase Setup
 
-#### 1. Prerequisites
+> **Important**: This project uses **remote Supabase only** (no Docker/local database).
+> All development and testing is done against the remote development environment.
+> This simplifies onboarding and ensures the development environment matches production.
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) installed and running
-- Supabase CLI (already installed in this project)
+#### 1. Environment Variables
 
-#### 2. Local Development Database
-
-Start a local Supabase instance for development:
+Get your Supabase credentials from [Project Settings → API](https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd/settings/api):
 
 ```bash
-# Start local Supabase (first time will download Docker images)
-pnpm db:start
+# Copy example env file
+cp apps/web/.env.example apps/web/.env.local
 
-# This starts:
-# - PostgreSQL database at postgresql://postgres:postgres@localhost:54322/postgres
-# - Supabase Studio at http://localhost:54323
-# - API server at http://localhost:54321
+# Edit apps/web/.env.local with your credentials:
+NEXT_PUBLIC_SUPABASE_URL=https://lrelbxzvndbmfpxhgosd.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-from-dashboard
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-from-dashboard
 ```
 
-Access **Supabase Studio** at [http://localhost:54323](http://localhost:54323) to:
+**Security Notes**:
 
-- View tables and data
-- Test RLS policies
+- `NEXT_PUBLIC_*` variables are exposed to the browser
+- `SUPABASE_SERVICE_ROLE_KEY` is SERVER-ONLY and bypasses RLS
+- Never commit `.env.local` to version control
+
+#### 2. Remote Supabase Project
+
+The project is linked to: `https://lrelbxzvndbmfpxhgosd.supabase.co`
+
+Access **Supabase Dashboard** at [https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd](https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd) to:
+
+- View tables and data (Table Editor)
+- Test RLS policies (SQL Editor)
 - Run SQL queries
-- Manage authentication
+- Manage authentication (Authentication)
+- View logs and monitor performance
 
-#### 3. Run Migrations and Seed Data
+#### 3. Generate TypeScript Types
 
-```bash
-# Apply migrations and seed test data
-pnpm db:reset
-
-# This will:
-# 1. Drop existing local database
-# 2. Run all migrations in supabase/migrations/
-# 3. Run seed.sql to create test data
-```
-
-Test data includes:
-
-- 2 households (Smith Family, Johnson Household)
-- 4 users (2 per household)
-- 10 recipes with realistic ingredients and steps
-- Calendar entries for upcoming week
-- Cooking events from past week
-
-#### 4. Generate TypeScript Types
-
-After running migrations, generate TypeScript types from the database schema:
+Generate TypeScript types from the remote database schema:
 
 ```bash
 pnpm db:types
@@ -149,40 +136,9 @@ type Recipe = Database['public']['Tables']['recipes']['Row'];
 type RecipeInsert = Database['public']['Tables']['recipes']['Insert'];
 ```
 
-#### 5. Remote Supabase Project
+**Regenerate types after schema changes** (migrations) to keep TypeScript types in sync.
 
-The project is linked to: `https://lrelbxzvndbmfpxhgosd.supabase.co`
-
-To push local migrations to remote:
-
-```bash
-# Push migrations to production
-pnpm db:push
-```
-
-**⚠️ Warning**: Only push migrations to remote after thorough local testing.
-
-#### 6. Environment Variables
-
-Get your Supabase credentials from [Project Settings → API](https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd/settings/api):
-
-```bash
-# Copy example env file
-cp apps/web/.env.example apps/web/.env.local
-
-# Edit apps/web/.env.local with your credentials:
-NEXT_PUBLIC_SUPABASE_URL=https://lrelbxzvndbmfpxhgosd.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-from-dashboard
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-from-dashboard
-```
-
-**Security Notes**:
-
-- `NEXT_PUBLIC_*` variables are exposed to the browser
-- `SUPABASE_SERVICE_ROLE_KEY` is SERVER-ONLY and bypasses RLS
-- Never commit `.env.local` to version control
-
-#### 7. Database Schema Overview
+#### 4. Database Schema Overview
 
 **Core Tables**:
 
@@ -209,9 +165,9 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-from-dashboard
 - `get_recipe_version_history()` - Get version history
 - `get_household_recipe_stats()` - Get household statistics
 
-#### 8. Migration Workflow
+#### 5. Migration Workflow
 
-Creating a new migration:
+Creating and pushing a new migration:
 
 ```bash
 # Create new migration file
@@ -220,48 +176,55 @@ pnpm db:migrate my_feature_name
 # Edit the generated file in supabase/migrations/
 # Always write idempotent migrations (can run multiple times)
 
-# Test locally
-pnpm db:reset
-
-# If successful, push to remote
+# Push migrations to remote Supabase
 pnpm db:push
+
+# Regenerate TypeScript types after schema changes
+pnpm db:types
 ```
 
 **Migration Best Practices** (see [CLAUDE.md](./CLAUDE.md)):
 
 - Use `CREATE TABLE IF NOT EXISTS`
 - Use `CREATE INDEX IF NOT EXISTS`
-- Test migrations locally before pushing to remote
+- Use `CREATE OR REPLACE FUNCTION` for functions
+- All migrations must be idempotent (can run multiple times)
+- Test migrations via Supabase Dashboard SQL Editor before pushing
 - Always provide rollback strategy
 
-#### 9. Testing Email Flows Locally
+**Idempotent Migration Example**:
 
-**Email confirmations are ENABLED** in `supabase/config.toml`. Users must verify their email before signing in.
+```sql
+-- Add column only if it doesn't exist
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS rolling_score NUMERIC(3,2);
 
-**Inbucket** (local email testing):
+-- Create or replace function
+CREATE OR REPLACE FUNCTION calculate_rolling_score(p_recipe_id UUID)
+RETURNS NUMERIC(3,2) AS $$
+-- function body
+$$ LANGUAGE plpgsql;
 
-```bash
-# Start local Supabase (includes Inbucket)
-pnpm db:start
-
-# Inbucket will be available at:
-# http://127.0.0.1:54324
+-- Drop trigger before creating (prevents duplicate trigger error)
+DROP TRIGGER IF EXISTS trigger_name ON table_name;
+CREATE TRIGGER trigger_name ...
 ```
 
-**Testing email verification**:
+#### 6. Testing Email Flows
 
-1. Start Supabase and web app:
+**Email confirmations are ENABLED**. Users must verify their email before signing in.
+
+**Testing email verification** (remote development environment):
+
+1. Start web app:
 
    ```bash
-   pnpm db:start
    pnpm web:dev
    ```
 
-2. Sign up with any email (e.g., `test@example.com`)
-3. Open Inbucket: [http://127.0.0.1:54324](http://127.0.0.1:54324)
-4. Find the verification email in your inbox
-5. Click "Confirm Email" link in the email
-6. You'll be redirected to `/auth/confirm` and then to dashboard
+2. Sign up with a real email you can access
+3. Check your email inbox for verification email
+4. Click "Confirm Email" link
+5. You'll be redirected to `/auth/confirm` and then to dashboard
 
 **Email flows to test**:
 
@@ -271,11 +234,6 @@ pnpm db:start
 - Resend verification email → new email sent
 - Password reset → reset email sent
 
-**Email rate limiting** (local):
-
-- 2 emails per hour (configured in `supabase/config.toml`)
-- Prevents spam during testing
-
 **Custom email templates** (Material Design 3):
 
 - Confirmation email: `supabase/templates/confirm.html`
@@ -283,18 +241,7 @@ pnpm db:start
 
 See [CLAUDE.md - Email Verification](./CLAUDE.md#email-verification-and-password-reset) for full documentation.
 
-#### 10. Troubleshooting
-
-**Local Supabase won't start**:
-
-```bash
-# Check Docker is running
-docker ps
-
-# Reset local Supabase
-pnpm db:stop
-pnpm db:start
-```
+#### 7. Troubleshooting
 
 **Migrations fail**:
 
@@ -302,19 +249,27 @@ pnpm db:start
 # Check migration syntax
 cat supabase/migrations/YOUR_MIGRATION.sql
 
-# Reset and try again
-pnpm db:reset
+# Test migration in Supabase Dashboard SQL Editor first
+
+# Pull remote schema to see current state
+pnpm db:pull
 ```
 
 **Types not updating**:
 
 ```bash
-# Regenerate types
+# Regenerate types from remote schema
 pnpm db:types
 
 # Restart TypeScript server in VSCode
 # Command palette → "TypeScript: Restart TS Server"
 ```
+
+**Authentication issues**:
+
+- Check environment variables in `.env.local`
+- Verify Supabase project URL and keys in dashboard
+- Check RLS policies in Supabase Dashboard
 
 ### Monorepo Structure
 

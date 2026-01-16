@@ -45,4 +45,6 @@ CREATE TRIGGER on_auth_user_created
 -- =============================================================================
 
 COMMENT ON FUNCTION public.handle_new_user IS 'Automatically creates a profile when a new user signs up';
-COMMENT ON TRIGGER on_auth_user_created ON auth.users IS 'Trigger to auto-create profile on user signup';
+
+-- Note: Cannot add COMMENT ON TRIGGER for auth.users (requires superuser permissions)
+-- Trigger documentation is in migration file comments above

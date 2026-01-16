@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.1';
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       calendar_entries: {
@@ -294,6 +319,56 @@ export type Database = {
           },
         ];
       };
+      recipe_images: {
+        Row: {
+          alt_text: string | null;
+          created_at: string;
+          created_by: string;
+          display_order: number;
+          file_size_bytes: number | null;
+          height: number | null;
+          id: string;
+          is_primary: boolean;
+          recipe_id: string;
+          storage_path: string;
+          width: number | null;
+        };
+        Insert: {
+          alt_text?: string | null;
+          created_at?: string;
+          created_by: string;
+          display_order?: number;
+          file_size_bytes?: number | null;
+          height?: number | null;
+          id?: string;
+          is_primary?: boolean;
+          recipe_id: string;
+          storage_path: string;
+          width?: number | null;
+        };
+        Update: {
+          alt_text?: string | null;
+          created_at?: string;
+          created_by?: string;
+          display_order?: number;
+          file_size_bytes?: number | null;
+          height?: number | null;
+          id?: string;
+          is_primary?: boolean;
+          recipe_id?: string;
+          storage_path?: string;
+          width?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recipe_images_recipe_id_fkey';
+            columns: ['recipe_id'];
+            isOneToOne: false;
+            referencedRelation: 'recipes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       recipe_versions: {
         Row: {
           cook_time_minutes: number | null;
@@ -353,6 +428,9 @@ export type Database = {
           household_id: string;
           id: string;
           last_cooked_at: string | null;
+          rolling_score: number | null;
+          search_vector: unknown;
+          tags: string[] | null;
           title: string;
           updated_at: string;
         };
@@ -364,6 +442,9 @@ export type Database = {
           household_id: string;
           id?: string;
           last_cooked_at?: string | null;
+          rolling_score?: number | null;
+          search_vector?: unknown;
+          tags?: string[] | null;
           title: string;
           updated_at?: string;
         };
@@ -375,6 +456,9 @@ export type Database = {
           household_id?: string;
           id?: string;
           last_cooked_at?: string | null;
+          rolling_score?: number | null;
+          search_vector?: unknown;
+          tags?: string[] | null;
           title?: string;
           updated_at?: string;
         };
@@ -400,6 +484,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      calculate_rolling_score: {
+        Args: { p_recipe_id: string };
+        Returns: number;
+      };
       create_household_on_signup: {
         Args: { p_display_name: string; p_user_id: string };
         Returns: undefined;
@@ -436,6 +524,13 @@ export type Database = {
           total_recipes: number;
         }[];
       };
+      get_household_tags: {
+        Args: { p_household_id: string };
+        Returns: {
+          recipe_count: number;
+          tag: string;
+        }[];
+      };
       get_recipe_version_history: {
         Args: { p_recipe_id: string };
         Returns: {
@@ -453,6 +548,22 @@ export type Database = {
       is_household_admin_of: {
         Args: { household_id: string };
         Returns: boolean;
+      };
+      search_recipes: {
+        Args: { p_household_id: string; p_query: string };
+        Returns: {
+          created_at: string;
+          created_by: string;
+          current_version_id: string;
+          description: string;
+          household_id: string;
+          id: string;
+          last_cooked_at: string;
+          rank: number;
+          rolling_score: number;
+          title: string;
+          updated_at: string;
+        }[];
       };
       update_recipe_create_version: {
         Args: {
@@ -595,6 +706,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

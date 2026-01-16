@@ -31,7 +31,7 @@
     "db:migrate": "supabase migration new",
     "db:push": "supabase db push",
     "db:pull": "supabase db pull",
-    "db:types": "supabase gen types typescript --local > packages/types/src/database.types.ts",
+    "db:types": "supabase gen types typescript --linked > packages/types/src/database.types.ts",
     "functions:serve": "supabase functions serve",
     "functions:new": "supabase functions new",
     "functions:deploy": "supabase functions deploy",
