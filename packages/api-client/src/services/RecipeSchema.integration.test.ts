@@ -35,6 +35,9 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       },
     });
 
+    // Use existing test user
+    testUserId = 'eabe1dac-71bf-471c-9bc3-3e2d84a928b1';
+
     // Create test household
     const { data: household, error: householdError } = await supabase
       .from('households')
@@ -48,9 +51,16 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
 
     testHouseholdId = household.id;
 
-    // Create test user (we'll use a mock user ID for testing)
-    // In production, this would be from auth.users
-    testUserId = '00000000-0000-0000-0000-000000000001';
+    // Add test user to household
+    const { error: memberError } = await supabase.from('household_members').insert({
+      household_id: testHouseholdId,
+      user_id: testUserId,
+      role: 'admin',
+    });
+
+    if (memberError) {
+      throw new Error(`Failed to add test user to household: ${memberError.message}`);
+    }
   });
 
   afterAll(async () => {
