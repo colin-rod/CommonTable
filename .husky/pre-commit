@@ -1,1 +1,6 @@
+# Scan for secrets before committing
+echo "🔍 Scanning for secrets with gitleaks..."
+gitleaks protect --staged --verbose --no-banner
+
+# Run lint-staged
 pnpm exec lint-staged

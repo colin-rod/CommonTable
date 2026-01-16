@@ -1,0 +1,25 @@
+# Gitleaks configuration for CommonTable
+# https://github.com/gitleaks/gitleaks
+
+title = "CommonTable Gitleaks Config"
+
+[allowlist]
+description = "Allowlist for test files and documentation"
+
+# Allow test fixtures and mock data
+paths = [
+    '''.*\.test\.(ts|tsx|js|jsx)$''',
+    '''.*\.spec\.(ts|tsx|js|jsx)$''',
+    '''.*/__tests__/.*''',
+    '''.*/__mocks__/.*''',
+    '''.*/test/.*''',
+    '''.*/tests/.*''',
+]
+
+# Allow example/template files (placeholders only)
+regexes = [
+    '''your-.*-key-here''',
+    '''your-.*-project''',
+    '''test-.*-key-\d+''',
+    '''example\.supabase\.co''',
+]
