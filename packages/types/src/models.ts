@@ -19,10 +19,16 @@ export interface Recipe {
   current_version_id: RecipeVersionId | null;
   rolling_score: number | null;
   tags: string[];
+  is_favorite: boolean;
   last_cooked_at: Date | null;
   created_by: UserId;
   created_at: Date;
   updated_at: Date;
+}
+
+// Recipe with its current version data (for detail view)
+export interface RecipeWithVersion extends Recipe {
+  current_version: RecipeVersion | null;
 }
 
 export interface RecipeImage {
