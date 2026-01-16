@@ -45,3 +45,7 @@ next-env.d.ts
 
 # Husky
 .husky/_
+
+# Claude settings (may contain secrets)
+.claude/settings.local.json
+.claude/*.local.json

@@ -4,18 +4,18 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 // Server-side Supabase client with cookie handling
-// Uses anon key for authenticated requests (respects RLS)
+// Uses publishable key for authenticated requests (respects RLS)
 export async function createClient() {
   const cookieStore = await cookies();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabasePublishableKey) {
     throw new Error('Missing Supabase environment variables');
   }
 
-  return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
+  return createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -31,19 +31,19 @@ export async function createClient() {
   });
 }
 
-// Admin client using service role key (bypasses RLS)
+// Admin client using secret key (bypasses RLS)
 // USE WITH EXTREME CAUTION - only for admin operations
 export function createAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secretKey = process.env.SUPABASE_SECRET_KEY;
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Missing Supabase service role key (server-side only)');
+  if (!supabaseUrl || !secretKey) {
+    throw new Error('Missing Supabase secret key (server-side only)');
   }
 
   // Note: Using standard createClient, not SSR version
-  // Service role client doesn't need cookie handling
-  return createSupabaseClient<Database>(supabaseUrl, serviceRoleKey, {
+  // Secret key client doesn't need cookie handling
+  return createSupabaseClient<Database>(supabaseUrl, secretKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
