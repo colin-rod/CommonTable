@@ -1014,6 +1014,242 @@ describe('RecipeService', () => {
   });
 
   // =============================================================================
+  // revertToVersion
+  // =============================================================================
+
+  describe('revertToVersion', () => {
+    const validRecipeId = 'c3d4e5f6-a7b8-9012-cdef-123456789012' as RecipeId;
+    const validHouseholdId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+    const validUserId = 'b2c3d4e5-f6a7-8901-bcde-f12345678901' as UserId;
+    const validVersionId = 'd4e5f6a7-b8c9-0123-def1-234567890123';
+    const newVersionId = 'e5f6a7b8-c9d0-1234-ef12-345678901234';
+
+    it('should revert to a previous version by creating a new version with old content', async () => {
+      const targetVersionNumber = 2;
+
+      // Mock target version (the version we're reverting to)
+      const targetVersion: MockRecipeVersion = {
+        id: 'version-2',
+        recipe_id: validRecipeId,
+        version_number: targetVersionNumber,
+        ingredients_json: [{ name: 'old ingredient', quantity: 100, unit: 'g' }],
+        steps_json: [{ position: 1, text: 'Old step from version 2' }],
+        servings: 2,
+        prep_time_minutes: 15,
+        cook_time_minutes: 25,
+        notes: 'Old notes from version 2',
+        created_by: validUserId,
+        created_at: '2024-01-10T00:00:00Z',
+      };
+
+      // Mock existing recipe
+      const existingRecipe: MockRecipe = {
+        id: validRecipeId,
+        household_id: validHouseholdId,
+        title: 'Test Recipe',
+        description: 'Recipe description',
+        current_version_id: validVersionId, // Currently on version 3
+        rolling_score: null,
+        tags: ['tag1'],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: validUserId,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      // Mock updated recipe after revert
+      const updatedRecipe: MockRecipe = {
+        ...existingRecipe,
+        current_version_id: newVersionId, // New version created
+        updated_at: '2024-01-20T00:00:00Z',
+      };
+
+      // Setup mocks in order:
+      // 1. getVersion (fetch target version)
+      const versionBuilder = createMockQueryBuilder({ data: targetVersion, error: null });
+      // 2. getById (fetch existing recipe for metadata)
+      const existingRecipeBuilder = createMockQueryBuilder({ data: existingRecipe, error: null });
+      // 3. getById (fetch updated recipe after revert)
+      const updatedRecipeBuilder = createMockQueryBuilder({ data: updatedRecipe, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(versionBuilder as any) // getVersion
+        .mockReturnValueOnce(existingRecipeBuilder as any) // getById (existing)
+        .mockReturnValueOnce(updatedRecipeBuilder as any); // getById (after revert)
+
+      // Mock RPC call to update_recipe_create_version
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: newVersionId,
+        error: null,
+      } as any);
+
+      const result = await service.revertToVersion(validRecipeId, targetVersionNumber, validUserId);
+
+      // Verify RPC was called with content from target version
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('update_recipe_create_version', {
+        p_recipe_id: validRecipeId,
+        p_title: existingRecipe.title,
+        p_description: existingRecipe.description,
+        p_ingredients_json: targetVersion.ingredients_json,
+        p_steps_json: targetVersion.steps_json,
+        p_servings: targetVersion.servings,
+        p_prep_time_minutes: targetVersion.prep_time_minutes,
+        p_cook_time_minutes: targetVersion.cook_time_minutes,
+        p_notes: targetVersion.notes,
+        p_user_id: validUserId,
+      });
+
+      expect(result.current_version_id).toBe(newVersionId);
+    });
+
+    it('should handle null values in target version when reverting', async () => {
+      const targetVersionNumber = 1;
+
+      // Mock target version with null optional fields
+      const targetVersion: MockRecipeVersion = {
+        id: 'version-1',
+        recipe_id: validRecipeId,
+        version_number: targetVersionNumber,
+        ingredients_json: [{ name: 'ingredient' }],
+        steps_json: [{ position: 1, text: 'Step' }],
+        servings: null,
+        prep_time_minutes: null,
+        cook_time_minutes: null,
+        notes: null,
+        created_by: validUserId,
+        created_at: '2024-01-01T00:00:00Z',
+      };
+
+      const existingRecipe: MockRecipe = {
+        id: validRecipeId,
+        household_id: validHouseholdId,
+        title: 'Test Recipe',
+        description: null,
+        current_version_id: validVersionId,
+        rolling_score: null,
+        tags: [],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: validUserId,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const updatedRecipe: MockRecipe = {
+        ...existingRecipe,
+        current_version_id: newVersionId,
+        updated_at: '2024-01-20T00:00:00Z',
+      };
+
+      const versionBuilder = createMockQueryBuilder({ data: targetVersion, error: null });
+      const existingRecipeBuilder = createMockQueryBuilder({ data: existingRecipe, error: null });
+      const updatedRecipeBuilder = createMockQueryBuilder({ data: updatedRecipe, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(versionBuilder as any)
+        .mockReturnValueOnce(existingRecipeBuilder as any)
+        .mockReturnValueOnce(updatedRecipeBuilder as any);
+
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: newVersionId,
+        error: null,
+      } as any);
+
+      await service.revertToVersion(validRecipeId, targetVersionNumber, validUserId);
+
+      // Verify RPC was called with 0 for null numeric values and empty string for null notes
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('update_recipe_create_version', {
+        p_recipe_id: validRecipeId,
+        p_title: existingRecipe.title,
+        p_description: '',
+        p_ingredients_json: targetVersion.ingredients_json,
+        p_steps_json: targetVersion.steps_json,
+        p_servings: 0,
+        p_prep_time_minutes: 0,
+        p_cook_time_minutes: 0,
+        p_notes: '',
+        p_user_id: validUserId,
+      });
+    });
+
+    it('should throw NotFoundError when target version does not exist', async () => {
+      const nonExistentVersionNumber = 999;
+
+      const versionBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(versionBuilder as any);
+
+      await expect(
+        service.revertToVersion(validRecipeId, nonExistentVersionNumber, validUserId),
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it('should throw NotFoundError when recipe does not exist', async () => {
+      const nonExistentRecipeId = 'nonexistent-recipe' as RecipeId;
+      const targetVersionNumber = 1;
+
+      // First call succeeds (getVersion doesn't check recipe existence directly)
+      // But when we try to get the recipe, it fails
+      const versionBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(versionBuilder as any);
+
+      await expect(
+        service.revertToVersion(nonExistentRecipeId, targetVersionNumber, validUserId),
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it('should throw AppError when database RPC fails', async () => {
+      const targetVersionNumber = 2;
+
+      const targetVersion: MockRecipeVersion = {
+        id: 'version-2',
+        recipe_id: validRecipeId,
+        version_number: targetVersionNumber,
+        ingredients_json: [{ name: 'ingredient' }],
+        steps_json: [{ position: 1, text: 'Step' }],
+        servings: 4,
+        prep_time_minutes: 10,
+        cook_time_minutes: 20,
+        notes: 'Notes',
+        created_by: validUserId,
+        created_at: '2024-01-10T00:00:00Z',
+      };
+
+      const existingRecipe: MockRecipe = {
+        id: validRecipeId,
+        household_id: validHouseholdId,
+        title: 'Test Recipe',
+        description: 'Description',
+        current_version_id: validVersionId,
+        rolling_score: null,
+        tags: [],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: validUserId,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const versionBuilder = createMockQueryBuilder({ data: targetVersion, error: null });
+      const existingRecipeBuilder = createMockQueryBuilder({ data: existingRecipe, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(versionBuilder as any)
+        .mockReturnValueOnce(existingRecipeBuilder as any);
+
+      // Mock RPC failure
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: null,
+        error: { message: 'Database error' },
+      } as any);
+
+      await expect(
+        service.revertToVersion(validRecipeId, targetVersionNumber, validUserId),
+      ).rejects.toThrow(AppError);
+    });
+  });
+
+  // =============================================================================
   // getPrimaryImage
   // =============================================================================
 

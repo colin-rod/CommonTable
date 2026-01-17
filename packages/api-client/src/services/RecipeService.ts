@@ -1,11 +1,13 @@
 import {
   type RecipeId,
   type HouseholdId,
+  type UserId,
   type Recipe,
   type RecipeVersion,
   type RecipeWithVersion,
   type RecipeImage,
   type RecipeSearchResult,
+  type VersionHistoryEntry,
   type CreateRecipeInput,
   type UpdateRecipeInput,
   CreateRecipeInputSchema,
@@ -18,17 +20,6 @@ import {
 import { z } from 'zod';
 
 import { BaseService } from './BaseService';
-
-/**
- * Version history entry returned by get_recipe_version_history database function
- */
-interface VersionHistoryEntry {
-  version_id: string;
-  version_number: number;
-  created_by: string;
-  created_at: string;
-  is_current: boolean;
-}
 
 /**
  * RecipeService - Manages recipe CRUD operations
@@ -432,6 +423,60 @@ export class RecipeService extends BaseService {
 
       console.error('RecipeService.getWithVersion failed:', error);
       throw new AppError('Failed to fetch recipe with version', 'FETCH_ERROR', 500, { id });
+    }
+  }
+
+  /**
+   * Revert a recipe to a previous version
+   *
+   * Creates a new version with the content from the target version.
+   * This preserves the full version history - no data is lost.
+   *
+   * @param recipeId - Recipe ID
+   * @param versionNumber - Version number to revert to
+   * @param userId - User performing the revert
+   * @returns Updated recipe with new current version
+   * @throws {NotFoundError} If recipe or version does not exist
+   * @throws {AppError} If database operation fails
+   */
+  async revertToVersion(
+    recipeId: RecipeId,
+    versionNumber: number,
+    userId: UserId,
+  ): Promise<Recipe> {
+    try {
+      // 1. Fetch the target version's content
+      const targetVersion = await this.getVersion(recipeId, versionNumber);
+
+      // 2. Get existing recipe for metadata
+      const existing = await this.getById(recipeId);
+
+      // 3. Create new version with old content via existing RPC
+      const { error: rpcError } = await this.supabase.rpc('update_recipe_create_version', {
+        p_recipe_id: recipeId,
+        p_title: existing.title,
+        p_description: existing.description ?? '',
+        p_ingredients_json: targetVersion.ingredients_json,
+        p_steps_json: targetVersion.steps_json,
+        p_servings: targetVersion.servings ?? 0,
+        p_prep_time_minutes: targetVersion.prep_time_minutes ?? 0,
+        p_cook_time_minutes: targetVersion.cook_time_minutes ?? 0,
+        p_notes: targetVersion.notes ?? '',
+        p_user_id: userId,
+      });
+
+      if (rpcError) throw rpcError;
+
+      // Return updated recipe
+      return await this.getById(recipeId);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+
+      console.error('RecipeService.revertToVersion failed:', error);
+      throw new AppError('Failed to revert to version', 'REVERT_ERROR', 500, {
+        recipeId,
+        versionNumber,
+      });
     }
   }
 

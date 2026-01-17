@@ -345,6 +345,56 @@ export async function getRecipePrimaryImage(
 }
 
 /**
+ * Restore a recipe to a previous version
+ *
+ * Creates a new version with the content from the specified version.
+ * This preserves the full version history - no data is lost.
+ *
+ * @param recipeId - Recipe ID
+ * @param versionNumber - Version number to restore to
+ * @returns Updated recipe or error
+ */
+export async function restoreRecipeVersion(
+  recipeId: RecipeId,
+  versionNumber: number,
+): Promise<ActionResult<Recipe>> {
+  try {
+    const supabase = await createClient();
+    const service = new RecipeService(supabase);
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } };
+    }
+
+    // Get user's profile ID
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!profile) {
+      return { success: false, error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' } };
+    }
+
+    const recipe = await service.revertToVersion(recipeId, versionNumber, profile.id);
+
+    // Revalidate recipe detail and version history pages
+    revalidatePath(`/recipes/${recipeId}`);
+    revalidatePath(`/recipes/${recipeId}/versions`);
+    revalidatePath('/recipes');
+
+    return { success: true, data: recipe };
+  } catch (error) {
+    return { success: false, error: formatError(error) };
+  }
+}
+
+/**
  * Log a cooking event for a recipe
  *
  * @param recipeId - Recipe ID

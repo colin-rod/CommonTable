@@ -207,16 +207,16 @@ export default function RecipeDetailPage() {
         </Box>
 
         {/* Version history link */}
-        <Typography variant="body2" color="text.secondary">
+        <Box>
           <Button
-            variant="text"
+            variant="outlined"
+            color="primary"
             size="small"
             onClick={() => router.push(`/recipes/${recipeId}/versions`)}
-            sx={{ p: 0, minWidth: 'auto', textTransform: 'none' }}
           >
             View version history
           </Button>
-        </Typography>
+        </Box>
       </Stack>
 
       {/* Delete confirmation dialog */}

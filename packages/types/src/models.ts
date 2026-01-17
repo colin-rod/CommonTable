@@ -76,3 +76,13 @@ export interface StepInput {
 export interface RecipeSearchResult extends Recipe {
   rank: number;
 }
+
+// Version history entry returned by get_recipe_version_history database function
+export interface VersionHistoryEntry {
+  readonly version_id: RecipeVersionId;
+  readonly version_number: number;
+  readonly created_by: UserId;
+  readonly created_by_name: string | null;
+  readonly created_at: Date;
+  readonly is_current: boolean;
+}
