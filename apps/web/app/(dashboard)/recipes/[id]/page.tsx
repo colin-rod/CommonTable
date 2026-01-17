@@ -5,6 +5,7 @@ import {
   ArrowBack as ArrowBackIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  ContentCopy as ForkIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
 } from '@mui/icons-material';
@@ -21,8 +22,9 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useCallback } from 'react';
 
-import { deleteRecipe, logCookingEvent } from '@/app/actions/recipe';
+import { deleteRecipe, logCookingEvent, forkRecipe } from '@/app/actions/recipe';
 import { DeleteRecipeDialog } from '@/components/recipe/DeleteRecipeDialog';
+import { ForkRecipeDialog } from '@/components/recipe/ForkRecipeDialog';
 import { RecipeDetailView } from '@/components/recipe/RecipeDetailView';
 import { useRecipe } from '@/hooks/useRecipe';
 
@@ -52,6 +54,8 @@ export default function RecipeDetailPage() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [forkDialogOpen, setForkDialogOpen] = useState(false);
+  const [forking, setForking] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -90,6 +94,37 @@ export default function RecipeDetailPage() {
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
+  };
+
+  const handleForkClick = () => {
+    setForkDialogOpen(true);
+  };
+
+  const handleForkConfirm = async (newTitle: string) => {
+    try {
+      setForking(true);
+      const result = await forkRecipe({
+        parentRecipeId: recipeId,
+        newTitle,
+      });
+
+      if (result.success) {
+        // Navigate to the forked recipe
+        router.push(`/recipes/${result.data.id}`);
+      } else {
+        setSnackbar({ open: true, message: result.error.message });
+        setForkDialogOpen(false);
+      }
+    } catch {
+      setSnackbar({ open: true, message: 'Failed to fork recipe' });
+      setForkDialogOpen(false);
+    } finally {
+      setForking(false);
+    }
+  };
+
+  const handleForkCancel = () => {
+    setForkDialogOpen(false);
   };
 
   const handleCookThis = async () => {
@@ -188,6 +223,14 @@ export default function RecipeDetailPage() {
             <Button
               variant="outlined"
               color="primary"
+              startIcon={<ForkIcon />}
+              onClick={handleForkClick}
+            >
+              Fork
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
               startIcon={<DeleteIcon />}
               onClick={handleDeleteClick}
             >
@@ -226,6 +269,15 @@ export default function RecipeDetailPage() {
         loading={deleting}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
+      />
+
+      {/* Fork recipe dialog */}
+      <ForkRecipeDialog
+        open={forkDialogOpen}
+        recipeName={recipe.title}
+        loading={forking}
+        onConfirm={handleForkConfirm}
+        onCancel={handleForkCancel}
       />
 
       {/* Feedback snackbar */}

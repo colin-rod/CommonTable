@@ -1250,6 +1250,140 @@ describe('RecipeService', () => {
   });
 
   // =============================================================================
+  // fork
+  // =============================================================================
+
+  describe('fork', () => {
+    const validParentRecipeId = 'c3d4e5f6-a7b8-9012-cdef-123456789012';
+    const validHouseholdId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+    const validUserId = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';
+    const validVersionId = 'd4e5f6a7-b8c9-0123-def1-234567890123';
+    const forkedRecipeId = 'f6a7b8c9-d0e1-2345-f012-345678901234';
+    const forkedVersionId = 'a7b8c9d0-e1f2-3456-0123-456789012345';
+
+    it('should fork a recipe and return the forked recipe with version', async () => {
+      const input = {
+        parentRecipeId: validParentRecipeId,
+        newTitle: 'Copy of Pasta Carbonara',
+      };
+
+      // Mock forked recipe
+      const mockForkedRecipe: MockRecipe = {
+        id: forkedRecipeId,
+        household_id: validHouseholdId,
+        title: input.newTitle,
+        description: 'Classic Italian pasta',
+        current_version_id: forkedVersionId,
+        rolling_score: null,
+        tags: [],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: validUserId,
+        created_at: '2024-01-15T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const mockForkedVersion: MockRecipeVersion = {
+        id: forkedVersionId,
+        recipe_id: forkedRecipeId,
+        version_number: 1,
+        ingredients_json: [{ name: 'pasta', quantity: 400, unit: 'g' }],
+        steps_json: [{ position: 1, text: 'Boil pasta' }],
+        servings: 4,
+        prep_time_minutes: 10,
+        cook_time_minutes: 20,
+        notes: 'Use guanciale if available',
+        created_by: validUserId,
+        created_at: '2024-01-15T00:00:00Z',
+      };
+
+      // Mock RPC call to fork_recipe
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: forkedRecipeId,
+        error: null,
+      } as any);
+
+      // Mock fetching the forked recipe (getById)
+      const recipeBuilder = createMockQueryBuilder({ data: mockForkedRecipe, error: null });
+      // Mock fetching the version (getWithVersion)
+      const versionBuilder = createMockQueryBuilder({ data: mockForkedVersion, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(recipeBuilder as any) // getById for forked recipe
+        .mockReturnValueOnce(versionBuilder as any); // getWithVersion fetches version
+
+      const result = await service.fork(input, validUserId as UserId);
+
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('fork_recipe', {
+        p_parent_recipe_id: input.parentRecipeId,
+        p_new_title: input.newTitle,
+        p_user_id: validUserId,
+      });
+
+      expect(result.id).toBe(forkedRecipeId);
+      expect(result.title).toBe(input.newTitle);
+      expect(result.current_version).not.toBeNull();
+    });
+
+    it('should throw ValidationError for empty newTitle', async () => {
+      const input = {
+        parentRecipeId: validParentRecipeId,
+        newTitle: '',
+      };
+
+      await expect(service.fork(input, validUserId as UserId)).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for newTitle exceeding max length', async () => {
+      const input = {
+        parentRecipeId: validParentRecipeId,
+        newTitle: 'A'.repeat(201),
+      };
+
+      await expect(service.fork(input, validUserId as UserId)).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for invalid parentRecipeId', async () => {
+      const input = {
+        parentRecipeId: 'not-a-uuid',
+        newTitle: 'Valid Title',
+      };
+
+      await expect(service.fork(input, validUserId as UserId)).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw NotFoundError when parent recipe does not exist', async () => {
+      const input = {
+        parentRecipeId: validParentRecipeId,
+        newTitle: 'Copy of Recipe',
+      };
+
+      // Mock RPC call returning error for parent not found
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: null,
+        error: { message: 'Parent recipe not found', code: 'P0001' },
+      } as any);
+
+      await expect(service.fork(input, validUserId as UserId)).rejects.toThrow(NotFoundError);
+    });
+
+    it('should throw AppError when database operation fails', async () => {
+      const input = {
+        parentRecipeId: validParentRecipeId,
+        newTitle: 'Copy of Recipe',
+      };
+
+      // Mock RPC call returning generic error
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: null,
+        error: { message: 'Database error', code: 'XX000' },
+      } as any);
+
+      await expect(service.fork(input, validUserId as UserId)).rejects.toThrow(AppError);
+    });
+  });
+
+  // =============================================================================
   // getPrimaryImage
   // =============================================================================
 

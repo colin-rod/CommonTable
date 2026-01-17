@@ -9,6 +9,7 @@ import {
   type RecipeSearchResult,
   type CreateRecipeInput,
   type UpdateRecipeInput,
+  type ForkRecipeInput,
   type RecipeId,
   type HouseholdId,
 } from '@commontable/api-client';
@@ -389,6 +390,50 @@ export async function restoreRecipeVersion(
     revalidatePath('/recipes');
 
     return { success: true, data: recipe };
+  } catch (error) {
+    return { success: false, error: formatError(error) };
+  }
+}
+
+/**
+ * Fork a recipe to create a copy with lineage tracking
+ *
+ * Creates a new recipe with the same content as the parent recipe.
+ * Records the fork relationship for lineage tracking.
+ *
+ * @param input - Fork input with parentRecipeId and newTitle
+ * @returns Forked recipe with version data or error
+ */
+export async function forkRecipe(input: ForkRecipeInput): Promise<ActionResult<RecipeWithVersion>> {
+  try {
+    const supabase = await createClient();
+    const service = new RecipeService(supabase);
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } };
+    }
+
+    // Get user's profile ID
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (!profile) {
+      return { success: false, error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' } };
+    }
+
+    const forkedRecipe = await service.fork(input, profile.id);
+
+    // Revalidate recipes list to include the new forked recipe
+    revalidatePath('/recipes');
+
+    return { success: true, data: forkedRecipe };
   } catch (error) {
     return { success: false, error: formatError(error) };
   }

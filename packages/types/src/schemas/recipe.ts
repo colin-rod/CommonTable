@@ -243,3 +243,22 @@ export const RecipeIdSchema = z.string().uuid('Invalid recipe ID');
  * Recipe version ID schema
  */
 export const RecipeVersionIdSchema = z.string().uuid('Invalid recipe version ID');
+
+// =============================================================================
+// Recipe Fork Schemas
+// =============================================================================
+
+/**
+ * Fork recipe input schema
+ * Used when forking (copying) a recipe to create a new recipe with the same content
+ */
+export const ForkRecipeInputSchema = z.object({
+  parentRecipeId: z.string().uuid('Invalid parent recipe ID'),
+  newTitle: z
+    .string()
+    .min(1, 'Title is required')
+    .max(200, 'Title must be 200 characters or less')
+    .trim(),
+});
+
+export type ForkRecipeInput = z.infer<typeof ForkRecipeInputSchema>;

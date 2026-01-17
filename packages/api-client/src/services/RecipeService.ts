@@ -10,9 +10,11 @@ import {
   type VersionHistoryEntry,
   type CreateRecipeInput,
   type UpdateRecipeInput,
+  type ForkRecipeInput,
   CreateRecipeInputSchema,
   UpdateRecipeInputSchema,
   RecipeSearchSchema,
+  ForkRecipeInputSchema,
   ValidationError,
   NotFoundError,
   AppError,
@@ -477,6 +479,57 @@ export class RecipeService extends BaseService {
         recipeId,
         versionNumber,
       });
+    }
+  }
+
+  /**
+   * Fork a recipe to create a copy with lineage tracking
+   *
+   * Uses database function fork_recipe which:
+   * 1. Creates a new recipe with the same household
+   * 2. Copies current version content (ingredients, steps, etc.)
+   * 3. Records the fork relationship in recipe_forks table
+   *
+   * @param input - Fork input with parentRecipeId and newTitle
+   * @param userId - User performing the fork
+   * @returns Created forked recipe with its version
+   * @throws {ValidationError} If input validation fails
+   * @throws {NotFoundError} If parent recipe does not exist
+   * @throws {AppError} If database operation fails
+   */
+  async fork(input: ForkRecipeInput, userId: UserId): Promise<RecipeWithVersion> {
+    try {
+      const validated = ForkRecipeInputSchema.parse(input);
+
+      // Call database function for atomic fork operation
+      const { data: forkedRecipeId, error: rpcError } = await this.supabase.rpc('fork_recipe', {
+        p_parent_recipe_id: validated.parentRecipeId,
+        p_new_title: validated.newTitle,
+        p_user_id: userId,
+      });
+
+      if (rpcError) {
+        // Check if it's a "not found" error from the database function
+        if (rpcError.message?.includes('not found')) {
+          throw new NotFoundError('Recipe', validated.parentRecipeId);
+        }
+        throw rpcError;
+      }
+
+      if (!forkedRecipeId) {
+        throw new AppError('Failed to fork recipe - no ID returned', 'FORK_ERROR');
+      }
+
+      // Fetch and return the created recipe with its version
+      return await this.getWithVersion(forkedRecipeId as RecipeId);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new ValidationError('Invalid fork data', { errors: error.errors });
+      }
+      if (error instanceof AppError) throw error;
+
+      console.error('RecipeService.fork failed:', error);
+      throw new AppError('Failed to fork recipe', 'FORK_ERROR', 500);
     }
   }
 
