@@ -12,7 +12,7 @@ export const sharedConfig = defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['**/*.test.ts', '**/*.spec.ts'],
+    include: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/coverage/**', '**/.turbo/**'],
     coverage: {
       provider: 'v8',
@@ -28,7 +28,9 @@ export const sharedConfig = defineConfig({
         '**/types/**',
         '**/__mocks__/**',
         '**/*.test.ts',
+        '**/*.test.tsx',
         '**/*.spec.ts',
+        '**/*.spec.tsx',
       ],
     },
   },
