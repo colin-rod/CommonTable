@@ -1,10 +1,13 @@
 'use client';
 
-import type { IngredientInput } from '@commontable/types';
+import type { IngredientInput, UnitSystem } from '@commontable/types';
+import { convertToSystem, roundQuantity } from '@commontable/types';
 import { List, ListItem, ListItemText, Typography, Box } from '@mui/material';
 
 interface IngredientListProps {
   ingredients: IngredientInput[];
+  /** Optional unit system for display conversion (metric or imperial) */
+  unitSystem?: UnitSystem;
 }
 
 /**
@@ -20,7 +23,7 @@ interface IngredientListProps {
  * - body1 for ingredient text
  * - body2 for notes
  */
-export function IngredientList({ ingredients }: IngredientListProps) {
+export function IngredientList({ ingredients, unitSystem }: IngredientListProps) {
   if (ingredients.length === 0) {
     return (
       <Box sx={{ py: 2 }}>
@@ -32,21 +35,39 @@ export function IngredientList({ ingredients }: IngredientListProps) {
   }
 
   /**
-   * Format ingredient display text
+   * Format quantity for display (remove trailing zeros)
+   */
+  const formatQuantity = (qty: number): string => {
+    if (Number.isInteger(qty)) {
+      return qty.toString();
+    }
+    return qty.toFixed(2).replace(/\.?0+$/, '');
+  };
+
+  /**
+   * Format ingredient display text with optional unit conversion
    */
   const formatIngredient = (ingredient: IngredientInput): string => {
     const parts: string[] = [];
 
-    if (ingredient.quantity !== undefined) {
-      // Format quantity (remove trailing zeros)
-      const qty = Number.isInteger(ingredient.quantity)
-        ? ingredient.quantity.toString()
-        : ingredient.quantity.toFixed(2).replace(/\.?0+$/, '');
-      parts.push(qty);
+    let displayQuantity = ingredient.quantity;
+    let displayUnit = ingredient.unit;
+
+    // Apply unit system conversion if specified
+    if (unitSystem && ingredient.quantity !== undefined && ingredient.unit) {
+      const converted = convertToSystem(ingredient.quantity, ingredient.unit, unitSystem);
+      if (converted) {
+        displayQuantity = roundQuantity(converted.value);
+        displayUnit = converted.unit;
+      }
     }
 
-    if (ingredient.unit) {
-      parts.push(ingredient.unit);
+    if (displayQuantity !== undefined) {
+      parts.push(formatQuantity(displayQuantity));
+    }
+
+    if (displayUnit) {
+      parts.push(displayUnit);
     }
 
     parts.push(ingredient.name);

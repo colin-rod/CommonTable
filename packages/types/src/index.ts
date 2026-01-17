@@ -6,3 +6,6 @@ export * from './errors';
 export * from './auth';
 export * from './schemas/household';
 export * from './schemas/recipe';
+
+// Re-export utilities
+export * from './utils';

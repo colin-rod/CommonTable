@@ -1,10 +1,13 @@
 'use client';
 
-import type { RecipeWithVersion, RecipeImage } from '@commontable/types';
+import type { RecipeWithVersion, RecipeImage, UnitSystem } from '@commontable/types';
+import { scaleIngredients } from '@commontable/types';
 import { Stack, Typography, Divider, Box } from '@mui/material';
+import { useState, useMemo, useCallback } from 'react';
 
 import { IngredientList } from './IngredientList';
 import { RecipeMetadata } from './RecipeMetadata';
+import { ServingsScaler } from './ServingsScaler';
 import { StepList } from './StepList';
 
 interface RecipeDetailViewProps {
@@ -31,6 +34,30 @@ interface RecipeDetailViewProps {
  */
 export function RecipeDetailView({ recipe, primaryImage: _primaryImage }: RecipeDetailViewProps) {
   const version = recipe.current_version;
+  const originalServings = version?.servings ?? null;
+
+  // Scaling state
+  const [targetServings, setTargetServings] = useState<number>(originalServings ?? 4);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
+
+  // Calculate scaled ingredients
+  const scaledIngredients = useMemo(() => {
+    const ingredients = version?.ingredients_json ?? [];
+    if (originalServings === null || originalServings === targetServings) {
+      return ingredients;
+    }
+    return scaleIngredients(ingredients, originalServings, targetServings);
+  }, [version?.ingredients_json, originalServings, targetServings]);
+
+  const handleServingsChange = useCallback((servings: number) => {
+    setTargetServings(servings);
+  }, []);
+
+  const handleUnitSystemChange = useCallback((system: UnitSystem) => {
+    setUnitSystem(system);
+  }, []);
+
+  const canScale = originalServings !== null;
 
   return (
     <Stack spacing={3}>
@@ -53,12 +80,31 @@ export function RecipeDetailView({ recipe, primaryImage: _primaryImage }: Recipe
 
       <Divider />
 
+      {/* Scaling controls */}
+      {canScale && (
+        <ServingsScaler
+          originalServings={originalServings}
+          targetServings={targetServings}
+          onServingsChange={handleServingsChange}
+          unitSystem={unitSystem}
+          onUnitSystemChange={handleUnitSystemChange}
+        />
+      )}
+
+      {!canScale && (
+        <Typography variant="body2" color="text.secondary">
+          Servings not set for this recipe
+        </Typography>
+      )}
+
+      <Divider />
+
       {/* Ingredients */}
       <Box>
         <Typography variant="h6" gutterBottom>
           Ingredients
         </Typography>
-        <IngredientList ingredients={version?.ingredients_json || []} />
+        <IngredientList ingredients={scaledIngredients} unitSystem={unitSystem} />
       </Box>
 
       <Divider />
