@@ -37,6 +37,7 @@ export interface RecipeImage {
   storage_path: string;
   display_order: number;
   is_primary: boolean;
+  is_public: boolean;
   alt_text: string | null;
   width: number | null;
   height: number | null;

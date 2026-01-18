@@ -8,6 +8,12 @@ export { StepList } from './StepList';
 export { RecipeMetadata } from './RecipeMetadata';
 export { DeleteRecipeDialog } from './DeleteRecipeDialog';
 
+// Image Management Components
+export { ImageManagement } from './ImageManagement';
+export { ImageUploader } from './ImageUploader';
+export { ImageGallery } from './ImageGallery';
+export { ImageEditorDialog } from './ImageEditorDialog';
+
 // Recipe Form Components - Create/Edit
 export { RecipeForm } from './RecipeForm';
 export type { RecipeFormProps } from './RecipeForm';

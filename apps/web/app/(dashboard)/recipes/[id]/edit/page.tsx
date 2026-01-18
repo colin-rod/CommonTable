@@ -1,12 +1,12 @@
 'use client';
 
 import type { RecipeId, RecipeWithVersion } from '@commontable/types';
-import { Container, CircularProgress, Box, Typography } from '@mui/material';
+import { Container, CircularProgress, Box, Typography, Divider, Stack } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { updateRecipe } from '@/app/actions/recipe';
-import { RecipeForm, type RecipeFormValues } from '@/components/recipe';
+import { RecipeForm, type RecipeFormValues, ImageManagement } from '@/components/recipe';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecipe } from '@/hooks/useRecipe';
 
@@ -142,14 +142,21 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
   return (
     <Container maxWidth="md">
       <Box py={4}>
-        <RecipeForm
-          mode="edit"
-          initialValues={transformToFormValues(recipe)}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          loading={loading}
-          error={error}
-        />
+        <Stack spacing={4}>
+          <RecipeForm
+            mode="edit"
+            initialValues={transformToFormValues(recipe)}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            loading={loading}
+            error={error}
+          />
+
+          <Divider />
+
+          {/* Image Management Section */}
+          <ImageManagement recipeId={recipeId} userId={household.id} />
+        </Stack>
       </Box>
     </Container>
   );

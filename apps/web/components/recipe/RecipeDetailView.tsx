@@ -2,8 +2,8 @@
 
 import type { RecipeWithVersion, RecipeImage, UnitSystem } from '@commontable/types';
 import { scaleIngredients } from '@commontable/types';
-import { Stack, Typography, Divider, Box } from '@mui/material';
-import { useState, useMemo, useCallback } from 'react';
+import { Stack, Typography, Divider, Box, Skeleton } from '@mui/material';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 
 import { IngredientList } from './IngredientList';
 import { RecipeMetadata } from './RecipeMetadata';
@@ -13,6 +13,8 @@ import { StepList } from './StepList';
 interface RecipeDetailViewProps {
   recipe: RecipeWithVersion;
   primaryImage?: RecipeImage | null;
+  /** Function to get signed URL for private image */
+  getImageUrl?: (image: RecipeImage) => Promise<string>;
 }
 
 /**
@@ -32,13 +34,30 @@ interface RecipeDetailViewProps {
  * - body1 for content
  * - Divider between sections
  */
-export function RecipeDetailView({ recipe, primaryImage: _primaryImage }: RecipeDetailViewProps) {
+export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDetailViewProps) {
   const version = recipe.current_version;
   const originalServings = version?.servings ?? null;
 
   // Scaling state
   const [targetServings, setTargetServings] = useState<number>(originalServings ?? 4);
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial');
+
+  // Image URL state
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
+
+  // Load image URL when primary image changes
+  useEffect(() => {
+    if (primaryImage && getImageUrl) {
+      setImageLoading(true);
+      getImageUrl(primaryImage)
+        .then(setImageUrl)
+        .catch(() => setImageUrl(null))
+        .finally(() => setImageLoading(false));
+    } else {
+      setImageUrl(null);
+    }
+  }, [primaryImage, getImageUrl]);
 
   // Calculate scaled ingredients
   const scaledIngredients = useMemo(() => {
@@ -61,6 +80,34 @@ export function RecipeDetailView({ recipe, primaryImage: _primaryImage }: Recipe
 
   return (
     <Stack spacing={3}>
+      {/* Primary Image */}
+      {(primaryImage || imageLoading) && (
+        <Box
+          sx={{
+            width: '100%',
+            maxHeight: 400,
+            borderRadius: 1,
+            overflow: 'hidden',
+            bgcolor: 'background.default',
+          }}
+        >
+          {imageLoading ? (
+            <Skeleton variant="rectangular" width="100%" height={300} />
+          ) : imageUrl ? (
+            <Box
+              component="img"
+              src={imageUrl}
+              alt={primaryImage?.alt_text || recipe.title}
+              sx={{
+                width: '100%',
+                maxHeight: 400,
+                objectFit: 'cover',
+              }}
+            />
+          ) : null}
+        </Box>
+      )}
+
       {/* Description */}
       {recipe.description && (
         <Typography variant="body1" color="text.secondary">

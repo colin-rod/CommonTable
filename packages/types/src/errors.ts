@@ -55,3 +55,41 @@ export class EmailVerificationError extends AppError {
     super(message, 'EMAIL_VERIFICATION_ERROR', 400, metadata);
   }
 }
+
+export class StorageError extends AppError {
+  constructor(message: string, metadata?: Record<string, unknown>) {
+    super(message, 'STORAGE_ERROR', 500, metadata);
+  }
+}
+
+export class ImageLimitExceededError extends AppError {
+  constructor(recipeId: string, currentCount: number, maxCount: number) {
+    super(`Maximum ${maxCount} images per recipe`, 'IMAGE_LIMIT_EXCEEDED', 400, {
+      recipeId,
+      currentCount,
+      maxCount,
+    });
+  }
+}
+
+export class InvalidFileTypeError extends AppError {
+  constructor(providedType: string, allowedTypes: readonly string[]) {
+    super(
+      `Invalid file type: ${providedType}. Allowed types: ${allowedTypes.join(', ')}`,
+      'INVALID_FILE_TYPE',
+      400,
+      { providedType, allowedTypes },
+    );
+  }
+}
+
+export class FileTooLargeError extends AppError {
+  constructor(fileSize: number, maxSize: number) {
+    const fileSizeMB = (fileSize / (1024 * 1024)).toFixed(2);
+    const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
+    super(`File size ${fileSizeMB}MB exceeds maximum ${maxSizeMB}MB`, 'FILE_TOO_LARGE', 400, {
+      fileSize,
+      maxSize,
+    });
+  }
+}

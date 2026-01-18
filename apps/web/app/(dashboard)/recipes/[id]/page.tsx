@@ -1,5 +1,6 @@
 'use client';
 
+import { RecipeImageService } from '@commontable/api-client';
 import type { RecipeId } from '@commontable/types';
 import {
   ArrowBack as ArrowBackIcon,
@@ -60,6 +61,9 @@ export default function RecipeDetailPage() {
     open: boolean;
     message: string;
   }>({ open: false, message: '' });
+
+  // Image service for getting signed URLs
+  const recipeImageService = new RecipeImageService();
 
   const handleBack = () => {
     router.push('/recipes');
@@ -240,7 +244,11 @@ export default function RecipeDetailPage() {
         </Box>
 
         {/* Recipe content */}
-        <RecipeDetailView recipe={recipe} primaryImage={primaryImage} />
+        <RecipeDetailView
+          recipe={recipe}
+          primaryImage={primaryImage}
+          getImageUrl={(image) => recipeImageService.getSignedUrl(image.storage_path)}
+        />
 
         {/* Primary action */}
         <Box sx={{ pt: 2 }}>
