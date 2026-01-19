@@ -100,6 +100,43 @@ export default [
       'no-var': 'error',
     },
   },
+  // Deno Edge Functions (Supabase Functions)
+  {
+    files: ['supabase/functions/**/*.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+      globals: {
+        Deno: 'readonly',
+        fetch: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        console: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
+      },
+    },
+    rules: {
+      // Allow `any` for untyped JSON-LD data
+      '@typescript-eslint/no-explicit-any': 'off',
+      // Allow console.log for debugging Edge Functions
+      'no-console': 'off',
+      // Disable project-based type checking for Deno
+      '@typescript-eslint/consistent-type-imports': 'off',
+      // Allow non-null assertions
+      '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
   // Relaxed rules for test files
   {
     files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
@@ -121,6 +158,7 @@ export default [
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        Deno: 'readonly',
       },
     },
     rules: {
