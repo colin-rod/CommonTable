@@ -45,6 +45,10 @@ export default function RecipesPage() {
     router.push('/recipes/new');
   };
 
+  const handleImportRecipe = () => {
+    router.push('/recipes/import');
+  };
+
   if (error) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
@@ -67,14 +71,19 @@ export default function RecipesPage() {
           }}
         >
           <Typography variant="h5">Recipes</Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={handleAddRecipe}
-          >
-            Add Recipe
-          </Button>
+          <Stack direction="row" spacing={2}>
+            <Button variant="outlined" color="primary" onClick={handleImportRecipe}>
+              Import from URL
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleAddRecipe}
+            >
+              Add Recipe
+            </Button>
+          </Stack>
         </Box>
 
         {/* Search */}
