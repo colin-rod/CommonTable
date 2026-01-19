@@ -60,6 +60,7 @@ export const RecipePreviewSchema = z.object({
   ingredients: z.array(IngredientPreviewSchema).default([]),
   steps: z.array(StepPreviewSchema).default([]),
   image_url: z.string().url().optional(),
+  cover_image_storage_path: z.string().optional(), // Path to image in Supabase Storage
   tags: z.array(z.string()).default([]),
 });
 

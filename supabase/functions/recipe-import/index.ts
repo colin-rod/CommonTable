@@ -12,6 +12,7 @@ import {
 import { getAuthToken, validateRequestBody } from '../_shared/validation.ts';
 
 import { parseHtmlFallback } from './parsers/html-fallback.ts';
+import { downloadAndUploadImage } from './parsers/image-downloader.ts';
 import { parseJsonLd } from './parsers/jsonld.ts';
 import { normalizeRecipeData } from './parsers/normalizer.ts';
 import { RecipeImportRequestSchema, type RecipeImportResponse } from './schema.ts';
@@ -166,9 +167,33 @@ serve(async (req) => {
     // Normalize parsed data
     const normalized = normalizeRecipeData(rawData);
 
+    // Try to download and upload image (non-critical)
+    let coverImageStoragePath: string | null = null;
+
+    if (normalized.preview.image_url) {
+      try {
+        console.log(`Attempting to download image from: ${normalized.preview.image_url}`);
+        const imageResult = await downloadAndUploadImage(
+          normalized.preview.image_url,
+          user.id,
+          supabase,
+        );
+        if (imageResult) {
+          coverImageStoragePath = imageResult.storage_path;
+          console.log(`Successfully uploaded image to: ${coverImageStoragePath}`);
+        }
+      } catch (error) {
+        console.error('Image download failed (non-critical):', error);
+      }
+    }
+
     // Add source metadata
     const result: RecipeImportResponse = {
       ...normalized,
+      preview: {
+        ...normalized.preview,
+        cover_image_storage_path: coverImageStoragePath || undefined,
+      },
       source: {
         url: validated.url,
         parsed_via,

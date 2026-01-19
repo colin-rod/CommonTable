@@ -34,6 +34,7 @@ export interface RecipeImportResponse {
       text: string;
     }>;
     image_url?: string;
+    cover_image_storage_path?: string; // NEW: Path to downloaded image in temp storage
     tags: string[];
   };
   validation_errors: Array<{
@@ -139,15 +140,15 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
 }
 
 /**
- * Create a recipe from imported data with optional image download
+ * Create a recipe from imported data with optional image from temp storage
  *
  * @param input - Recipe creation input (without user_id)
- * @param imageUrl - Optional image URL to download and upload
+ * @param coverImageStoragePath - Optional path to image in temp storage
  * @returns Created recipe or error
  */
 export async function createImportedRecipe(
   input: Omit<CreateRecipeInput, 'user_id'>,
-  imageUrl?: string,
+  coverImageStoragePath?: string,
 ): Promise<ActionResult<Recipe>> {
   try {
     const supabase = await createClient();
@@ -185,13 +186,19 @@ export async function createImportedRecipe(
       user_id: profile.id,
     });
 
-    // If image URL provided, try to download and upload (non-critical)
-    if (imageUrl) {
+    // If cover image provided, move from temp to permanent storage (non-critical)
+    if (coverImageStoragePath) {
       try {
-        await downloadAndUploadRecipeImage(recipe.id, imageUrl, supabase);
+        await moveImageToPermanentStorage(
+          coverImageStoragePath,
+          recipe.id,
+          recipe.household_id,
+          profile.id,
+          supabase,
+        );
       } catch (imageError) {
         // Log but don't fail recipe creation
-        console.error('Image upload failed (non-critical):', imageError);
+        console.error('Image move failed (non-critical):', imageError);
       }
     }
 
@@ -204,112 +211,62 @@ export async function createImportedRecipe(
 }
 
 /**
- * Download image from URL and upload to recipe storage
+ * Move image from temporary storage to permanent recipe storage
  *
+ * @param tempStoragePath - Path to image in temp storage (imports/{user_id}/...)
  * @param recipeId - Recipe ID
- * @param imageUrl - Image URL to download from
+ * @param householdId - Household ID
+ * @param userId - User profile ID (created_by)
  * @param supabase - Supabase client
  */
-async function downloadAndUploadRecipeImage(
+async function moveImageToPermanentStorage(
+  tempStoragePath: string,
   recipeId: string,
-  imageUrl: string,
+  householdId: string,
+  userId: string,
   supabase: Awaited<ReturnType<typeof createClient>>,
 ): Promise<void> {
-  // Fetch image from URL with 10-second timeout
-  const controller = new AbortController();
-  // eslint-disable-next-line no-undef
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  // 1. Download from temp location
+  const { data: fileData, error: downloadError } = await supabase.storage
+    .from('recipe-images')
+    .download(tempStoragePath);
 
-  try {
-    // eslint-disable-next-line no-undef
-    const response = await fetch(imageUrl, {
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: HTTP ${response.status}`);
-    }
-
-    // Get image blob
-    const blob = await response.blob();
-
-    // Validate content type
-    const contentType = response.headers.get('content-type') || blob.type;
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
-
-    if (!validImageTypes.some((type) => contentType.includes(type))) {
-      throw new Error(`Invalid image type: ${contentType}`);
-    }
-
-    // Generate filename from content type
-    const extension = contentType.split('/')[1]?.split(';')[0] || 'jpg';
-    const filename = `imported-recipe.${extension}`;
-
-    // Convert blob to File
-    const file = new File([blob], filename, { type: contentType });
-
-    // Get user ID for upload
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get user profile ID
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!profile) {
-      throw new Error('Profile not found');
-    }
-
-    // Get recipe to get household_id
-    const { data: recipe } = await supabase
-      .from('recipes')
-      .select('household_id')
-      .eq('id', recipeId)
-      .single();
-
-    if (!recipe) {
-      throw new Error('Recipe not found');
-    }
-
-    // Upload to storage
-    // eslint-disable-next-line no-undef
-    const storagePath = `${recipe.household_id}/${recipeId}/${crypto.randomUUID()}.${extension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('recipe-images')
-      .upload(storagePath, file, {
-        contentType: file.type,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    // Create image metadata record
-    const { error: dbError } = await supabase.from('recipe_images').insert({
-      recipe_id: recipeId,
-      storage_path: storagePath,
-      created_by: profile.id,
-      is_primary: true, // First image is primary
-      alt_text: 'Imported recipe image',
-    });
-
-    if (dbError) {
-      // Clean up uploaded file if DB insert fails
-      await supabase.storage.from('recipe-images').remove([storagePath]);
-      throw dbError;
-    }
-  } finally {
-    // eslint-disable-next-line no-undef
-    clearTimeout(timeoutId);
+  if (downloadError) {
+    throw new Error(`Failed to download temp image: ${downloadError.message}`);
   }
+
+  // 2. Generate permanent path
+  const extension = tempStoragePath.split('.').pop() || 'jpg';
+  // eslint-disable-next-line no-undef
+  const permanentPath = `${householdId}/${recipeId}/${crypto.randomUUID()}.${extension}`;
+
+  // 3. Upload to permanent location
+  const { error: uploadError } = await supabase.storage
+    .from('recipe-images')
+    .upload(permanentPath, fileData, {
+      contentType: fileData.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload to permanent storage: ${uploadError.message}`);
+  }
+
+  // 4. Create recipe_images record
+  const { error: dbError } = await supabase.from('recipe_images').insert({
+    recipe_id: recipeId,
+    storage_path: permanentPath,
+    created_by: userId,
+    is_primary: true,
+    alt_text: 'Imported recipe cover image',
+  });
+
+  if (dbError) {
+    // Clean up uploaded file if DB insert fails
+    await supabase.storage.from('recipe-images').remove([permanentPath]);
+    throw new Error(`Failed to create image metadata record: ${dbError.message}`);
+  }
+
+  // 5. Optionally delete temp file (leaving it for manual cleanup as per plan)
+  // await supabase.storage.from('recipe-images').remove([tempStoragePath]);
 }

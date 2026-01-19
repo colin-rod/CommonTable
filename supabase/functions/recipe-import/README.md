@@ -78,6 +78,7 @@ Authorization: Bearer <user-token>
         }
       ],
       "image_url": "https://example.com/recipe-image.jpg",
+      "cover_image_storage_path": "imports/user-123/1737292800000_d4e5f6/abc123.jpg",
       "tags": ["italian", "pasta", "dinner"]
     },
     "validation_errors": [],
@@ -195,6 +196,8 @@ The function looks for `<script type="application/ld+json">` tags containing sch
 - `recipeIngredient` → `ingredients[]` (array of strings)
 - `recipeInstructions` → `steps[]` (array of strings or HowToStep objects)
 - `image` → `image_url` (string, ImageObject, or array)
+  - **NEW**: If image found, function downloads it and stores in temp location
+  - Returns `cover_image_storage_path` (path in Supabase Storage)
 - `keywords`, `recipeCategory` → `tags[]`
 
 **Handles:**
@@ -288,7 +291,8 @@ deno test normalizer.test.ts
 - JSON-LD parser: 22 test cases
 - HTML fallback parser: 26 test cases
 - Normalizer: 26 test cases
-- **Total: 74 test cases**
+- Image downloader: 10 test cases
+- **Total: 84 test cases**
 
 ### View Logs
 
@@ -309,7 +313,9 @@ supabase/functions/recipe-import/
 │   ├── html-fallback.ts         # HTML pattern parser
 │   ├── html-fallback.test.ts    # HTML fallback tests
 │   ├── normalizer.ts            # Data normalization
-│   └── normalizer.test.ts       # Normalizer tests
+│   ├── normalizer.test.ts       # Normalizer tests
+│   ├── image-downloader.ts      # Image download & upload
+│   └── image-downloader.test.ts # Image downloader tests
 ```
 
 ## Security Considerations
@@ -338,16 +344,91 @@ No rate limiting is implemented in this function. Consider adding:
 - Limits response size to 1MB
 - 10-second timeout prevents hanging requests
 
+## Temporary Image Storage
+
+When a recipe image is successfully downloaded during parsing, it is stored in a temporary location for preview before the user saves the recipe.
+
+### Storage Path Format
+
+**Temporary Location** (during preview):
+
+```
+imports/{user_id}/{timestamp}_{session_id}/{image_id}.{ext}
+```
+
+Example:
+
+```
+imports/550e8400-e29b-41d4-a716-446655440000/1737292800000_d4e5f6/abc123.jpg
+```
+
+**Permanent Location** (after recipe saved):
+
+```
+{household_id}/{recipe_id}/{image_id}.{ext}
+```
+
+Example:
+
+```
+household-123/recipe-456/xyz789.jpg
+```
+
+### Image Download Process
+
+1. **Parsing**: Edge Function parses recipe and extracts `image_url`
+2. **Download**: Function downloads image from external URL
+   - 10-second timeout
+   - Max size: 5MB
+   - Allowed types: JPEG, PNG, WebP
+3. **Upload**: Uploads to temp storage (`imports/{user_id}/...`)
+4. **Response**: Returns `cover_image_storage_path` in preview
+5. **Client Preview**: Client fetches signed URL to display image
+6. **Save**: When user saves recipe, image is moved to permanent location
+7. **Database**: `recipe_images` record created with `is_primary: true`
+
+### Graceful Fallback
+
+- If image download fails, recipe import continues without error
+- Returns `image_url` only (no `cover_image_storage_path`)
+- User can manually upload image later
+
+### Abandoned Imports
+
+Images in `/imports/` folder that are **never saved** (user abandons preview) will remain in storage.
+
+**Manual Cleanup**:
+
+1. Go to Supabase Dashboard → Storage → recipe-images
+2. Navigate to `imports/` folder
+3. Delete folders older than 7+ days
+
+**Estimated Storage Impact**:
+
+- Average image: ~500KB
+- 100 abandoned imports/day: ~50MB/day
+- Monthly accumulation: ~1-2GB
+
+**Future**: Automated cleanup job will be implemented in a separate issue (deferred).
+
+### Security & RLS
+
+- Users can only read/write to their own `/imports/{user_id}/` folder
+- RLS policies enforce user isolation for temp storage
+- Service role key used by Edge Function to bypass RLS during upload
+
+---
+
 ## Known Limitations
 
 ### Not Supported in MVP
 
 - Recipe site authentication (only public recipes)
-- Image download/upload (returns URL only, client handles upload)
 - Caching of parsed results
 - Site-specific parsing rules (AllRecipes, NYT Cooking, etc.)
 - Bulk URL import
 - Import history tracking
+- Automated cleanup of abandoned imports
 
 ### Edge Cases
 
@@ -363,19 +444,17 @@ To complete the recipe import flow:
 1. **Client UI** (web app)
    - URL input form
    - Preview display with validation errors
-   - Image preview (from returned URL)
+   - **Image preview** (fetch signed URL from `cover_image_storage_path`)
    - Edit fields before saving
    - Save button to create recipe
 
-2. **Image Handling** (client-side)
-   - Fetch image from returned URL
-   - Upload to Supabase Storage via RecipeImageService
-   - Link to created recipe
-
-3. **Recipe Creation**
-   - Call RecipeService.create() with normalized data
+2. **Recipe Creation**
+   - Call `createImportedRecipe()` server action with normalized data
+   - Pass `cover_image_storage_path` to move image to permanent location
    - Handle validation errors
    - Redirect to recipe detail page
+
+**Note**: Image download/upload is now handled server-side by this Edge Function.
 
 ## Deployment
 
