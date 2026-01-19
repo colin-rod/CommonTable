@@ -9,6 +9,9 @@ export type HouseholdId = string & { __brand: 'HouseholdId' };
 export type ProfileId = string & { __brand: 'ProfileId' };
 export type AuthUserId = string & { __brand: 'AuthUserId' };
 export type InvitationId = string & { __brand: 'InvitationId' };
+export type TagId = string & { __brand: 'TagId' };
+export type RecipeVersionTagId = string & { __brand: 'RecipeVersionTagId' };
+export type AiTagSuggestionId = string & { __brand: 'AiTagSuggestionId' };
 
 // Recipe domain models
 export interface Recipe {
@@ -58,6 +61,10 @@ export interface RecipeVersion {
   notes: string | null;
   created_by: UserId;
   created_at: Date;
+
+  // Optional joined data
+  tags?: RecipeVersionTagWithName[];
+  ai_tag_suggestions?: AiTagSuggestionWithTag[];
 }
 
 // Supporting types for recipe creation
@@ -86,4 +93,43 @@ export interface VersionHistoryEntry {
   readonly created_by_name: string | null;
   readonly created_at: Date;
   readonly is_current: boolean;
+}
+
+// Tag domain models
+export interface Tag {
+  id: TagId;
+  household_id: HouseholdId;
+  name: string;
+  created_by: UserId;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RecipeVersionTag {
+  id: RecipeVersionTagId;
+  recipe_version_id: RecipeVersionId;
+  tag_id: TagId;
+  created_by: UserId;
+  created_at: Date;
+}
+
+export interface AiTagSuggestion {
+  id: AiTagSuggestionId;
+  recipe_version_id: RecipeVersionId;
+  tag_id: TagId;
+  confidence_score: number; // 0.00 to 1.00
+  user_accepted: boolean | null; // null = pending, true = accepted, false = rejected
+  accepted_at: Date | null;
+  model_version: string;
+  created_at: Date;
+}
+
+// Joined type for querying version tags with tag names
+export interface RecipeVersionTagWithName extends RecipeVersionTag {
+  tag: Tag;
+}
+
+// Type for AI suggestion with tag details
+export interface AiTagSuggestionWithTag extends AiTagSuggestion {
+  tag: Tag;
 }

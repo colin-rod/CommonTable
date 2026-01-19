@@ -8,6 +8,9 @@
 -- who created each version. Uses LEFT JOIN to handle cases where profile
 -- may not exist (e.g., deleted users).
 
+-- Drop existing function to allow signature change
+DROP FUNCTION IF EXISTS public.get_recipe_version_history(UUID);
+
 CREATE OR REPLACE FUNCTION public.get_recipe_version_history(p_recipe_id UUID)
 RETURNS TABLE (
   version_id UUID,

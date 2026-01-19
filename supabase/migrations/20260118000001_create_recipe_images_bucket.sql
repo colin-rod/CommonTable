@@ -28,8 +28,7 @@
 -- Policy name: recipe_images_select_policy
 -- Target roles: authenticated
 -- USING expression (copy this exactly):
-
-(bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
+-- (bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
 
 -- Policy 2: INSERT (uploading images)
 -- -----------------------------------
@@ -37,8 +36,7 @@
 -- Policy name: recipe_images_insert_policy
 -- Target roles: authenticated
 -- WITH CHECK expression (copy this exactly):
-
-(bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
+-- (bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
 
 -- Policy 3: UPDATE (updating images)
 -- ----------------------------------
@@ -46,12 +44,9 @@
 -- Policy name: recipe_images_update_policy
 -- Target roles: authenticated
 -- USING expression (copy this exactly):
-
-(bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
-
+-- (bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
 -- WITH CHECK expression (copy this exactly):
-
-(bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
+-- (bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
 
 -- Policy 4: DELETE (deleting images)
 -- ----------------------------------
@@ -59,8 +54,7 @@
 -- Policy name: recipe_images_delete_policy
 -- Target roles: authenticated
 -- USING expression (copy this exactly):
-
-(bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
+-- (bucket_id = 'recipe-images' AND public.user_belongs_to_household(public.get_household_id_from_storage_path(name)) AND public.recipe_belongs_to_household(public.get_recipe_id_from_storage_path(name), public.get_household_id_from_storage_path(name)))
 --
 -- STEP 3: Run this migration
 -- --------------------------

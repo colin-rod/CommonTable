@@ -6,8 +6,81 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.1';
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
+      ai_tag_suggestions: {
+        Row: {
+          accepted_at: string | null;
+          confidence_score: number;
+          created_at: string;
+          id: string;
+          model_version: string;
+          recipe_version_id: string;
+          tag_id: string;
+          user_accepted: boolean | null;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          confidence_score: number;
+          created_at?: string;
+          id?: string;
+          model_version: string;
+          recipe_version_id: string;
+          tag_id: string;
+          user_accepted?: boolean | null;
+        };
+        Update: {
+          accepted_at?: string | null;
+          confidence_score?: number;
+          created_at?: string;
+          id?: string;
+          model_version?: string;
+          recipe_version_id?: string;
+          tag_id?: string;
+          user_accepted?: boolean | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_tag_suggestions_recipe_version_id_fkey';
+            columns: ['recipe_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'recipe_versions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_tag_suggestions_tag_id_fkey';
+            columns: ['tag_id'];
+            isOneToOne: false;
+            referencedRelation: 'tags';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_entries: {
         Row: {
           created_at: string;
@@ -304,6 +377,7 @@ export type Database = {
           height: number | null;
           id: string;
           is_primary: boolean;
+          is_public: boolean;
           recipe_id: string;
           storage_path: string;
           width: number | null;
@@ -317,6 +391,7 @@ export type Database = {
           height?: number | null;
           id?: string;
           is_primary?: boolean;
+          is_public?: boolean;
           recipe_id: string;
           storage_path: string;
           width?: number | null;
@@ -330,6 +405,7 @@ export type Database = {
           height?: number | null;
           id?: string;
           is_primary?: boolean;
+          is_public?: boolean;
           recipe_id?: string;
           storage_path?: string;
           width?: number | null;
@@ -340,6 +416,45 @@ export type Database = {
             columns: ['recipe_id'];
             isOneToOne: false;
             referencedRelation: 'recipes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      recipe_version_tags: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          id: string;
+          recipe_version_id: string;
+          tag_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          id?: string;
+          recipe_version_id: string;
+          tag_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          id?: string;
+          recipe_version_id?: string;
+          tag_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recipe_version_tags_recipe_version_id_fkey';
+            columns: ['recipe_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'recipe_versions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recipe_version_tags_tag_id_fkey';
+            columns: ['tag_id'];
+            isOneToOne: false;
+            referencedRelation: 'tags';
             referencedColumns: ['id'];
           },
         ];
@@ -457,6 +572,41 @@ export type Database = {
           },
         ];
       };
+      tags: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          household_id: string;
+          id: string;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          household_id: string;
+          id?: string;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          household_id?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tags_household_id_fkey';
+            columns: ['household_id'];
+            isOneToOne: false;
+            referencedRelation: 'households';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -493,6 +643,10 @@ export type Database = {
         };
         Returns: string;
       };
+      get_household_id_from_storage_path: {
+        Args: { path: string };
+        Returns: string;
+      };
       get_household_recipe_stats: {
         Args: { p_household_id: string };
         Returns: {
@@ -505,15 +659,28 @@ export type Database = {
       get_household_tags: {
         Args: { p_household_id: string };
         Returns: {
-          recipe_count: number;
-          tag: string;
+          tag_name: string;
+          usage_count: number;
         }[];
+      };
+      get_or_create_tag: {
+        Args: {
+          p_created_by: string;
+          p_household_id: string;
+          p_tag_name: string;
+        };
+        Returns: string;
+      };
+      get_recipe_id_from_storage_path: {
+        Args: { path: string };
+        Returns: string;
       };
       get_recipe_version_history: {
         Args: { p_recipe_id: string };
         Returns: {
           created_at: string;
           created_by: string;
+          created_by_name: string;
           is_current: boolean;
           version_id: string;
           version_number: number;
@@ -521,10 +688,17 @@ export type Database = {
       };
       get_user_household_id: { Args: never; Returns: string };
       get_user_household_role: { Args: never; Returns: string };
+      get_user_id_from_imports_path: { Args: { path: string }; Returns: string };
       get_user_profile_id: { Args: never; Returns: string };
       is_household_admin: { Args: never; Returns: boolean };
       is_household_admin_of: {
         Args: { household_id: string };
+        Returns: boolean;
+      };
+      is_imports_path: { Args: { path: string }; Returns: boolean };
+      migrate_recipe_tags_to_normalized: { Args: never; Returns: undefined };
+      recipe_belongs_to_household: {
+        Args: { household_id: string; recipe_id: string };
         Returns: boolean;
       };
       search_recipes: {
@@ -557,6 +731,10 @@ export type Database = {
           p_user_id: string;
         };
         Returns: string;
+      };
+      user_belongs_to_household: {
+        Args: { household_id: string };
+        Returns: boolean;
       };
     };
     Enums: {
@@ -684,6 +862,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
