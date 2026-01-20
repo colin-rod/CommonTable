@@ -85,6 +85,9 @@ export interface RecipeSearchResult extends Recipe {
   rank: number;
 }
 
+// Sort options for recipe list
+export type SortOption = 'last-cooked' | 'recent' | 'alphabetical' | 'favorites' | 'rating';
+
 // Version history entry returned by get_recipe_version_history database function
 export interface VersionHistoryEntry {
   readonly version_id: RecipeVersionId;

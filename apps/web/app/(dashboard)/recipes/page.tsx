@@ -1,20 +1,29 @@
 'use client';
 
+import { RecipeService } from '@commontable/api-client';
+import type { SortOption } from '@commontable/types';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Container, Stack, Typography, Button, Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 import { RecipeList } from '@/components/recipe/RecipeList';
 import { RecipeSearchBar } from '@/components/recipe/RecipeSearchBar';
+import { RecipeFilterBar } from '@/components/recipes/RecipeFilterBar';
+import { useAuth } from '@/hooks/useAuth';
+import { useRecipeFilters } from '@/hooks/useRecipeFilters';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useRecipeSearch } from '@/hooks/useRecipeSearch';
+import { createClient } from '@/lib/supabase/client';
 
 /**
- * Recipes List Page
+ * Recipes List Page (Issue 4.3 - UI: Search + Filters)
  *
  * Displays all recipes for the household with:
- * - Search functionality
+ * - Full-text search functionality (backend)
+ * - Tag filter (multi-select with AND logic)
+ * - Sort options (last-cooked, recent, alphabetical, favorites, rating)
+ * - Favorites filter toggle
  * - Favorite toggling
  * - Navigation to recipe detail
  *
@@ -26,18 +35,44 @@ import { useRecipeSearch } from '@/hooks/useRecipeSearch';
  */
 export default function RecipesPage() {
   const router = useRouter();
+  const { household } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<SortOption>('last-cooked');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
 
   const { recipes, loading: recipesLoading, error, toggleFavorite } = useRecipes();
   const { results: searchResults, loading: searchLoading } = useRecipeSearch(searchQuery);
 
+  const supabase = useMemo(() => createClient(), []);
+  const recipeService = useMemo(() => new RecipeService(supabase), [supabase]);
+
+  // Fetch available tags on mount
+  useEffect(() => {
+    async function loadTags() {
+      if (!household?.id) return;
+
+      try {
+        const tags = await recipeService.getAllTags(household.id);
+        setAvailableTags(tags);
+      } catch (err) {
+        console.error('Failed to load tags:', err);
+      }
+    }
+    void loadTags();
+  }, [household?.id, recipeService]);
+
   // Show search results when searching, otherwise show all recipes
-  const displayRecipes = useMemo(() => {
+  const baseRecipes = useMemo(() => {
     if (searchQuery.trim()) {
       return searchResults;
     }
     return recipes;
   }, [searchQuery, searchResults, recipes]);
+
+  // Apply client-side filters and sort
+  const filteredRecipes = useRecipeFilters(baseRecipes, selectedTags, showFavoritesOnly, sortBy);
 
   const isLoading = searchQuery.trim() ? searchLoading : recipesLoading;
 
@@ -89,9 +124,20 @@ export default function RecipesPage() {
         {/* Search */}
         <RecipeSearchBar value={searchQuery} onChange={setSearchQuery} />
 
+        {/* Filters (Issue 4.3) */}
+        <RecipeFilterBar
+          selectedTags={selectedTags}
+          onTagsChange={setSelectedTags}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          showFavoritesOnly={showFavoritesOnly}
+          onFavoritesToggle={setShowFavoritesOnly}
+          availableTags={availableTags}
+        />
+
         {/* Recipe List */}
         <RecipeList
-          recipes={displayRecipes}
+          recipes={filteredRecipes}
           loading={isLoading}
           onToggleFavorite={toggleFavorite}
         />

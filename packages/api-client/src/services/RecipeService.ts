@@ -559,4 +559,35 @@ export class RecipeService extends BaseService {
       throw new AppError('Failed to fetch primary image', 'FETCH_ERROR', 500, { recipeId });
     }
   }
+
+  /**
+   * Get all unique tags from recipes in a household (Issue 4.3 - Tag Filter)
+   *
+   * @param householdId - Household ID
+   * @returns Array of unique tag names sorted alphabetically
+   * @throws {AppError} If database operation fails
+   */
+  async getAllTags(householdId: HouseholdId): Promise<string[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('recipes')
+        .select('tags')
+        .eq('household_id', householdId);
+
+      if (error) throw error;
+
+      // Flatten and deduplicate tags
+      const allTags = new Set<string>();
+      data?.forEach((recipe) => {
+        recipe.tags?.forEach((tag: string) => allTags.add(tag));
+      });
+
+      return Array.from(allTags).sort();
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+
+      console.error('RecipeService.getAllTags failed:', error);
+      throw new AppError('Failed to fetch tags', 'FETCH_ERROR', 500, { householdId });
+    }
+  }
 }

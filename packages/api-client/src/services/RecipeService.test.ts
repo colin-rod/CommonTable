@@ -1620,4 +1620,154 @@ describe('RecipeService', () => {
       expect(result).toBeNull();
     });
   });
+
+  // =============================================================================
+  // getAllTags (Issue 4.3 - Tag Filter)
+  // =============================================================================
+
+  describe('getAllTags', () => {
+    const validHouseholdId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' as HouseholdId;
+
+    it('should return all unique tags from household recipes sorted alphabetically', async () => {
+      const mockRecipes = [
+        { tags: ['italian', 'pasta', 'dinner'] },
+        { tags: ['chicken', 'asian', 'dinner'] },
+        { tags: ['italian', 'vegetarian'] },
+        { tags: ['breakfast', 'quick'] },
+      ];
+
+      // Mock query chain - eq() is the last method called, so it should resolve
+      const tagsBuilder: MockQueryBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        insert: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        limit: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        textSearch: vi.fn().mockReturnThis(),
+      };
+      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+
+      const result = await service.getAllTags(validHouseholdId);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('recipes');
+      expect(tagsBuilder.select).toHaveBeenCalledWith('tags');
+      expect(tagsBuilder.eq).toHaveBeenCalledWith('household_id', validHouseholdId);
+
+      // Should flatten, deduplicate, and sort
+      expect(result).toEqual([
+        'asian',
+        'breakfast',
+        'chicken',
+        'dinner',
+        'italian',
+        'pasta',
+        'quick',
+        'vegetarian',
+      ]);
+    });
+
+    it('should return empty array when household has no recipes', async () => {
+      const tagsBuilder: MockQueryBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        insert: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: [], error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: [], error: null }),
+        limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+        textSearch: vi.fn().mockReturnThis(),
+      };
+      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+
+      const result = await service.getAllTags(validHouseholdId);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty array when all recipes have no tags', async () => {
+      const mockRecipes = [{ tags: [] }, { tags: [] }, { tags: null }];
+
+      const tagsBuilder: MockQueryBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        insert: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        limit: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        textSearch: vi.fn().mockReturnThis(),
+      };
+      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+
+      const result = await service.getAllTags(validHouseholdId);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should handle duplicate tags correctly', async () => {
+      const mockRecipes = [
+        { tags: ['italian', 'pasta'] },
+        { tags: ['italian', 'dinner'] },
+        { tags: ['pasta', 'vegetarian'] },
+      ];
+
+      const tagsBuilder: MockQueryBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        insert: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        limit: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
+        textSearch: vi.fn().mockReturnThis(),
+      };
+      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+
+      const result = await service.getAllTags(validHouseholdId);
+
+      // 'italian' and 'pasta' appear multiple times but should only appear once
+      expect(result).toEqual(['dinner', 'italian', 'pasta', 'vegetarian']);
+      expect(result.filter((tag) => tag === 'italian')).toHaveLength(1);
+    });
+
+    it('should throw AppError when database query fails', async () => {
+      const tagsBuilder: MockQueryBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database error' },
+        }),
+        insert: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database error' },
+        }),
+        maybeSingle: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database error' },
+        }),
+        limit: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database error' },
+        }),
+        textSearch: vi.fn().mockReturnThis(),
+      };
+      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+
+      await expect(service.getAllTags(validHouseholdId)).rejects.toThrow(AppError);
+    });
+  });
 });
