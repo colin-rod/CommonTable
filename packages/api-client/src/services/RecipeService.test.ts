@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   ValidationError,
   NotFoundError,
@@ -721,6 +721,197 @@ describe('RecipeService', () => {
         p_query: query,
         p_household_id: validHouseholdId,
         p_limit: limit,
+      });
+    });
+
+    // =============================================================================
+    // Tag Search Tests (Issue 4.2)
+    // =============================================================================
+
+    describe('tag search', () => {
+      it('should find recipes by tag name', async () => {
+        const query = 'italian';
+
+        const mockResults = [
+          {
+            id: validRecipeId,
+            household_id: validHouseholdId,
+            title: 'Pasta Carbonara',
+            description: 'Classic pasta',
+            current_version_id: validVersionId,
+            rolling_score: null,
+            tags: ['italian', 'dinner'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: validUserId,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        vi.mocked(mockSupabase.rpc).mockResolvedValue({
+          data: mockResults,
+          error: null,
+        } as any);
+
+        const result = await service.search(query, validHouseholdId);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].tags).toContain('italian');
+        expect(result[0].title).toBe('Pasta Carbonara');
+      });
+
+      it('should find recipes with multi-word tags', async () => {
+        const query = 'quick weeknight';
+
+        const mockResults = [
+          {
+            id: validRecipeId,
+            household_id: validHouseholdId,
+            title: 'Simple Stir Fry',
+            description: 'Fast dinner',
+            current_version_id: validVersionId,
+            rolling_score: null,
+            tags: ['quick weeknight', 'asian'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: validUserId,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        vi.mocked(mockSupabase.rpc).mockResolvedValue({
+          data: mockResults,
+          error: null,
+        } as any);
+
+        const result = await service.search(query, validHouseholdId);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].tags).toContain('quick weeknight');
+      });
+
+      it('should search tags case-insensitively', async () => {
+        const query = 'ITALIAN';
+
+        const mockResults = [
+          {
+            id: validRecipeId,
+            household_id: validHouseholdId,
+            title: 'Margherita Pizza',
+            description: 'Classic pizza',
+            current_version_id: validVersionId,
+            rolling_score: null,
+            tags: ['italian', 'vegetarian'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: validUserId,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        vi.mocked(mockSupabase.rpc).mockResolvedValue({
+          data: mockResults,
+          error: null,
+        } as any);
+
+        const result = await service.search(query, validHouseholdId);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].tags).toContain('italian');
+      });
+
+      it('should combine title and tag search', async () => {
+        const query = 'pasta italian';
+
+        const mockResults = [
+          {
+            id: validRecipeId,
+            household_id: validHouseholdId,
+            title: 'Pasta Carbonara',
+            description: 'Classic Italian pasta',
+            current_version_id: validVersionId,
+            rolling_score: null,
+            tags: ['italian', 'dinner'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: validUserId,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+        ];
+
+        vi.mocked(mockSupabase.rpc).mockResolvedValue({
+          data: mockResults,
+          error: null,
+        } as any);
+
+        const result = await service.search(query, validHouseholdId);
+
+        expect(result).toHaveLength(1);
+        expect(result[0].title).toContain('Pasta');
+        expect(result[0].tags).toContain('italian');
+      });
+
+      it('should return empty array when searching for tag with no matches', async () => {
+        const query = 'nonexistent-tag';
+
+        vi.mocked(mockSupabase.rpc).mockResolvedValue({
+          data: [],
+          error: null,
+        } as any);
+
+        const result = await service.search(query, validHouseholdId);
+
+        expect(result).toEqual([]);
+      });
+
+      it('should find multiple recipes sharing the same tag', async () => {
+        const query = 'vegetarian';
+
+        const mockResults = [
+          {
+            id: validRecipeId,
+            household_id: validHouseholdId,
+            title: 'Veggie Burger',
+            description: 'Plant-based burger',
+            current_version_id: validVersionId,
+            rolling_score: null,
+            tags: ['vegetarian', 'american'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: validUserId,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z',
+          },
+          {
+            id: 'd4e5f6a7-b8c9-0123-def1-234567890124',
+            household_id: validHouseholdId,
+            title: 'Greek Salad',
+            description: 'Fresh salad',
+            current_version_id: 'e5f6a7b8-c9d0-1234-ef12-345678901235',
+            rolling_score: null,
+            tags: ['vegetarian', 'greek'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: validUserId,
+            created_at: '2024-01-02T00:00:00Z',
+            updated_at: '2024-01-02T00:00:00Z',
+          },
+        ];
+
+        vi.mocked(mockSupabase.rpc).mockResolvedValue({
+          data: mockResults,
+          error: null,
+        } as any);
+
+        const result = await service.search(query, validHouseholdId);
+
+        expect(result).toHaveLength(2);
+        expect(result[0].tags).toContain('vegetarian');
+        expect(result[1].tags).toContain('vegetarian');
       });
     });
   });
