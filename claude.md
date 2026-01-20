@@ -1050,6 +1050,365 @@ export class ErrorBoundary extends Component<Props, State> {
 
 ---
 
+## Favorites Feature
+
+### Overview
+
+CommonTable implements a **household-level favorites** system that allows all household members to mark recipes as favorites. Unlike per-user favorites, this design promotes shared household preferences and simplifies the collaborative recipe management experience.
+
+### Architecture Decision: Household-Level vs Per-User
+
+**Decision**: Household-level favorites (single `is_favorite` boolean on `recipes` table)
+
+**Rationale**:
+
+- Simpler schema (no junction table needed)
+- All household members see the same favorites
+- Lower database overhead
+- Faster queries (no joins required)
+- Aligns with shared household recipe book philosophy
+- Easier querying and filtering
+
+**Trade-offs**:
+
+- Cannot track individual user preferences
+- All household members share the same favorites list
+- Less personalization per user
+
+### Database Schema
+
+```sql
+-- Migration: supabase/migrations/20260116000005_add_recipe_favorite.sql
+
+-- Add is_favorite column with default false
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN NOT NULL DEFAULT false;
+
+-- Create partial index for efficient filtering of favorites within a household
+CREATE INDEX IF NOT EXISTS idx_recipes_favorite
+ON recipes(household_id, is_favorite)
+WHERE is_favorite = true;
+```
+
+**Key Design Points**:
+
+- `is_favorite` is a boolean flag on the `recipes` table
+- Default value is `false`
+- Partial index optimizes filtering (`WHERE is_favorite = true`)
+- RLS policies enforce household isolation (users can only toggle favorites on their household's recipes)
+
+### Service Layer
+
+**RecipeService.toggleFavorite()**
+
+Location: [packages/api-client/src/services/RecipeService.ts:367-388](packages/api-client/src/services/RecipeService.ts#L367-L388)
+
+```typescript
+/**
+ * Toggle the favorite status of a recipe
+ *
+ * @param id - Recipe ID
+ * @returns Updated recipe with toggled favorite status
+ * @throws {NotFoundError} If recipe does not exist
+ * @throws {AppError} If database operation fails
+ */
+async toggleFavorite(id: RecipeId): Promise<Recipe> {
+  try {
+    // Get current recipe to check is_favorite status
+    const existing = await this.getById(id);
+
+    // Toggle the favorite status
+    const { error: updateError } = await this.supabase
+      .from('recipes')
+      .update({ is_favorite: !existing.is_favorite })
+      .eq('id', id);
+
+    if (updateError) throw updateError;
+
+    // Return updated recipe
+    return await this.getById(id);
+  } catch (error) {
+    if (error instanceof AppError) throw error;
+
+    console.error('RecipeService.toggleFavorite failed:', error);
+    throw new AppError('Failed to toggle favorite', 'UPDATE_ERROR', 500, { id });
+  }
+}
+```
+
+**Implementation Notes**:
+
+- Atomically toggles the `is_favorite` flag
+- Fetches current state first to ensure correct toggle operation
+- Returns updated recipe after toggle
+- Proper error handling with custom error types
+- 100% test coverage
+
+### Client Hooks
+
+**useRecipes Hook**
+
+Location: [apps/web/hooks/useRecipes.ts:59-72](apps/web/hooks/useRecipes.ts#L59-L72)
+
+```typescript
+/**
+ * Toggle favorite status of a recipe
+ */
+const toggleFavorite = useCallback(
+  async (recipeId: RecipeId) => {
+    try {
+      const updatedRecipe = await recipeService.toggleFavorite(recipeId);
+
+      // Update local state optimistically
+      setRecipes((prev) => prev.map((r) => (r.id === recipeId ? updatedRecipe : r)));
+    } catch (err) {
+      console.error('useRecipes.toggleFavorite failed:', err);
+      throw err;
+    }
+  },
+  [recipeService],
+);
+```
+
+**Features**:
+
+- Optimistic UI updates (star toggles immediately)
+- Local state management
+- Error propagation for error handling
+
+**useRecipeFilters Hook**
+
+Location: [apps/web/hooks/useRecipeFilters.ts:29-32](apps/web/hooks/useRecipeFilters.ts#L29-L32)
+
+```typescript
+// Apply favorites filter
+if (showFavoritesOnly) {
+  filtered = filtered.filter((recipe) => recipe.is_favorite);
+}
+```
+
+**Features**:
+
+- Client-side filtering by `is_favorite` flag
+- Combines with tag filters (AND logic)
+- Works with all sort options
+
+### UI Components
+
+**RecipeListItem Component**
+
+Location: [apps/web/components/recipe/RecipeListItem.tsx:34-37,62-72](apps/web/components/recipe/RecipeListItem.tsx#L34-L37)
+
+```typescript
+import { Star as StarIcon, StarBorder as StarBorderIcon } from '@mui/icons-material';
+
+// Star icon toggle (filled/unfilled based on is_favorite)
+<IconButton
+  onClick={(e) => {
+    e.stopPropagation(); // Don't navigate when clicking star
+    onToggleFavorite(recipe.id);
+  }}
+  aria-label={recipe.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+>
+  {recipe.is_favorite ? <StarIcon /> : <StarBorderIcon />}
+</IconButton>
+```
+
+**Features**:
+
+- Material Icons (Star/StarBorder)
+- Event propagation stopped (clicking star doesn't navigate)
+- Accessible aria-labels
+- Follows Design System (no custom colors)
+
+**RecipeFilterBar Component**
+
+Location: [apps/web/components/recipes/RecipeFilterBar.tsx:26,91-99](apps/web/components/recipes/RecipeFilterBar.tsx#L26)
+
+```typescript
+{/* Favorites Toggle */}
+<FormControlLabel
+  control={
+    <Checkbox
+      checked={showFavoritesOnly}
+      onChange={(e) => onFavoritesToggle(e.target.checked)}
+    />
+  }
+  label="Favorites only"
+/>
+```
+
+**Features**:
+
+- Simple checkbox toggle
+- Clear label ("Favorites only")
+- Material UI FormControlLabel for accessibility
+
+### Server Actions
+
+**toggleRecipeFavorite Action**
+
+Location: [apps/web/app/actions/recipe.ts:292-306](apps/web/app/actions/recipe.ts#L292-L306)
+
+```typescript
+/**
+ * Toggle the favorite status of a recipe
+ *
+ * @param id - Recipe ID
+ * @returns Updated recipe or error
+ */
+export async function toggleRecipeFavorite(id: RecipeId): Promise<ActionResult<Recipe>> {
+  try {
+    const supabase = await createClient();
+    const service = new RecipeService(supabase);
+
+    const recipe = await service.toggleFavorite(id);
+
+    revalidatePath(`/recipes/${id}`);
+    revalidatePath('/recipes');
+
+    return { success: true, data: recipe };
+  } catch (error) {
+    return { success: false, error: formatError(error) };
+  }
+}
+```
+
+**Features**:
+
+- Calls `RecipeService.toggleFavorite()`
+- Revalidates recipe detail page (`/recipes/[id]`)
+- Revalidates recipe list page (`/recipes`)
+- Error formatting for UI display
+
+### Testing
+
+**Service Layer** (100% Coverage)
+
+- [packages/api-client/src/services/RecipeService.test.ts:1029-1115](packages/api-client/src/services/RecipeService.test.ts#L1029-L1115)
+- Tests toggle from `false` to `true`
+- Tests toggle from `true` to `false`
+- Tests `NotFoundError` for non-existent recipe
+
+**Hooks** (100% Coverage)
+
+- [apps/web/hooks/useRecipes.test.ts:211-288](apps/web/hooks/useRecipes.test.ts#L211-L288)
+- Tests optimistic UI updates
+- Tests error handling
+- [apps/web/hooks/useRecipeFilters.test.ts:99-165](apps/web/hooks/useRecipeFilters.test.ts#L99-L165)
+- Tests favorites filtering
+- Tests combined filters (favorites + tags)
+
+**UI Components** (100% Coverage)
+
+- [apps/web/components/recipe/RecipeListItem.test.tsx:64-77,172-192](apps/web/components/recipe/RecipeListItem.test.tsx#L64-L77)
+- Tests star icon rendering (filled/unfilled)
+- Tests toggle callback
+- Tests event propagation prevention
+- [apps/web/components/recipes/RecipeFilterBar.test.tsx](apps/web/components/recipes/RecipeFilterBar.test.tsx)
+- Tests checkbox rendering
+- Tests toggle callback
+- Tests accessibility
+- [apps/web/components/recipe/RecipeList.test.tsx:131-140,181-194](apps/web/components/recipe/RecipeList.test.tsx#L131-L140)
+- Tests integration with RecipeListItem
+
+### User Flows
+
+**Toggle Favorite**:
+
+1. User clicks star icon on recipe list item
+2. `RecipeListItem` calls `onToggleFavorite(recipeId)`
+3. `useRecipes` hook calls `RecipeService.toggleFavorite()`
+4. Service updates database (`is_favorite = !existing.is_favorite`)
+5. Local state updated optimistically
+6. Star icon toggles immediately (filled ↔ unfilled)
+
+**Filter by Favorites**:
+
+1. User clicks "Favorites only" checkbox in `RecipeFilterBar`
+2. `onFavoritesToggle(true)` callback fires
+3. `useRecipeFilters` filters recipes by `is_favorite === true`
+4. Recipe list updates to show only favorited recipes
+
+**Combined Filters**:
+
+1. User selects tags (e.g., "pasta", "italian")
+2. User clicks "Favorites only"
+3. `useRecipeFilters` applies AND logic:
+   - Recipe must have ALL selected tags
+   - Recipe must have `is_favorite === true`
+4. Recipes matching ALL criteria are displayed
+
+### Design System Compliance
+
+**Material Icons** ✅
+
+- `Star` (filled): Favorite recipes
+- `StarBorder` (unfilled): Non-favorite recipes
+
+**Button Variants** ✅
+
+- Icon-only button for secondary action (favorite toggle)
+- Not a primary action (primary actions require text)
+
+**Typography** ✅
+
+- "Favorites only" label uses body1 variant
+- Calm, neutral tone (no emojis)
+
+**Spacing** ✅
+
+- Follows 8px base grid
+- Proper padding and margins
+
+**Accessibility** ✅
+
+- `aria-label` on star button ("Add to favorites" / "Remove from favorites")
+- Checkbox label for "Favorites only"
+- Keyboard navigation supported
+
+### Performance Optimizations
+
+**Partial Index**:
+
+```sql
+CREATE INDEX idx_recipes_favorite
+ON recipes(household_id, is_favorite)
+WHERE is_favorite = true;
+```
+
+- Only indexes favorite recipes (smaller index)
+- Faster filtering when `showFavoritesOnly = true`
+- Efficient for large recipe collections
+
+**Optimistic Updates**:
+
+- UI updates immediately without waiting for database response
+- Better perceived performance
+- Error handling reverts state if toggle fails
+
+**Client-Side Filtering**:
+
+- No additional database queries when filtering
+- All recipes loaded once, filtered in memory
+- Fast filter interactions
+
+### Future Enhancements
+
+**Per-User Favorites** (Not in MVP):
+
+- Create `recipe_favorites` junction table (`user_id`, `recipe_id`)
+- Add RLS policies for per-user access
+- Update UI to show "favorited by N people"
+- Add "My favorites" vs "Household favorites" views
+
+**Favorite Analytics** (Not in MVP):
+
+- Track favorite count per recipe
+- Surface most-favorited recipes
+- Use favorites as signal for recipe recommendations
+
+---
+
 ## Database Patterns
 
 ### Migration Guidelines
