@@ -191,7 +191,10 @@ export function createTestMealRequest(
     requested_date: string;
     requested_meal_slot: 'breakfast' | 'lunch' | 'dinner' | 'snack';
     notes: string | null;
+    status: 'open' | 'planned' | 'dismissed';
+    priority: number;
     created_at: string;
+    updated_at: string;
   }>,
 ) {
   const now = new Date().toISOString();
@@ -204,7 +207,10 @@ export function createTestMealRequest(
     requested_date: new Date().toISOString().split('T')[0],
     requested_meal_slot: 'dinner' as const,
     notes: null,
+    status: 'open' as const,
+    priority: 0,
     created_at: now,
+    updated_at: now,
     ...overrides,
   };
 }

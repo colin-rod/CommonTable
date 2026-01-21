@@ -159,6 +159,9 @@ export interface CalendarEntry {
   updated_at: Date;
 }
 
+// Meal request status lifecycle
+export type MealRequestStatus = 'open' | 'planned' | 'dismissed';
+
 // Meal request domain model
 export interface MealRequest {
   id: MealRequestId;
@@ -168,5 +171,8 @@ export interface MealRequest {
   requested_date: Date;
   requested_meal_slot: MealSlot;
   notes: string | null;
+  status: MealRequestStatus;
+  priority: number;
   created_at: Date;
+  updated_at: Date;
 }
