@@ -152,10 +152,10 @@ export function createTestCalendarEntry(
   overrides?: Partial<{
     id: string;
     household_id: string;
-    recipe_id: string;
+    recipe_id: string | null;
     planned_date: string;
     meal_slot: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-    servings: number | null;
+    status: 'planned' | 'confirmed' | 'completed' | 'cancelled';
     notes: string | null;
     created_by: string;
     created_at: string;
@@ -170,11 +170,41 @@ export function createTestCalendarEntry(
     recipe_id: randomUUID(),
     planned_date: new Date().toISOString().split('T')[0],
     meal_slot: 'dinner' as const,
-    servings: null,
+    status: 'planned' as const,
     notes: null,
     created_by: randomUUID(),
     created_at: now,
     updated_at: now,
+    ...overrides,
+  };
+}
+
+/**
+ * Create test meal request data
+ */
+export function createTestMealRequest(
+  overrides?: Partial<{
+    id: string;
+    household_id: string;
+    recipe_id: string | null;
+    requested_by: string;
+    requested_date: string;
+    requested_meal_slot: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    notes: string | null;
+    created_at: string;
+  }>,
+) {
+  const now = new Date().toISOString();
+
+  return {
+    id: randomUUID(),
+    household_id: randomUUID(),
+    recipe_id: null,
+    requested_by: randomUUID(),
+    requested_date: new Date().toISOString().split('T')[0],
+    requested_meal_slot: 'dinner' as const,
+    notes: null,
+    created_at: now,
     ...overrides,
   };
 }

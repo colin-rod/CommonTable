@@ -12,6 +12,8 @@ export type InvitationId = string & { __brand: 'InvitationId' };
 export type TagId = string & { __brand: 'TagId' };
 export type RecipeVersionTagId = string & { __brand: 'RecipeVersionTagId' };
 export type AiTagSuggestionId = string & { __brand: 'AiTagSuggestionId' };
+export type CalendarEntryId = string & { __brand: 'CalendarEntryId' };
+export type MealRequestId = string & { __brand: 'MealRequestId' };
 
 // Recipe domain models
 export interface Recipe {
@@ -135,4 +137,36 @@ export interface RecipeVersionTagWithName extends RecipeVersionTag {
 // Type for AI suggestion with tag details
 export interface AiTagSuggestionWithTag extends AiTagSuggestion {
   tag: Tag;
+}
+
+// Meal slot type (shared by calendar_entries and meal_requests)
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+// Calendar entry status lifecycle
+export type CalendarEntryStatus = 'planned' | 'confirmed' | 'completed' | 'cancelled';
+
+// Calendar entry domain model
+export interface CalendarEntry {
+  id: CalendarEntryId;
+  household_id: HouseholdId;
+  recipe_id: RecipeId | null;
+  planned_date: Date;
+  meal_slot: MealSlot;
+  status: CalendarEntryStatus;
+  notes: string | null;
+  created_by: UserId;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Meal request domain model
+export interface MealRequest {
+  id: MealRequestId;
+  household_id: HouseholdId;
+  recipe_id: RecipeId | null;
+  requested_by: UserId;
+  requested_date: Date;
+  requested_meal_slot: MealSlot;
+  notes: string | null;
+  created_at: Date;
 }

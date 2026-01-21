@@ -91,6 +91,8 @@ export type Database = {
           notes: string | null;
           planned_date: string;
           recipe_id: string | null;
+          status: string;
+          updated_at: string;
         };
         Insert: {
           created_at?: string;
@@ -101,6 +103,8 @@ export type Database = {
           notes?: string | null;
           planned_date: string;
           recipe_id?: string | null;
+          status?: string;
+          updated_at?: string;
         };
         Update: {
           created_at?: string;
@@ -111,6 +115,8 @@ export type Database = {
           notes?: string | null;
           planned_date?: string;
           recipe_id?: string | null;
+          status?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -300,6 +306,54 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      meal_requests: {
+        Row: {
+          created_at: string;
+          household_id: string;
+          id: string;
+          notes: string | null;
+          recipe_id: string | null;
+          requested_by: string;
+          requested_date: string;
+          requested_meal_slot: string;
+        };
+        Insert: {
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          notes?: string | null;
+          recipe_id?: string | null;
+          requested_by: string;
+          requested_date: string;
+          requested_meal_slot: string;
+        };
+        Update: {
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          notes?: string | null;
+          recipe_id?: string | null;
+          requested_by?: string;
+          requested_date?: string;
+          requested_meal_slot?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meal_requests_household_id_fkey';
+            columns: ['household_id'];
+            isOneToOne: false;
+            referencedRelation: 'households';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meal_requests_recipe_id_fkey';
+            columns: ['recipe_id'];
+            isOneToOne: false;
+            referencedRelation: 'recipes';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       profiles: {
         Row: {
@@ -521,7 +575,6 @@ export type Database = {
           last_cooked_at: string | null;
           rolling_score: number | null;
           search_vector: unknown;
-          tags: string[] | null;
           title: string;
           updated_at: string;
         };
@@ -536,7 +589,6 @@ export type Database = {
           last_cooked_at?: string | null;
           rolling_score?: number | null;
           search_vector?: unknown;
-          tags?: string[] | null;
           title: string;
           updated_at?: string;
         };
@@ -551,7 +603,6 @@ export type Database = {
           last_cooked_at?: string | null;
           rolling_score?: number | null;
           search_vector?: unknown;
-          tags?: string[] | null;
           title?: string;
           updated_at?: string;
         };
