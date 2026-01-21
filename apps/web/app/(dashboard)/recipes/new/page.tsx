@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { createRecipe } from '@/app/actions/recipe';
 import { RecipeForm, type RecipeFormValues } from '@/components/recipe';
 import { useAuth } from '@/hooks/useAuth';
+import { useTags } from '@/hooks/useTags';
 
 /**
  * Create Recipe Page
@@ -17,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function CreateRecipePage() {
   const router = useRouter();
   const { household, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { tags: availableTags, loading: tagsLoading } = useTags();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -28,6 +30,7 @@ export default function CreateRecipePage() {
     prep_time_minutes: undefined,
     cook_time_minutes: undefined,
     notes: '',
+    tags: [],
     ingredients: [],
     steps: [],
   };
@@ -53,6 +56,7 @@ export default function CreateRecipePage() {
         prep_time_minutes: data.prep_time_minutes,
         cook_time_minutes: data.cook_time_minutes,
         notes: data.notes || '',
+        tags: data.tags,
       };
 
       const result = await createRecipe(input);
@@ -77,8 +81,8 @@ export default function CreateRecipePage() {
     router.push('/recipes');
   };
 
-  // Loading state while checking auth
-  if (authLoading) {
+  // Loading state while checking auth or tags
+  if (authLoading || tagsLoading) {
     return (
       <Container maxWidth="md">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -102,6 +106,7 @@ export default function CreateRecipePage() {
           <RecipeForm
             mode="create"
             initialValues={initialValues}
+            availableTags={availableTags}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             loading={loading}
@@ -120,6 +125,7 @@ export default function CreateRecipePage() {
         <RecipeForm
           mode="create"
           initialValues={initialValues}
+          availableTags={availableTags}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           loading={loading}

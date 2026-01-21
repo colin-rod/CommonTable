@@ -1629,35 +1629,30 @@ describe('RecipeService', () => {
     const validHouseholdId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' as HouseholdId;
 
     it('should return all unique tags from household recipes sorted alphabetically', async () => {
-      const mockRecipes = [
-        { tags: ['italian', 'pasta', 'dinner'] },
-        { tags: ['chicken', 'asian', 'dinner'] },
-        { tags: ['italian', 'vegetarian'] },
-        { tags: ['breakfast', 'quick'] },
+      const mockTagsWithUsage = [
+        { tag_name: 'italian', usage_count: 2 },
+        { tag_name: 'pasta', usage_count: 2 },
+        { tag_name: 'dinner', usage_count: 2 },
+        { tag_name: 'chicken', usage_count: 1 },
+        { tag_name: 'asian', usage_count: 1 },
+        { tag_name: 'vegetarian', usage_count: 1 },
+        { tag_name: 'breakfast', usage_count: 1 },
+        { tag_name: 'quick', usage_count: 1 },
       ];
 
-      // Mock query chain - eq() is the last method called, so it should resolve
-      const tagsBuilder: MockQueryBuilder = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        delete: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        maybeSingle: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        limit: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        textSearch: vi.fn().mockReturnThis(),
-      };
-      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+      // Mock RPC call to get_household_tags
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: mockTagsWithUsage,
+        error: null,
+      } as any);
 
       const result = await service.getAllTags(validHouseholdId);
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('recipes');
-      expect(tagsBuilder.select).toHaveBeenCalledWith('tags');
-      expect(tagsBuilder.eq).toHaveBeenCalledWith('household_id', validHouseholdId);
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('get_household_tags', {
+        p_household_id: validHouseholdId,
+      });
 
-      // Should flatten, deduplicate, and sort
+      // Should return tag names sorted alphabetically
       expect(result).toEqual([
         'asian',
         'breakfast',
@@ -1671,19 +1666,11 @@ describe('RecipeService', () => {
     });
 
     it('should return empty array when household has no recipes', async () => {
-      const tagsBuilder: MockQueryBuilder = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        delete: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: [], error: null }),
-        maybeSingle: vi.fn().mockResolvedValue({ data: [], error: null }),
-        limit: vi.fn().mockResolvedValue({ data: [], error: null }),
-        textSearch: vi.fn().mockReturnThis(),
-      };
-      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+      // Mock RPC call returning empty array
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: [],
+        error: null,
+      } as any);
 
       const result = await service.getAllTags(validHouseholdId);
 
@@ -1691,21 +1678,11 @@ describe('RecipeService', () => {
     });
 
     it('should return empty array when all recipes have no tags', async () => {
-      const mockRecipes = [{ tags: [] }, { tags: [] }, { tags: null }];
-
-      const tagsBuilder: MockQueryBuilder = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        delete: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        maybeSingle: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        limit: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        textSearch: vi.fn().mockReturnThis(),
-      };
-      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+      // Mock RPC call returning empty array (no tags in household)
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: [],
+        error: null,
+      } as any);
 
       const result = await service.getAllTags(validHouseholdId);
 
@@ -1713,59 +1690,32 @@ describe('RecipeService', () => {
     });
 
     it('should handle duplicate tags correctly', async () => {
-      const mockRecipes = [
-        { tags: ['italian', 'pasta'] },
-        { tags: ['italian', 'dinner'] },
-        { tags: ['pasta', 'vegetarian'] },
+      const mockTagsWithUsage = [
+        { tag_name: 'italian', usage_count: 2 },
+        { tag_name: 'pasta', usage_count: 2 },
+        { tag_name: 'dinner', usage_count: 1 },
+        { tag_name: 'vegetarian', usage_count: 1 },
       ];
 
-      const tagsBuilder: MockQueryBuilder = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        delete: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        maybeSingle: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        limit: vi.fn().mockResolvedValue({ data: mockRecipes, error: null }),
-        textSearch: vi.fn().mockReturnThis(),
-      };
-      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+      // Mock RPC call
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: mockTagsWithUsage,
+        error: null,
+      } as any);
 
       const result = await service.getAllTags(validHouseholdId);
 
-      // 'italian' and 'pasta' appear multiple times but should only appear once
+      // Database function already deduplicates, so each tag appears once
       expect(result).toEqual(['dinner', 'italian', 'pasta', 'vegetarian']);
       expect(result.filter((tag) => tag === 'italian')).toHaveLength(1);
     });
 
     it('should throw AppError when database query fails', async () => {
-      const tagsBuilder: MockQueryBuilder = {
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({
-          data: null,
-          error: { message: 'Database error' },
-        }),
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        delete: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({
-          data: null,
-          error: { message: 'Database error' },
-        }),
-        maybeSingle: vi.fn().mockResolvedValue({
-          data: null,
-          error: { message: 'Database error' },
-        }),
-        limit: vi.fn().mockResolvedValue({
-          data: null,
-          error: { message: 'Database error' },
-        }),
-        textSearch: vi.fn().mockReturnThis(),
-      };
-      vi.mocked(mockSupabase.from).mockReturnValue(tagsBuilder as any);
+      // Mock RPC call with error
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: null,
+        error: { message: 'Database error' },
+      } as any);
 
       await expect(service.getAllTags(validHouseholdId)).rejects.toThrow(AppError);
     });

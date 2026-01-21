@@ -3,6 +3,8 @@
 import { Stack, TextField } from '@mui/material';
 import { type Control, Controller, type FieldErrors } from 'react-hook-form';
 
+import { TagAutocomplete } from './TagAutocomplete';
+
 /**
  * Recipe form values structure matching CreateRecipeInput schema
  */
@@ -13,6 +15,7 @@ export interface RecipeFormValues {
   prep_time_minutes?: number;
   cook_time_minutes?: number;
   notes: string;
+  tags: string[];
   ingredients: Array<{
     name: string;
     quantity?: number;
@@ -29,6 +32,7 @@ export interface RecipeMetadataFieldsProps {
   control: Control<RecipeFormValues>;
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
+  availableTags: string[];
 }
 
 /**
@@ -47,6 +51,7 @@ export function RecipeMetadataFields({
   control,
   errors,
   disabled = false,
+  availableTags,
 }: RecipeMetadataFieldsProps) {
   return (
     <Stack spacing={3}>
@@ -156,6 +161,22 @@ export function RecipeMetadataFields({
             disabled={disabled}
             error={!!errors.notes}
             helperText={errors.notes?.message}
+          />
+        )}
+      />
+
+      <Controller
+        name="tags"
+        control={control}
+        defaultValue={[]}
+        render={({ field }) => (
+          <TagAutocomplete
+            value={field.value}
+            onChange={field.onChange}
+            availableTags={availableTags}
+            disabled={disabled}
+            error={!!errors.tags}
+            helperText={errors.tags?.message}
           />
         )}
       />

@@ -11,6 +11,7 @@ import {
   type CreateRecipeInput,
   type UpdateRecipeInput,
   type ForkRecipeInput,
+  type Database,
   CreateRecipeInputSchema,
   UpdateRecipeInputSchema,
   RecipeSearchSchema,
@@ -19,9 +20,11 @@ import {
   NotFoundError,
   AppError,
 } from '@commontable/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 import { BaseService } from './BaseService';
+import { TagService } from './TagService';
 
 /**
  * RecipeService - Manages recipe CRUD operations
@@ -35,6 +38,13 @@ import { BaseService } from './BaseService';
  * - Retrieving version history
  */
 export class RecipeService extends BaseService {
+  private tagService: TagService;
+
+  constructor(supabase: SupabaseClient<Database>) {
+    super(supabase);
+    this.tagService = new TagService(supabase);
+  }
+
   /**
    * Create a new recipe with its initial version
    *
@@ -42,6 +52,7 @@ export class RecipeService extends BaseService {
    * 1. Creates recipe record
    * 2. Creates initial version (version 1)
    * 3. Sets recipe.current_version_id to the new version
+   * 4. Associates tags with the version (if provided)
    *
    * @param input - Recipe creation input
    * @returns Created recipe
@@ -76,8 +87,27 @@ export class RecipeService extends BaseService {
         throw new AppError('Failed to create recipe - no ID returned', 'CREATE_ERROR');
       }
 
-      // Fetch and return the created recipe
-      return await this.getById(recipeId as RecipeId);
+      // Fetch the created recipe to get current_version_id
+      const recipe = await this.getById(recipeId as RecipeId);
+
+      // Associate tags with the recipe version (if provided)
+      if (validated.tags && validated.tags.length > 0 && recipe.current_version_id) {
+        const versionId = recipe.current_version_id;
+        await Promise.all(
+          validated.tags.map((tagName) =>
+            this.tagService.addTagToVersion({
+              recipe_version_id: versionId,
+              tag_name: tagName,
+            }),
+          ),
+        );
+
+        // Also write to legacy recipes.tags column (dual-write for migration safety)
+        await this.supabase.from('recipes').update({ tags: validated.tags }).eq('id', recipeId);
+      }
+
+      // Return the recipe (tags will be loaded on subsequent reads)
+      return recipe;
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new ValidationError('Invalid recipe data', { errors: error.errors });
@@ -562,6 +592,7 @@ export class RecipeService extends BaseService {
 
   /**
    * Get all unique tags from recipes in a household (Issue 4.3 - Tag Filter)
+   * MIGRATED: Now uses normalized tags from TagService
    *
    * @param householdId - Household ID
    * @returns Array of unique tag names sorted alphabetically
@@ -569,25 +600,39 @@ export class RecipeService extends BaseService {
    */
   async getAllTags(householdId: HouseholdId): Promise<string[]> {
     try {
-      const { data, error } = await this.supabase
-        .from('recipes')
-        .select('tags')
-        .eq('household_id', householdId);
-
-      if (error) throw error;
-
-      // Flatten and deduplicate tags
-      const allTags = new Set<string>();
-      data?.forEach((recipe) => {
-        recipe.tags?.forEach((tag: string) => allTags.add(tag));
-      });
-
-      return Array.from(allTags).sort();
+      const tags = await this.tagService.getHouseholdTags(householdId);
+      return tags.map((t) => t.tag_name).sort();
     } catch (error) {
       if (error instanceof AppError) throw error;
 
       console.error('RecipeService.getAllTags failed:', error);
       throw new AppError('Failed to fetch tags', 'FETCH_ERROR', 500, { householdId });
+    }
+  }
+
+  /**
+   * Get tags for the current version of a recipe
+   *
+   * @param recipeId - Recipe ID
+   * @returns Array of tag names sorted alphabetically
+   * @throws {NotFoundError} If recipe does not exist
+   * @throws {AppError} If database operation fails
+   */
+  async getCurrentVersionTags(recipeId: RecipeId): Promise<string[]> {
+    try {
+      const recipe = await this.getById(recipeId);
+
+      if (!recipe.current_version_id) {
+        return [];
+      }
+
+      const tags = await this.tagService.getVersionTags(recipe.current_version_id);
+      return tags.map((t) => t.name).sort();
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+
+      console.error('RecipeService.getCurrentVersionTags failed:', error);
+      throw new AppError('Failed to fetch recipe tags', 'FETCH_ERROR', 500, { recipeId });
     }
   }
 }

@@ -20,6 +20,7 @@ describe('RecipeForm', () => {
     prep_time_minutes: undefined,
     cook_time_minutes: undefined,
     notes: '',
+    tags: [],
     ingredients: [],
     steps: [],
   };
@@ -29,6 +30,7 @@ describe('RecipeForm', () => {
       <RecipeForm
         mode="create"
         initialValues={defaultInitialValues}
+        availableTags={[]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
@@ -48,6 +50,7 @@ describe('RecipeForm', () => {
       prep_time_minutes: 10,
       cook_time_minutes: 20,
       notes: 'Use fresh eggs',
+      tags: ['pasta', 'italian'],
       ingredients: [{ name: 'pasta', quantity: 400, unit: 'g' }],
       steps: [{ position: 1, text: 'Boil water' }],
     };
@@ -56,6 +59,7 @@ describe('RecipeForm', () => {
       <RecipeForm
         mode="edit"
         initialValues={editValues}
+        availableTags={['pasta', 'italian', 'quick']}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
@@ -73,6 +77,7 @@ describe('RecipeForm', () => {
       <RecipeForm
         mode="create"
         initialValues={defaultInitialValues}
+        availableTags={[]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
@@ -102,6 +107,7 @@ describe('RecipeForm', () => {
       <RecipeForm
         mode="create"
         initialValues={defaultInitialValues}
+        availableTags={[]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
@@ -124,6 +130,7 @@ describe('RecipeForm', () => {
       <RecipeForm
         mode="create"
         initialValues={defaultInitialValues}
+        availableTags={[]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
         loading={true}
@@ -141,6 +148,7 @@ describe('RecipeForm', () => {
       <RecipeForm
         mode="create"
         initialValues={defaultInitialValues}
+        availableTags={[]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
       />,
@@ -159,6 +167,7 @@ describe('RecipeForm', () => {
       <RecipeForm
         mode="create"
         initialValues={defaultInitialValues}
+        availableTags={[]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
         error={error}
@@ -173,6 +182,7 @@ describe('RecipeForm', () => {
       <RecipeForm
         mode="create"
         initialValues={defaultInitialValues}
+        availableTags={[]}
         onSubmit={mockOnSubmit}
         onCancel={mockOnCancel}
         loading={true}

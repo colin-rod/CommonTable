@@ -9,6 +9,7 @@ import { updateRecipe } from '@/app/actions/recipe';
 import { RecipeForm, type RecipeFormValues, ImageManagement } from '@/components/recipe';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecipe } from '@/hooks/useRecipe';
+import { useTags } from '@/hooks/useTags';
 
 /**
  * Edit Recipe Page
@@ -26,6 +27,7 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
   const { household, isAuthenticated, isLoading: authLoading } = useAuth();
   const recipeId = params.id as RecipeId;
   const { recipe, loading: recipeLoading, error: recipeError } = useRecipe(recipeId);
+  const { tags: availableTags, loading: tagsLoading } = useTags();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -40,6 +42,7 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
       prep_time_minutes: recipe.prep_time_minutes ?? undefined,
       cook_time_minutes: recipe.cook_time_minutes ?? undefined,
       notes: recipe.notes || '',
+      tags: recipe.tags || [],
       ingredients: recipe.ingredients_json || [],
       steps: recipe.steps_json || [],
     };
@@ -66,6 +69,7 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
         prep_time_minutes: data.prep_time_minutes,
         cook_time_minutes: data.cook_time_minutes,
         notes: data.notes || '',
+        tags: data.tags,
       };
 
       const result = await updateRecipe(recipeId, input);
@@ -88,8 +92,8 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
     router.push(`/recipes/${recipeId}`);
   };
 
-  // Loading state while checking auth
-  if (authLoading || recipeLoading) {
+  // Loading state while checking auth, recipe, or tags
+  if (authLoading || recipeLoading || tagsLoading) {
     return (
       <Container maxWidth="md">
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -127,6 +131,7 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
           <RecipeForm
             mode="edit"
             initialValues={transformToFormValues(recipe)}
+            availableTags={availableTags}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             loading={loading}
@@ -146,6 +151,7 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
           <RecipeForm
             mode="edit"
             initialValues={transformToFormValues(recipe)}
+            availableTags={availableTags}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             loading={loading}

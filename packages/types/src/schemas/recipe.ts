@@ -74,6 +74,7 @@ export const CreateRecipeInputSchema = z.object({
     .nonnegative('Cook time cannot be negative')
     .optional(),
   notes: z.string().max(5000, 'Notes must be 5000 characters or less').trim().optional(),
+  tags: z.array(z.string().min(1).max(50)).max(20, 'Maximum 20 tags allowed').default([]),
   user_id: z.string().uuid('Invalid user ID'),
 });
 

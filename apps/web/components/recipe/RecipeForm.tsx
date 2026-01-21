@@ -46,6 +46,7 @@ const RecipeFormSchema = z.object({
     .trim()
     .optional()
     .or(z.literal('')),
+  tags: z.array(z.string().min(1).max(50)).max(20, 'Maximum 20 tags allowed').default([]),
   ingredients: z.array(IngredientInputSchema).default([]),
   steps: z.array(StepInputSchema).default([]),
 });
@@ -53,6 +54,7 @@ const RecipeFormSchema = z.object({
 export interface RecipeFormProps {
   mode: 'create' | 'edit';
   initialValues: RecipeFormValues;
+  availableTags: string[];
   onSubmit: (data: RecipeFormValues) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
@@ -71,6 +73,7 @@ export interface RecipeFormProps {
 export function RecipeForm({
   mode,
   initialValues,
+  availableTags,
   onSubmit,
   onCancel,
   loading = false,
@@ -107,7 +110,12 @@ export function RecipeForm({
       )}
 
       {/* Metadata Fields Section */}
-      <RecipeMetadataFields control={control} errors={errors} disabled={loading} />
+      <RecipeMetadataFields
+        control={control}
+        errors={errors}
+        disabled={loading}
+        availableTags={availableTags}
+      />
 
       <Divider />
 
