@@ -1,5 +1,134 @@
 # CommonTable - Claude Development Guide
 
+## Global Skills Enforcement (MANDATORY)
+
+**CRITICAL**: This project activates and enforces **global skills** installed at `~/.agents/skills/`. These skills are **BINDING** and take precedence over default behaviors. Violations will be called out immediately.
+
+### Active Global Skills
+
+#### 1. **test-driven-development** (NON-NEGOTIABLE)
+
+- **Location**: `~/.agents/skills/test-driven-development/`
+- **Iron Law**: NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
+- **Enforcement**:
+  - ALWAYS write failing test before implementation
+  - Watch test fail with correct error message
+  - Write minimal code to pass the test
+  - Refactor while keeping tests green
+  - If code written before test → DELETE and start over
+- **Applies to**: ALL features, bug fixes, refactoring
+
+#### 2. **systematic-debugging** (MANDATORY FOR ALL ISSUES)
+
+- **Location**: `~/.agents/skills/systematic-debugging/`
+- **Iron Law**: NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
+- **Enforcement**:
+  - Phase 1: Root cause investigation (read errors, reproduce, trace data flow)
+  - Phase 2: Pattern analysis (find working examples, compare differences)
+  - Phase 3: Hypothesis testing (one change at a time)
+  - Phase 4: Implementation (create failing test, fix, verify)
+  - If 3+ fixes failed → STOP and question architecture
+- **Applies to**: ALL bugs, test failures, unexpected behavior
+
+#### 3. **verification-before-completion** (ALWAYS REQUIRED)
+
+- **Location**: `~/.agents/skills/verification-before-completion/`
+- **Iron Law**: NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
+- **Enforcement**:
+  - BEFORE claiming "done", "fixed", "passing" → run verification command
+  - Show fresh output from current conversation turn
+  - No "should work", "probably passes", or similar hedging
+  - Evidence first, claims second
+- **Applies to**: ALL completion claims, commits, PRs, task handoffs
+
+#### 4. **vercel-react-best-practices** (AUTO-INVOKED)
+
+- **Location**: `~/.agents/skills/vercel-react-best-practices/`
+- **Enforcement**: 45 performance optimization rules across 8 categories
+- **Priority Rules**:
+  - CRITICAL: Eliminate waterfalls (parallel data fetching)
+  - CRITICAL: Avoid barrel imports (import directly from source)
+  - HIGH: Use React.cache() for server-side deduplication
+  - MEDIUM: Optimize re-renders (memo, useMemo, useCallback)
+- **Applies to**: ALL React/Next.js code in `apps/web/`
+
+#### 5. **react-native-best-practices** (FOR PHASE 2)
+
+- **Location**: `~/.agents/skills/react-native-best-practices/`
+- **Enforcement**: FPS optimization, bundle size, TTI, native performance
+- **Applies to**: React Native/Expo mobile app (deferred to Phase 2)
+
+#### 6. **ui-ux-pro-max** (DESIGN SYSTEM ALIGNMENT)
+
+- **Location**: `~/.agents/skills/ui-ux-pro-max/`
+- **Enforcement**:
+  - Accessibility CRITICAL (color contrast 4.5:1, touch targets 44x44px)
+  - Focus states visible, keyboard navigation
+  - Image optimization, reduced motion support
+- **Applies to**: ALL UI/UX design work (aligns with DESIGN_SYSTEM.md)
+
+#### 7. **copywriting** (CONTENT TONE)
+
+- **Location**: `~/.agents/skills/copywriting/`
+- **Enforcement**:
+  - Clarity over cleverness
+  - Benefits over features
+  - Specificity over vagueness
+  - Customer language over company language
+- **Alignment**: Reinforces CommonTable's "calm, neutral, practical" tone
+- **Applies to**: Error messages, form labels, page titles, help text
+
+#### 8. **executing-plans** (WORKFLOW MANAGEMENT)
+
+- **Location**: `~/.agents/skills/executing-plans/`
+- **Enforcement**:
+  - Load plan → Review critically → Execute batch (3 tasks) → Report → Continue
+  - STOP when blocked (don't guess)
+  - Use TodoWrite to track progress
+- **Applies to**: Implementation of written plans with review checkpoints
+
+### Conflict Resolution Hierarchy
+
+When skills or requirements conflict:
+
+1. **Iron Laws (TDD, Debugging, Verification)**: ALWAYS enforced (non-negotiable)
+2. **DESIGN_SYSTEM.md**: Overrides general UI/UX advice (project-specific)
+3. **CLAUDE.md (this file)**: Project-specific rules override generic best practices
+4. **Global skills**: Applied when not in conflict with #1-3
+
+### Skill Conflict Examples
+
+**BLOCKED (violates iron laws)**:
+
+- ❌ "Skip TDD for this quick fix" → Violates test-driven-development
+- ❌ "Just try this fix without investigating" → Violates systematic-debugging
+- ❌ "Should work now" (without running tests) → Violates verification-before-completion
+
+**BLOCKED (violates DESIGN_SYSTEM.md)**:
+
+- ❌ "Use a playful font instead of Roboto" → Violates Material Design 3 constraints
+- ❌ "Add emoji to error messages" → Violates DESIGN_SYSTEM.md + copywriting skill
+- ❌ "Use purple gradients" → Violates project aesthetic guidelines
+
+**SUGGESTED (best practices)**:
+
+- ✅ "Use barrel imports for cleaner code" → Suggest direct imports (React best practices)
+- ✅ "Add more typography variants" → Suggest staying within allowed 4 variants
+
+### Proactive Skill Invocation
+
+The following skills are invoked AUTOMATICALLY without explicit request:
+
+- ✅ Writing React components → `vercel-react-best-practices` (check waterfalls, barrel imports)
+- ✅ Implementing features → `test-driven-development` (failing test first)
+- ✅ Debugging issues → `systematic-debugging` (root cause investigation)
+- ✅ About to say "done" → `verification-before-completion` (run tests, show output)
+- ✅ Designing UI → `ui-ux-pro-max` (accessibility checklist)
+- ✅ Writing copy → `copywriting` (clarity, benefits, customer language)
+- ✅ Executing a plan → `executing-plans` (batch execution with checkpoints)
+
+---
+
 ## Project Overview
 
 **CommonTable** is a shared household recipe book that helps families plan meals, improve recipes over time, and preserve what they love to cook — together.
@@ -2381,18 +2510,28 @@ pnpm lint:fix
 
 ## Critical Principles Summary
 
-1. **TDD is non-negotiable**: RED → GREEN → REFACTOR
-2. **Design system is strict**: Follow DESIGN_SYSTEM.md exactly (MUI only, 3 button variants, 4 typography variants, specific spacing)
-3. **Types are documentation**: Use strict TypeScript, no `any`
-4. **Errors are typed**: Use custom error classes, never generic `Error`
-5. **Immutability by default**: Use `readonly`, avoid mutations
-6. **Test coverage is mandatory**: Aim for 100% on services and utils
-7. **No emojis**: Use Material Icons (@mui/icons-material)
-8. **Content is calm**: No jokes, no playful language, neutral tone
-9. **Database migrations are idempotent**: Can be run multiple times safely
-10. **RLS policies enforce security**: Never bypass with service role client-side
-11. **MUI sx prop only**: No custom CSS, no Tailwind, use theme tokens
-12. **Lists are primary pattern**: Most content in List components, tables forbidden in MVP
+### Global Skills (Enforced via ~/.agents/skills/)
+
+1. **TDD is non-negotiable** (`test-driven-development`): RED → GREEN → REFACTOR (iron law)
+2. **Systematic debugging** (`systematic-debugging`): 4-phase root cause investigation before fixes (iron law)
+3. **Verification before completion** (`verification-before-completion`): Evidence before claims, always (iron law)
+4. **React performance** (`vercel-react-best-practices`): Eliminate waterfalls, avoid barrel imports, optimize re-renders
+5. **Accessibility first** (`ui-ux-pro-max`): Color contrast 4.5:1, touch targets 44x44px, keyboard navigation
+6. **Clear copywriting** (`copywriting`): Clarity over cleverness, benefits over features, customer language
+
+### Project-Specific Rules (DESIGN_SYSTEM.md + CLAUDE.md)
+
+7. **Design system is strict**: Follow DESIGN_SYSTEM.md exactly (MUI only, 3 button variants, 4 typography variants, specific spacing)
+8. **Types are documentation**: Use strict TypeScript, no `any`
+9. **Errors are typed**: Use custom error classes, never generic `Error`
+10. **Immutability by default**: Use `readonly`, avoid mutations
+11. **Test coverage is mandatory**: Aim for 100% on services and utils
+12. **No emojis**: Use Material Icons (@mui/icons-material)
+13. **Content is calm**: No jokes, no playful language, neutral tone
+14. **Database migrations are idempotent**: Can be run multiple times safely
+15. **RLS policies enforce security**: Never bypass with service role client-side
+16. **MUI sx prop only**: No custom CSS, no Tailwind, use theme tokens
+17. **Lists are primary pattern**: Most content in List components, tables forbidden in MVP
 
 ---
 
