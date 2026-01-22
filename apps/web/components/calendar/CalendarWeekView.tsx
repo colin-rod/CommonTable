@@ -8,7 +8,7 @@ import type {
   CreateCalendarEntryInput,
   UpdateCalendarEntryInput,
 } from '@commontable/types';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Typography, Snackbar } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect } from 'react';
 
@@ -18,7 +18,6 @@ import { EditCalendarEntryDialog } from './EditCalendarEntryDialog';
 import { WeekGrid } from './WeekGrid';
 import { WeekNavigation } from './WeekNavigation';
 
-import { LogMealDialog } from '@/components/cooking/LogMealDialog';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useWeekNavigation } from '@/hooks/useWeekNavigation';
@@ -62,13 +61,15 @@ export function CalendarWeekView() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [logMealDialogOpen, setLogMealDialogOpen] = useState(false);
+
+  // Success toast state
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Selected date/slot for add dialog
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedMealSlot, setSelectedMealSlot] = useState<MealSlot | undefined>(undefined);
 
-  // Selected entry for edit/delete/log meal dialogs
+  // Selected entry for edit/delete dialogs
   const [selectedEntry, setSelectedEntry] = useState<CalendarEntry | null>(null);
 
   // Refresh entries when week changes
@@ -116,17 +117,10 @@ export function CalendarWeekView() {
     [router],
   );
 
-  // Mark complete handler - Opens LogMealDialog instead of directly marking complete
-  const handleMarkComplete = useCallback(
-    (id: CalendarEntryId) => {
-      const entry = entries.find((e) => e.id === id);
-      if (entry && entry.recipe_id) {
-        setSelectedEntry(entry);
-        setLogMealDialogOpen(true);
-      }
-    },
-    [entries],
-  );
+  // Mark complete handler - Show success toast after CalendarEntryCard completes rating submission
+  const handleMarkComplete = useCallback(() => {
+    setShowSuccessToast(true);
+  }, []);
 
   // Add dialog submit
   const handleAddSubmit = useCallback(
@@ -237,26 +231,13 @@ export function CalendarWeekView() {
         entry={selectedEntry}
       />
 
-      {/* Log Meal Dialog */}
-      {selectedEntry?.recipe_id &&
-        (() => {
-          const recipe = recipes.find((r) => r.id === selectedEntry.recipe_id);
-          if (!recipe || !recipe.current_version_id) return null;
-
-          return (
-            <LogMealDialog
-              open={logMealDialogOpen}
-              onClose={() => {
-                setLogMealDialogOpen(false);
-                setSelectedEntry(null);
-              }}
-              recipeId={recipe.id}
-              recipeVersionId={recipe.current_version_id}
-              recipeTitle={recipe.title}
-              calendarEntryId={selectedEntry.id}
-            />
-          );
-        })()}
+      {/* Success Toast */}
+      <Snackbar
+        open={showSuccessToast}
+        autoHideDuration={3000}
+        onClose={() => setShowSuccessToast(false)}
+        message="Meal marked as cooked"
+      />
     </Box>
   );
 }
