@@ -13,7 +13,9 @@ export type TagId = string & { __brand: 'TagId' };
 export type RecipeVersionTagId = string & { __brand: 'RecipeVersionTagId' };
 export type AiTagSuggestionId = string & { __brand: 'AiTagSuggestionId' };
 export type CalendarEntryId = string & { __brand: 'CalendarEntryId' };
+export type CalendarEntryCommentId = string & { __brand: 'CalendarEntryCommentId' };
 export type MealRequestId = string & { __brand: 'MealRequestId' };
+export type CookingEventId = string & { __brand: 'CookingEventId' };
 
 // Recipe domain models
 export interface Recipe {
@@ -175,4 +177,32 @@ export interface MealRequest {
   priority: number;
   created_at: Date;
   updated_at: Date;
+}
+
+// Calendar entry comment domain model (append-only)
+export interface CalendarEntryComment {
+  readonly id: CalendarEntryCommentId;
+  readonly calendar_entry_id: CalendarEntryId;
+  readonly household_id: HouseholdId;
+  readonly comment_text: string;
+  readonly created_by: UserId;
+  readonly created_at: Date;
+}
+
+// Cooking event domain model (tracks when recipes are cooked + ratings)
+export interface CookingEvent {
+  readonly id: CookingEventId;
+  readonly recipe_id: RecipeId;
+  readonly recipe_version_id: RecipeVersionId;
+  readonly household_id: HouseholdId;
+  readonly cooked_at: Date;
+  readonly servings_made: number | null;
+  readonly rating: number | null; // 1-5 scale, nullable
+  readonly notes: string | null;
+  readonly cooked_by: UserId;
+}
+
+// Extended model with joined recipe data (for display in lists)
+export interface CookingEventWithRecipe extends CookingEvent {
+  recipe: Recipe;
 }

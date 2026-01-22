@@ -1,7 +1,7 @@
 'use client';
 
 import { RecipeImageService } from '@commontable/api-client';
-import type { RecipeId } from '@commontable/types';
+import type { RecipeId, CookingEvent } from '@commontable/types';
 import {
   ArrowBack as ArrowBackIcon,
   Edit as EditIcon,
@@ -21,9 +21,12 @@ import {
   IconButton,
 } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
-import { deleteRecipe, logCookingEvent, forkRecipe } from '@/app/actions/recipe';
+import { getCookingEventsByRecipe } from '@/app/actions/cookingEvent';
+import { deleteRecipe, forkRecipe } from '@/app/actions/recipe';
+import { CookingHistoryList } from '@/components/cooking/CookingHistoryList';
+import { LogMealDialog } from '@/components/cooking/LogMealDialog';
 import { DeleteRecipeDialog } from '@/components/recipe/DeleteRecipeDialog';
 import { ForkRecipeDialog } from '@/components/recipe/ForkRecipeDialog';
 import { RecipeDetailView } from '@/components/recipe/RecipeDetailView';
@@ -57,6 +60,9 @@ export default function RecipeDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [forkDialogOpen, setForkDialogOpen] = useState(false);
   const [forking, setForking] = useState(false);
+  const [logMealDialogOpen, setLogMealDialogOpen] = useState(false);
+  const [cookingEvents, setCookingEvents] = useState<CookingEvent[]>([]);
+  const [cookingEventsLoading, setCookingEventsLoading] = useState(true);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -64,6 +70,25 @@ export default function RecipeDetailPage() {
 
   // Image service for getting signed URLs
   const recipeImageService = new RecipeImageService();
+
+  // Fetch cooking events for this recipe
+  useEffect(() => {
+    const fetchCookingEvents = async () => {
+      try {
+        setCookingEventsLoading(true);
+        const result = await getCookingEventsByRecipe(recipeId);
+        if (result.success) {
+          setCookingEvents(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch cooking events:', error);
+      } finally {
+        setCookingEventsLoading(false);
+      }
+    };
+
+    fetchCookingEvents();
+  }, [recipeId]);
 
   const handleBack = () => {
     router.push('/recipes');
@@ -131,19 +156,23 @@ export default function RecipeDetailPage() {
     setForkDialogOpen(false);
   };
 
-  const handleCookThis = async () => {
-    try {
-      const result = await logCookingEvent(recipeId);
+  const handleLogMeal = () => {
+    setLogMealDialogOpen(true);
+  };
 
+  const handleLogMealClose = async () => {
+    setLogMealDialogOpen(false);
+    // Refresh cooking events after logging
+    try {
+      const result = await getCookingEventsByRecipe(recipeId);
       if (result.success) {
-        setSnackbar({ open: true, message: 'Cooking logged successfully' });
-        refresh(); // Refresh to update last_cooked_at
-      } else {
-        setSnackbar({ open: true, message: result.error.message });
+        setCookingEvents(result.data);
       }
-    } catch {
-      setSnackbar({ open: true, message: 'Failed to log cooking event' });
+    } catch (error) {
+      console.error('Failed to refresh cooking events:', error);
     }
+    // Refresh recipe to update last_cooked_at and rolling_score
+    refresh();
   };
 
   const handleFavoriteClick = useCallback(async () => {
@@ -250,10 +279,22 @@ export default function RecipeDetailPage() {
           getImageUrl={(image) => recipeImageService.getSignedUrl(image.storage_path)}
         />
 
+        {/* Cooking History */}
+        <Box>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Cooking History
+          </Typography>
+          {cookingEventsLoading ? (
+            <CircularProgress size={24} />
+          ) : (
+            <CookingHistoryList events={cookingEvents} />
+          )}
+        </Box>
+
         {/* Primary action */}
         <Box sx={{ pt: 2 }}>
-          <Button variant="contained" color="primary" onClick={handleCookThis} fullWidth>
-            I cooked this
+          <Button variant="contained" color="primary" onClick={handleLogMeal} fullWidth>
+            Log Meal
           </Button>
         </Box>
 
@@ -287,6 +328,17 @@ export default function RecipeDetailPage() {
         onConfirm={handleForkConfirm}
         onCancel={handleForkCancel}
       />
+
+      {/* Log Meal Dialog */}
+      {recipe.current_version_id && (
+        <LogMealDialog
+          open={logMealDialogOpen}
+          onClose={handleLogMealClose}
+          recipeId={recipe.id}
+          recipeVersionId={recipe.current_version_id}
+          recipeTitle={recipe.title}
+        />
+      )}
 
       {/* Feedback snackbar */}
       <Snackbar

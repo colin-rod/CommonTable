@@ -3,6 +3,8 @@ export * from './supabase';
 export * from './services/BaseService';
 export * from './services/AuthService';
 export * from './services/CalendarService';
+export * from './services/CalendarEntryCommentService';
+export * from './services/CookingEventService';
 export * from './services/HouseholdService';
 export * from './services/MealRequestService';
 export * from './services/RecipeService';
