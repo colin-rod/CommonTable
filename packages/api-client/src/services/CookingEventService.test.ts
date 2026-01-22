@@ -574,16 +574,12 @@ describe('CookingEventService', () => {
       const deleteBuilder = createMockQueryBuilder({ data: null, error: null });
       vi.mocked(mockSupabase.from).mockReturnValueOnce(deleteBuilder as any);
 
-      // Mock RPC call for rolling_score recalculation
-      vi.mocked(mockSupabase.rpc).mockResolvedValueOnce({ data: null, error: null } as any);
-
       await service.delete(mockCookingEventId);
 
       expect(deleteBuilder.delete).toHaveBeenCalled();
       expect(deleteBuilder.eq).toHaveBeenCalledWith('id', mockCookingEventId);
-      expect(mockSupabase.rpc).toHaveBeenCalledWith('calculate_rolling_score', {
-        p_recipe_id: mockRecipeId,
-      });
+      // Database triggers handle rolling_score and last_cooked_at automatically
+      // No RPC call expected
     });
 
     it('should throw NotFoundError if event does not exist', async () => {

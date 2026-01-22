@@ -302,24 +302,15 @@ export class CookingEventService extends BaseService {
    */
   async delete(id: CookingEventId): Promise<void> {
     try {
-      // Check if cooking event exists first
-      const existingEvent = await this.getById(id);
+      // Check if cooking event exists first (throws NotFoundError if not found)
+      await this.getById(id);
 
       const { error } = await this.supabase.from('cooking_events').delete().eq('id', id);
 
       if (error) throw error;
 
-      // Trigger rolling_score recalculation manually
-      // Note: Database trigger on INSERT updates rolling_score, but DELETE may not
-      // This ensures rolling_score stays accurate
-      const { error: rpcError } = await this.supabase.rpc('calculate_rolling_score', {
-        p_recipe_id: existingEvent.recipe_id,
-      });
-
-      if (rpcError) {
-        console.error('Failed to recalculate rolling_score after delete:', rpcError);
-        // Non-fatal: cooking event was deleted successfully
-      }
+      // Database triggers handle rolling_score and last_cooked_at automatically
+      // No manual recalculation needed
     } catch (error) {
       if (error instanceof AppError) throw error;
 
