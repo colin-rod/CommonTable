@@ -1,5 +1,5 @@
 /* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import { IMAGE_CONSTRAINTS } from '@commontable/types';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
