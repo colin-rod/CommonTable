@@ -1,56 +1,37 @@
-'use client';
+import { Container, Typography, Stack, Box } from '@mui/material';
 
-import { Container, Typography, Stack, Button, Box } from '@mui/material';
-import { useRouter } from 'next/navigation';
-
-import { useAuth } from '@/hooks/useAuth';
+import { getCookingEventsByHousehold } from '@/app/actions/cookingEvent';
+import { HouseholdActivityFeed } from '@/components/cooking/HouseholdActivityFeed';
+import { DashboardClient } from '@/components/dashboard/DashboardClient';
 
 /**
  * Dashboard Page
  * Protected route - requires authentication
  *
- * Shows user profile and household information
+ * Shows user profile, household information, and recent cooking activity
  */
-export default function DashboardPage() {
-  const { user, household, householdRole, signOut } = useAuth();
-  const router = useRouter();
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/auth/login');
-  };
-
-  if (!user) {
-    return null;
-  }
+export default async function DashboardPage() {
+  // Fetch household cooking events
+  const result = await getCookingEventsByHousehold(10);
 
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Stack spacing={4}>
-        {/* Page Header */}
+        {/* Client component for user info and sign out */}
+        <DashboardClient />
+
+        {/* Recently Cooked section */}
         <Box>
-          <Typography variant="h5">Welcome, {user.profile.display_name}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {user.email}
+          <Typography variant="h6" gutterBottom>
+            Recently Cooked
           </Typography>
-        </Box>
-
-        {/* Household Info */}
-        {household && (
-          <Box>
-            <Typography variant="h6">Your Household</Typography>
-            <Typography variant="body1">{household.name}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Role: {householdRole}
+          {result.success ? (
+            <HouseholdActivityFeed events={result.data} />
+          ) : (
+            <Typography variant="body2" color="error.main">
+              Failed to load cooking history
             </Typography>
-          </Box>
-        )}
-
-        {/* Actions */}
-        <Box>
-          <Button variant="outlined" color="primary" onClick={handleSignOut}>
-            Sign out
-          </Button>
+          )}
         </Box>
       </Stack>
     </Container>

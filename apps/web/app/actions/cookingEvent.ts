@@ -5,7 +5,13 @@ import {
   type CreateCookingEventInput,
   type UpdateCookingEventInput,
 } from '@commontable/api-client';
-import type { CookingEvent, CookingEventId, RecipeId, HouseholdId } from '@commontable/types';
+import type {
+  CookingEvent,
+  CookingEventId,
+  RecipeId,
+  HouseholdId,
+  CookingEventWithRecipeAndProfile,
+} from '@commontable/types';
 import { revalidatePath } from 'next/cache';
 
 import { createClient } from '@/lib/supabase/server';
@@ -125,7 +131,7 @@ export async function getCookingEventsByRecipe(
 export async function getCookingEventsByHousehold(
   limit: number = 50,
   offset: number = 0,
-): Promise<ActionResult<CookingEvent[]>> {
+): Promise<ActionResult<CookingEventWithRecipeAndProfile[]>> {
   try {
     const supabase = await createClient();
     const service = new CookingEventService(supabase);

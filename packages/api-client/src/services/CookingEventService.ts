@@ -4,6 +4,7 @@ import {
   type HouseholdId,
   type UserId,
   type CookingEvent,
+  type CookingEventWithRecipeAndProfile,
   type CreateCookingEventInput,
   type UpdateCookingEventInput,
   type Database,
@@ -213,11 +214,17 @@ export class CookingEventService extends BaseService {
     householdId: HouseholdId,
     limit: number = 50,
     offset: number = 0,
-  ): Promise<CookingEvent[]> {
+  ): Promise<CookingEventWithRecipeAndProfile[]> {
     try {
       const { data, error } = await this.supabase
         .from('cooking_events')
-        .select('*')
+        .select(
+          `
+          *,
+          recipes!inner(title),
+          profiles(display_name)
+        `,
+        )
         .eq('household_id', householdId)
         .order('cooked_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -225,9 +232,18 @@ export class CookingEventService extends BaseService {
       if (error) throw error;
 
       return (data ?? []).map((event) => ({
-        ...event,
+        id: event.id,
+        recipe_id: event.recipe_id,
+        recipe_version_id: event.recipe_version_id,
+        household_id: event.household_id,
         cooked_at: new Date(event.cooked_at),
-      })) as unknown as CookingEvent[];
+        servings_made: event.servings_made,
+        rating: event.rating,
+        notes: event.notes,
+        cooked_by: event.cooked_by,
+        recipe_title: event.recipes?.title ?? 'Unknown recipe',
+        cooked_by_name: event.profiles?.display_name ?? 'Unknown member',
+      })) as unknown as CookingEventWithRecipeAndProfile[];
     } catch (error) {
       if (error instanceof AppError) throw error;
 

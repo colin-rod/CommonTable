@@ -206,3 +206,9 @@ export interface CookingEvent {
 export interface CookingEventWithRecipe extends CookingEvent {
   recipe: Recipe;
 }
+
+// Extended model with recipe title and cooked_by member name (for household feed)
+export interface CookingEventWithRecipeAndProfile extends CookingEvent {
+  recipe_title: string;
+  cooked_by_name: string;
+}

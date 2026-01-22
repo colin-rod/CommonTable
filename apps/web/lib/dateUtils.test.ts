@@ -7,6 +7,7 @@ import {
   formatWeekRange,
   getDaysInWeek,
   isSameDay,
+  formatRelativeDate,
 } from './dateUtils';
 
 describe('dateUtils', () => {
@@ -202,6 +203,62 @@ describe('dateUtils', () => {
       const date2 = new Date('2026-01-01');
 
       expect(isSameDay(date1, date2)).toBe(false);
+    });
+  });
+
+  describe('formatRelativeDate', () => {
+    it('should return "Just now" for dates within the last minute', () => {
+      const now = new Date();
+      const recent = new Date(now.getTime() - 30 * 1000); // 30 seconds ago
+
+      expect(formatRelativeDate(recent)).toBe('Just now');
+    });
+
+    it('should return "X minutes ago" for recent dates', () => {
+      const now = new Date();
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+
+      expect(formatRelativeDate(fiveMinutesAgo)).toBe('5 minutes ago');
+    });
+
+    it('should return "1 hour ago" for singular hour', () => {
+      const now = new Date();
+      const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+      expect(formatRelativeDate(oneHourAgo)).toBe('1 hour ago');
+    });
+
+    it('should return "X hours ago" for plural hours', () => {
+      const now = new Date();
+      const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+
+      expect(formatRelativeDate(twoHoursAgo)).toBe('2 hours ago');
+    });
+
+    it('should return "Yesterday" for yesterday', () => {
+      const now = new Date();
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+      expect(formatRelativeDate(yesterday)).toBe('Yesterday');
+    });
+
+    it('should return "X days ago" for recent days', () => {
+      const now = new Date();
+      const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+
+      expect(formatRelativeDate(threeDaysAgo)).toBe('3 days ago');
+    });
+
+    it('should return "Jan 15" for dates within the current year but > 7 days ago', () => {
+      const date = new Date('2026-01-15');
+
+      expect(formatRelativeDate(date)).toBe('Jan 15');
+    });
+
+    it('should return "Jan 15, 2025" for dates in previous years', () => {
+      const date = new Date('2025-01-15');
+
+      expect(formatRelativeDate(date)).toBe('Jan 15, 2025');
     });
   });
 });

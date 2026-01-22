@@ -98,3 +98,55 @@ export function isSameDay(date1: Date, date2: Date): boolean {
     date1.getDate() === date2.getDate()
   );
 }
+
+/**
+ * Format a date as a relative time string (e.g., "2 hours ago", "Yesterday", "Jan 15")
+ * @param date - The date to format
+ * @returns Formatted relative time string
+ */
+export function formatRelativeDate(date: Date): string {
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  const diffInSeconds = Math.floor(diffInMs / 1000);
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  // Less than 1 minute: "Just now"
+  if (diffInMinutes < 1) {
+    return 'Just now';
+  }
+
+  // Less than 1 hour: "X minutes ago"
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+  }
+
+  // Less than 24 hours: "X hours ago"
+  if (diffInHours < 24) {
+    return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+  }
+
+  // Exactly 1 day: "Yesterday"
+  if (diffInDays === 1) {
+    return 'Yesterday';
+  }
+
+  // Less than 7 days: "X days ago"
+  if (diffInDays < 7) {
+    return `${diffInDays} days ago`;
+  }
+
+  // Same year: "Jan 15"
+  if (date.getFullYear() === now.getFullYear()) {
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const day = date.getDate();
+    return `${month} ${day}`;
+  }
+
+  // Different year: "Jan 15, 2025"
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${month} ${day}, ${year}`;
+}

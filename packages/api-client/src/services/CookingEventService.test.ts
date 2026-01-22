@@ -454,6 +454,68 @@ describe('CookingEventService', () => {
 
       expect(result).toEqual([]);
     });
+
+    it('should join with recipe title and cooked_by name', async () => {
+      const mockEventsWithJoin = [
+        {
+          id: '00000000-0000-0000-0000-000000000006',
+          recipe_id: mockRecipeId,
+          recipe_version_id: mockRecipeVersionId,
+          household_id: mockHouseholdId,
+          cooked_at: '2024-01-20T12:00:00Z',
+          servings_made: 4,
+          rating: 5,
+          notes: null,
+          cooked_by: mockUserId,
+          recipes: { title: 'Pasta Carbonara' }, // Supabase returns joined data as nested objects
+          profiles: { display_name: 'John Doe' },
+        },
+      ];
+
+      const builder = createMockQueryBuilder({ data: mockEventsWithJoin, error: null });
+      builder.order.mockReturnThis();
+      builder.range.mockReturnValue(Promise.resolve({ data: mockEventsWithJoin, error: null }));
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+
+      const result = await service.getByHouseholdId(mockHouseholdId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: '00000000-0000-0000-0000-000000000006',
+        recipe_title: 'Pasta Carbonara',
+        cooked_by_name: 'John Doe',
+      });
+    });
+
+    it('should handle missing profile data gracefully (LEFT JOIN)', async () => {
+      const mockEventsWithMissingProfile = [
+        {
+          id: '00000000-0000-0000-0000-000000000006',
+          recipe_id: mockRecipeId,
+          recipe_version_id: mockRecipeVersionId,
+          household_id: mockHouseholdId,
+          cooked_at: '2024-01-20T12:00:00Z',
+          servings_made: 4,
+          rating: 5,
+          notes: null,
+          cooked_by: mockUserId,
+          recipes: { title: 'Pasta Carbonara' },
+          profiles: null, // Profile not found (LEFT JOIN returns null)
+        },
+      ];
+
+      const builder = createMockQueryBuilder({ data: mockEventsWithMissingProfile, error: null });
+      builder.order.mockReturnThis();
+      builder.range.mockReturnValue(
+        Promise.resolve({ data: mockEventsWithMissingProfile, error: null }),
+      );
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+
+      const result = await service.getByHouseholdId(mockHouseholdId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].cooked_by_name).toBe('Unknown member');
+    });
   });
 
   describe('update', () => {
