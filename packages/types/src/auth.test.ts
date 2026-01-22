@@ -11,6 +11,7 @@ import {
   type ResetPasswordInput,
   type AuthState,
   type User,
+  type Profile,
   type Session,
 } from './auth';
 
@@ -394,7 +395,7 @@ describe('Auth Type Validation Schemas', () => {
         id: 'user123' as User['id'],
         email: 'john@example.com',
         profile: {
-          id: 'user123' as User['id'],
+          id: 'profile123' as Profile['id'],
           display_name: 'John Doe',
           avatar_url: null,
           created_at: '2024-01-01T00:00:00Z',
@@ -452,7 +453,7 @@ describe('Auth Type Validation Schemas', () => {
         id: 'user123' as User['id'],
         email: 'john@example.com',
         profile: {
-          id: 'user123' as User['id'],
+          id: 'profile123' as Profile['id'],
           display_name: 'John Doe',
           avatar_url: null,
           created_at: '2024-01-01T00:00:00Z',
