@@ -123,8 +123,9 @@ export function RecipeImportPreview({
         prep_time_minutes: data.prep_time_minutes,
         cook_time_minutes: data.cook_time_minutes,
         notes: data.notes || '',
-        ingredients_json: data.ingredients,
-        steps_json: data.steps,
+        ingredients_json: data.ingredients || [],
+        steps_json: data.steps || [],
+        tags: data.tags || [],
       };
 
       const result = await createImportedRecipe(input, preview.preview.image_url);
@@ -221,7 +222,12 @@ export function RecipeImportPreview({
         <Typography variant="h6">Recipe Details</Typography>
 
         {/* Metadata Fields Section */}
-        <RecipeMetadataFields control={control} errors={errors} disabled={loading} />
+        <RecipeMetadataFields
+          control={control}
+          errors={errors}
+          disabled={loading}
+          availableTags={[]}
+        />
 
         <Divider />
 

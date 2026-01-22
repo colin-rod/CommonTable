@@ -221,8 +221,7 @@ export class CookingEventService extends BaseService {
         .select(
           `
           *,
-          recipes!inner(title),
-          profiles(display_name)
+          recipes!inner(title)
         `,
         )
         .eq('household_id', householdId)
@@ -230,6 +229,15 @@ export class CookingEventService extends BaseService {
         .range(offset, offset + limit - 1);
 
       if (error) throw error;
+
+      // Fetch profile information separately since there's no FK relationship
+      const profileIds = [...new Set((data ?? []).map((e) => e.cooked_by))];
+      const { data: profilesData } = await this.supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', profileIds);
+
+      const profilesMap = new Map((profilesData ?? []).map((p) => [p.id, p.display_name]));
 
       return (data ?? []).map((event) => ({
         id: event.id,
@@ -242,7 +250,7 @@ export class CookingEventService extends BaseService {
         notes: event.notes,
         cooked_by: event.cooked_by,
         recipe_title: event.recipes?.title ?? 'Unknown recipe',
-        cooked_by_name: event.profiles?.display_name ?? 'Unknown member',
+        cooked_by_name: profilesMap.get(event.cooked_by) ?? 'Unknown member',
       })) as unknown as CookingEventWithRecipeAndProfile[];
     } catch (error) {
       if (error instanceof AppError) throw error;

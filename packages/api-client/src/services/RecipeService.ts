@@ -101,9 +101,6 @@ export class RecipeService extends BaseService {
             }),
           ),
         );
-
-        // Also write to legacy recipes.tags column (dual-write for migration safety)
-        await this.supabase.from('recipes').update({ tags: validated.tags }).eq('id', recipeId);
       }
 
       // Return the recipe (tags will be loaded on subsequent reads)
@@ -484,12 +481,15 @@ export class RecipeService extends BaseService {
       const existing = await this.getById(recipeId);
 
       // 3. Create new version with old content via existing RPC
+
       const { error: rpcError } = await this.supabase.rpc('update_recipe_create_version', {
         p_recipe_id: recipeId,
         p_title: existing.title,
         p_description: existing.description ?? '',
-        p_ingredients_json: targetVersion.ingredients_json,
-        p_steps_json: targetVersion.steps_json,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        p_ingredients_json: targetVersion.ingredients_json as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        p_steps_json: targetVersion.steps_json as any,
         p_servings: targetVersion.servings ?? 0,
         p_prep_time_minutes: targetVersion.prep_time_minutes ?? 0,
         p_cook_time_minutes: targetVersion.cook_time_minutes ?? 0,

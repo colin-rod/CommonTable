@@ -19,8 +19,13 @@ import type {
   UserId,
   Tag,
   RecipeVersionTag,
-  TagWithUsageCount,
 } from '@commontable/types';
+
+// Temporary: Define TagWithUsageCount locally until types package exports correctly
+interface TagWithUsageCount {
+  tag_name: string;
+  usage_count: number;
+}
 
 import { BaseService } from './BaseService';
 
@@ -59,7 +64,7 @@ export class TagService extends BaseService {
       if (error) throw error;
       if (!data) throw new AppError('Failed to create tag', 'CREATE_ERROR', 500);
 
-      return data as Tag;
+      return data as unknown as Tag;
     } catch (error) {
       // Zod validation errors should be wrapped in ValidationError
       if (error && typeof error === 'object' && 'issues' in error) {
@@ -89,7 +94,7 @@ export class TagService extends BaseService {
       if (error) throw error;
       if (!data) throw new NotFoundError('Tag', id);
 
-      return data as Tag;
+      return data as unknown as Tag;
     } catch (error) {
       if (error instanceof AppError) throw error;
 
@@ -115,7 +120,7 @@ export class TagService extends BaseService {
 
       if (error) throw error;
 
-      return (data as Tag[]) || [];
+      return (data as unknown as Tag[]) || [];
     } catch (error) {
       console.error('TagService.getByHousehold failed:', error);
       throw new AppError('Failed to fetch household tags', 'FETCH_ERROR', 500, { householdId });
@@ -146,7 +151,7 @@ export class TagService extends BaseService {
       if (error) throw error;
       if (!data) throw new NotFoundError('Tag', id);
 
-      return data as Tag;
+      return data as unknown as Tag;
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (error instanceof ValidationError) throw error;
@@ -269,7 +274,7 @@ export class TagService extends BaseService {
 
       if (!data) throw new AppError('Failed to add tag to version', 'CREATE_ERROR', 500);
 
-      return data as RecipeVersionTag;
+      return data as unknown as RecipeVersionTag;
     } catch (error) {
       // Zod validation errors
       if (error && typeof error === 'object' && 'issues' in error) {
@@ -330,10 +335,10 @@ export class TagService extends BaseService {
 
       const tags = (data || [])
         .map((row) => row.tags)
-        .filter((tag): tag is Tag => tag !== null)
+        .filter((tag) => tag !== null)
         .sort((a, b) => a.name.localeCompare(b.name));
 
-      return tags;
+      return tags as unknown as Tag[];
     } catch (error) {
       console.error('TagService.getVersionTags failed:', error);
       throw new AppError('Failed to fetch version tags', 'FETCH_ERROR', 500, { versionId });
@@ -382,7 +387,7 @@ export class TagService extends BaseService {
 
       if (error) throw error;
 
-      return (data as Tag[]) || [];
+      return (data as unknown as Tag[]) || [];
     } catch (error) {
       console.error('TagService.searchTags failed:', error);
       throw new AppError('Failed to search tags', 'FETCH_ERROR', 500, { query, householdId });

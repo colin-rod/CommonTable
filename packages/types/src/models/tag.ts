@@ -11,8 +11,10 @@ export type RecipeVersionTagInsert = Database['public']['Tables']['recipe_versio
 export type RecipeVersionTagUpdate = Database['public']['Tables']['recipe_version_tags']['Update'];
 
 // Tag with usage count (from get_household_tags function)
-export type TagWithUsageCount =
-  Database['public']['Functions']['get_household_tags']['Returns'][number];
+export interface TagWithUsageCount {
+  tag_name: string;
+  usage_count: number;
+}
 
 // Brand types for IDs
 export type TagId = string & { __brand: 'TagId' };

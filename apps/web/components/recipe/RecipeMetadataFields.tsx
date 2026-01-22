@@ -10,19 +10,19 @@ import { TagAutocomplete } from './TagAutocomplete';
  */
 export interface RecipeFormValues {
   title: string;
-  description: string;
+  description?: string;
   servings?: number;
   prep_time_minutes?: number;
   cook_time_minutes?: number;
-  notes: string;
-  tags: string[];
-  ingredients: Array<{
+  notes?: string;
+  tags?: string[];
+  ingredients?: Array<{
     name: string;
     quantity?: number;
     unit?: string;
     notes?: string;
   }>;
-  steps: Array<{
+  steps?: Array<{
     position: number;
     text: string;
   }>;
@@ -171,7 +171,7 @@ export function RecipeMetadataFields({
         defaultValue={[]}
         render={({ field }) => (
           <TagAutocomplete
-            value={field.value}
+            value={field.value || []}
             onChange={field.onChange}
             availableTags={availableTags}
             disabled={disabled}

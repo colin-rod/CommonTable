@@ -299,13 +299,15 @@ export class HouseholdService extends BaseService {
       if (memberError) throw memberError;
 
       // Update invitation status
-      await this.supabase
-        .from('household_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', invitation.id);
+      if (invitation.id) {
+        await this.supabase
+          .from('household_invitations')
+          .update({
+            status: 'accepted',
+            accepted_at: new Date().toISOString(),
+          })
+          .eq('id', invitation.id);
+      }
 
       return member as unknown as HouseholdMemberWithProfile;
     } catch (error) {
