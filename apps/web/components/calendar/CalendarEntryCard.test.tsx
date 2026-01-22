@@ -306,7 +306,7 @@ describe('CalendarEntryCard', () => {
   });
 
   describe('Submission flow', () => {
-    it('should call createCookingEvent with correct params when submitted', async () => {
+    it('should call createCookingEvent with correct params when submitted with rating', async () => {
       const user = userEvent.setup();
       const { createCookingEvent } = await import('@/app/actions/cookingEvent');
 
@@ -390,6 +390,71 @@ describe('CalendarEntryCard', () => {
       // Wait for async submission to fail
       await vi.waitFor(() => {
         expect(screen.getByText(/rate this meal/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should show "Skip rating" button in rating UI', async () => {
+      const user = userEvent.setup();
+
+      render(<CalendarEntryCard {...defaultProps} />);
+
+      const markAsCookedButton = screen.getByRole('button', { name: /mark as cooked/i });
+      await user.click(markAsCookedButton);
+
+      expect(screen.getByRole('button', { name: /skip rating/i })).toBeInTheDocument();
+    });
+
+    it('should call createCookingEvent with null rating when "Skip rating" clicked', async () => {
+      const user = userEvent.setup();
+      const { createCookingEvent } = await import('@/app/actions/cookingEvent');
+
+      render(<CalendarEntryCard {...defaultProps} />);
+
+      const markAsCookedButton = screen.getByRole('button', { name: /mark as cooked/i });
+      await user.click(markAsCookedButton);
+
+      const skipRatingButton = screen.getByRole('button', { name: /skip rating/i });
+      await user.click(skipRatingButton);
+
+      expect(createCookingEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recipe_id: mockEntry.recipe_id,
+          rating: null,
+          calendar_entry_id: mockEntry.id,
+        }),
+      );
+    });
+
+    it('should hide rating UI after skipping rating', async () => {
+      const user = userEvent.setup();
+
+      render(<CalendarEntryCard {...defaultProps} />);
+
+      const markAsCookedButton = screen.getByRole('button', { name: /mark as cooked/i });
+      await user.click(markAsCookedButton);
+
+      const skipRatingButton = screen.getByRole('button', { name: /skip rating/i });
+      await user.click(skipRatingButton);
+
+      await vi.waitFor(() => {
+        expect(screen.queryByText(/rate this meal/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it('should call onMarkComplete callback after skipping rating', async () => {
+      const user = userEvent.setup();
+      const onMarkComplete = vi.fn();
+
+      render(<CalendarEntryCard {...defaultProps} onMarkComplete={onMarkComplete} />);
+
+      const markAsCookedButton = screen.getByRole('button', { name: /mark as cooked/i });
+      await user.click(markAsCookedButton);
+
+      const skipRatingButton = screen.getByRole('button', { name: /skip rating/i });
+      await user.click(skipRatingButton);
+
+      await vi.waitFor(() => {
+        expect(onMarkComplete).toHaveBeenCalledTimes(1);
       });
     });
   });

@@ -122,6 +122,48 @@ export function CalendarEntryCard({
     }
   };
 
+  const handleSkipRating = async () => {
+    if (!entry.recipe_id) return;
+
+    setIsSubmitting(true);
+    try {
+      // Get recipe with version data to capture current version ID and servings
+      const supabase = createClient();
+      const recipeService = new RecipeService(supabase);
+      const recipe = await recipeService.getById(entry.recipe_id);
+
+      if (!recipe.current_version_id) {
+        throw new Error('Recipe has no current version');
+      }
+
+      // Get version details for servings
+      const version = await recipeService.getVersionById(recipe.current_version_id);
+
+      // Create cooking event without rating (rating = null)
+      const result = await createCookingEvent({
+        recipe_id: entry.recipe_id,
+        recipe_version_id: recipe.current_version_id,
+        rating: null,
+        servings_made: version.servings,
+        calendar_entry_id: entry.id,
+      });
+
+      if (result.success) {
+        // Close rating UI
+        setShowRatingInput(false);
+        setSelectedRating(null);
+
+        // Notify parent component of success
+        onMarkComplete?.();
+      }
+    } catch (error) {
+      console.error('Failed to mark as cooked:', error);
+      // Keep rating UI visible for user to retry
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Box>
       {/* Recipe title or notes-only indicator */}
@@ -148,7 +190,7 @@ export function CalendarEntryCard({
       {/* Inline Rating UI */}
       {showRatingInput && (
         <Stack spacing={1} sx={{ mb: 2 }}>
-          <Typography variant="body2">Rate this meal:</Typography>
+          <Typography variant="body2">Rate this meal (optional):</Typography>
 
           {/* Star rating buttons */}
           <Box sx={{ display: 'flex', gap: 0.5 }}>
@@ -169,7 +211,7 @@ export function CalendarEntryCard({
             ))}
           </Box>
 
-          {/* Submit and Cancel buttons */}
+          {/* Submit, Skip rating, and Cancel buttons */}
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"
@@ -179,6 +221,15 @@ export function CalendarEntryCard({
               disabled={!selectedRating || isSubmitting}
             >
               {isSubmitting ? <CircularProgress size={16} /> : 'Submit'}
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              size="small"
+              onClick={handleSkipRating}
+              disabled={isSubmitting}
+            >
+              Skip rating
             </Button>
             <Button
               variant="outlined"

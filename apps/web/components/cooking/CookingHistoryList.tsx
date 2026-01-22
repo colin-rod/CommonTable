@@ -1,16 +1,22 @@
 'use client';
 
-import type { CookingEvent } from '@commontable/types';
-import { List, ListItem, ListItemText, Typography, Rating, Stack } from '@mui/material';
+import type { UpdateCookingEventInput } from '@commontable/api-client';
+import type { CookingEvent, CookingEventId } from '@commontable/types';
+import { List, Typography } from '@mui/material';
+
+import { CookingHistoryItem } from './CookingHistoryItem';
+
+import { updateCookingEvent } from '@/app/actions/cookingEvent';
 
 interface CookingHistoryListProps {
   events: CookingEvent[];
 }
 
 /**
- * CookingHistoryList - Displays cooking history for a recipe
+ * CookingHistoryList - Displays cooking history for a recipe with inline editing
  *
- * Shows when the recipe was cooked, who cooked it, and ratings.
+ * Shows when the recipe was cooked, ratings, and notes.
+ * Any household member can edit ratings and notes on cooking events.
  */
 export function CookingHistoryList({ events }: CookingHistoryListProps) {
   if (events.length === 0) {
@@ -21,35 +27,18 @@ export function CookingHistoryList({ events }: CookingHistoryListProps) {
     );
   }
 
+  const handleUpdate = async (id: CookingEventId, data: UpdateCookingEventInput) => {
+    const result = await updateCookingEvent(id, data);
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+    // Server action will handle revalidation
+  };
+
   return (
     <List>
       {events.map((event) => (
-        <ListItem key={event.id} disablePadding>
-          <ListItemText
-            primary={
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Typography variant="body1">
-                  {new Date(event.cooked_at).toLocaleDateString()}
-                </Typography>
-                {event.rating && <Rating value={event.rating} readOnly size="small" />}
-              </Stack>
-            }
-            secondary={
-              <>
-                {event.servings_made && (
-                  <Typography variant="body2" component="span">
-                    {event.servings_made} servings
-                  </Typography>
-                )}
-                {event.notes && (
-                  <Typography variant="body2" component="span" sx={{ display: 'block', mt: 0.5 }}>
-                    {event.notes}
-                  </Typography>
-                )}
-              </>
-            }
-          />
-        </ListItem>
+        <CookingHistoryItem key={event.id} event={event} onUpdate={handleUpdate} />
       ))}
     </List>
   );
