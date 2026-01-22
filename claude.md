@@ -2275,6 +2275,11 @@ fix(sync-engine): handle concurrent edit conflicts correctly
 test(sync-engine): add test for concurrent edit conflict resolution
 ```
 
+**Branch Workflow**:
+
+- Feature branches → PR to `development`
+- `development` → PR to `main` (production releases only)
+
 ---
 
 ## Code Review Checklist
@@ -2449,7 +2454,9 @@ curl -X POST https://<project-ref>.supabase.co/functions/v1/<function-name> \
 ### 1. Start New Feature
 
 ```bash
-# Create feature branch
+# Create feature branch from development
+git checkout development
+git pull origin development
 git checkout -b feat/recipe-versioning
 
 # Write failing test first

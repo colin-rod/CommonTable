@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [development, main]
   push:
-    branches: [main]
+    branches: [development, main]
 
 # Cancel in-progress runs when a new workflow with the same PR/branch is triggered
 concurrency:
