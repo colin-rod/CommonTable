@@ -21,7 +21,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 
 import { getCookingEventsByRecipe } from '@/app/actions/cookingEvent';
 import { deleteRecipe, forkRecipe } from '@/app/actions/recipe';
@@ -31,6 +31,7 @@ import { DeleteRecipeDialog } from '@/components/recipe/DeleteRecipeDialog';
 import { ForkRecipeDialog } from '@/components/recipe/ForkRecipeDialog';
 import { RecipeDetailView } from '@/components/recipe/RecipeDetailView';
 import { useRecipe } from '@/hooks/useRecipe';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * Recipe Detail Page
@@ -69,7 +70,8 @@ export default function RecipeDetailPage() {
   }>({ open: false, message: '' });
 
   // Image service for getting signed URLs
-  const recipeImageService = new RecipeImageService();
+  const supabase = useMemo(() => createClient(), []);
+  const recipeImageService = useMemo(() => new RecipeImageService(supabase), [supabase]);
 
   // Fetch cooking events for this recipe
   useEffect(() => {

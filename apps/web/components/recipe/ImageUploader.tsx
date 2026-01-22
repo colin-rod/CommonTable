@@ -158,7 +158,7 @@ export function ImageUploader({
       if (isDisabled) return;
 
       const files = e.dataTransfer.files;
-      if (files.length > 0) {
+      if (files.length > 0 && files[0]) {
         void handleFile(files[0]);
       }
     },
@@ -171,7 +171,7 @@ export function ImageUploader({
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (files && files.length > 0) {
+      if (files && files.length > 0 && files[0]) {
         void handleFile(files[0]);
       }
       // Reset input so same file can be selected again

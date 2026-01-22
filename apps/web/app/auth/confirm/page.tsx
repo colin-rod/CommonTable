@@ -1,7 +1,7 @@
 import { EmailConfirmation } from '@/components/auth/EmailConfirmation';
 
 interface EmailConfirmPageProps {
-  searchParams: { error?: string; error_description?: string };
+  searchParams: Promise<{ error?: string; error_description?: string }>;
 }
 
 /**
@@ -18,11 +18,8 @@ interface EmailConfirmPageProps {
  * 4. Display success/error message
  * 5. Auto-redirect to dashboard on success
  */
-export default function EmailConfirmPage({ searchParams }: EmailConfirmPageProps) {
-  return (
-    <EmailConfirmation
-      error={searchParams.error}
-      errorDescription={searchParams.error_description}
-    />
-  );
+export default async function EmailConfirmPage({ searchParams }: EmailConfirmPageProps) {
+  const params = await searchParams;
+
+  return <EmailConfirmation error={params.error} errorDescription={params.error_description} />;
 }

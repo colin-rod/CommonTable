@@ -1,13 +1,7 @@
 'use client';
 
-import type {
-  MealSlot,
-  RecipeId,
-  CalendarEntryId,
-  CalendarEntry,
-  CreateCalendarEntryInput,
-  UpdateCalendarEntryInput,
-} from '@commontable/types';
+import type { CreateCalendarEntryInput, UpdateCalendarEntryInput } from '@commontable/api-client';
+import type { MealSlot, RecipeId, CalendarEntryId, CalendarEntry } from '@commontable/types';
 import { Box, CircularProgress, Typography, Snackbar } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect } from 'react';
@@ -198,10 +192,10 @@ export function CalendarWeekView() {
         weekStart={currentWeekStart}
         entries={entries}
         onAddMeal={handleAddMeal}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onViewRecipe={handleViewRecipe}
-        onMarkComplete={handleMarkComplete}
+        onEdit={(id) => handleEdit(id as CalendarEntryId)}
+        onDelete={(id) => handleDelete(id as CalendarEntryId)}
+        onViewRecipe={(id) => handleViewRecipe(id as RecipeId)}
+        onMarkComplete={() => handleMarkComplete()}
       />
 
       {/* Add Dialog */}

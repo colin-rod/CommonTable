@@ -1,5 +1,5 @@
 import type { HouseholdInvitation } from '@commontable/types';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -165,7 +165,7 @@ describe('InvitationListItem Component', () => {
 
   describe('Status chip', () => {
     it('should render pending status chip with small size', () => {
-      const { container } = render(<InvitationListItem invitation={mockInvitation} />);
+      render(<InvitationListItem invitation={mockInvitation} />);
 
       const chip = screen.getByText('Pending').closest('.MuiChip-root');
       expect(chip).toBeInTheDocument();

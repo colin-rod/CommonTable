@@ -3,7 +3,6 @@
 import {
   RecipeService,
   type Recipe,
-  type RecipeVersion,
   type RecipeWithVersion,
   type RecipeImage,
   type RecipeSearchResult,
@@ -240,7 +239,13 @@ export async function getRecipeVersionHistory(recipeId: RecipeId): Promise<
 
     const history = await service.getVersionHistory(recipeId);
 
-    return { success: true, data: history };
+    // Serialize dates for server action
+    const serializedHistory = history.map((entry) => ({
+      ...entry,
+      created_at: entry.created_at.toISOString(),
+    }));
+
+    return { success: true, data: serializedHistory };
   } catch (error) {
     return { success: false, error: formatError(error) };
   }
@@ -277,7 +282,13 @@ export async function getRecipeVersion(
 
     const version = await service.getVersion(recipeId, versionNumber);
 
-    return { success: true, data: version as unknown as RecipeVersion };
+    // Serialize date for server action
+    const serializedVersion = {
+      ...version,
+      created_at: version.created_at.toISOString(),
+    };
+
+    return { success: true, data: serializedVersion };
   } catch (error) {
     return { success: false, error: formatError(error) };
   }

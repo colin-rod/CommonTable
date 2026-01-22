@@ -18,7 +18,7 @@ import {
   MealRequestList,
   MealRequestFilterBar,
 } from '@/components/mealRequests';
-import { useAuth } from '@/hooks/useAuth';
+import { useHousehold } from '@/hooks/useHousehold';
 import { useMealRequests } from '@/hooks/useMealRequests';
 import { useRecipes } from '@/hooks/useRecipes';
 
@@ -36,7 +36,7 @@ import { useRecipes } from '@/hooks/useRecipes';
  * - Material Design 3 components only
  */
 export default function RequestsPage() {
-  const { householdMembers } = useAuth();
+  const { members: householdMembers } = useHousehold();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<MealRequestStatus | 'all'>('open');
   const [snackbarOpen, setSnackbarOpen] = useState(false);

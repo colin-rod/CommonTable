@@ -27,6 +27,10 @@ interface CalendarEntryCommentsProps {
 export function CalendarEntryComments({ calendarEntryId }: CalendarEntryCommentsProps) {
   const { comments, loading, error, addComment } = useCalendarEntryComments(calendarEntryId);
 
+  const handleSubmit = async (input: { calendar_entry_id: string; comment_text: string }) => {
+    await addComment(input);
+  };
+
   return (
     <Stack spacing={3}>
       <Typography variant="h6">Discussion</Typography>
@@ -35,7 +39,7 @@ export function CalendarEntryComments({ calendarEntryId }: CalendarEntryComments
       <CalendarEntryCommentList comments={comments} loading={loading} error={error} />
 
       {/* Add Comment Form */}
-      <CalendarEntryCommentForm onSubmit={addComment} calendarEntryId={calendarEntryId} />
+      <CalendarEntryCommentForm onSubmit={handleSubmit} calendarEntryId={calendarEntryId} />
     </Stack>
   );
 }

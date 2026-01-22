@@ -2,7 +2,7 @@
 
 import type { RecipeId, RecipeWithVersion } from '@commontable/types';
 import { Container, CircularProgress, Box, Typography, Divider, Stack } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { updateRecipe } from '@/app/actions/recipe';
@@ -22,9 +22,10 @@ import { useTags } from '@/hooks/useTags';
  * - Editing metadata (title, description) does NOT create a new version
  * - This is handled by the updateRecipe server action
  */
-export default function EditRecipePage({ params }: { params: { id: string } }) {
+export default function EditRecipePage() {
   const router = useRouter();
-  const { household, isAuthenticated, isLoading: authLoading } = useAuth();
+  const params = useParams();
+  const { user, household, isAuthenticated, isLoading: authLoading } = useAuth();
   const recipeId = params.id as RecipeId;
   const { recipe, loading: recipeLoading, error: recipeError } = useRecipe(recipeId);
   const { tags: availableTags, loading: tagsLoading } = useTags();
@@ -35,16 +36,18 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
    * Transform RecipeWithVersion to RecipeFormValues
    */
   const transformToFormValues = (recipe: RecipeWithVersion): RecipeFormValues => {
+    const currentVersion = recipe.current_version;
+
     return {
       title: recipe.title,
       description: recipe.description || '',
-      servings: recipe.servings ?? undefined,
-      prep_time_minutes: recipe.prep_time_minutes ?? undefined,
-      cook_time_minutes: recipe.cook_time_minutes ?? undefined,
-      notes: recipe.notes || '',
+      servings: currentVersion?.servings ?? undefined,
+      prep_time_minutes: currentVersion?.prep_time_minutes ?? undefined,
+      cook_time_minutes: currentVersion?.cook_time_minutes ?? undefined,
+      notes: currentVersion?.notes || '',
       tags: recipe.tags || [],
-      ingredients: recipe.ingredients_json || [],
-      steps: recipe.steps_json || [],
+      ingredients: currentVersion?.ingredients_json || [],
+      steps: currentVersion?.steps_json || [],
     };
   };
 
@@ -105,7 +108,7 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
 
   // Not authenticated
   if (!isAuthenticated) {
-    router.push('/login');
+    router.push('/auth/login');
     return null;
   }
 
@@ -161,7 +164,7 @@ export default function EditRecipePage({ params }: { params: { id: string } }) {
           <Divider />
 
           {/* Image Management Section */}
-          <ImageManagement recipeId={recipeId} userId={household.id} />
+          {user && <ImageManagement recipeId={recipeId} userId={user.id} />}
         </Stack>
       </Box>
     </Container>

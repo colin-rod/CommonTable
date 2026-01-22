@@ -55,7 +55,7 @@ export function AddMemberDialog({ open, onClose }: AddMemberDialogProps) {
       setLoading(true);
       setError(null);
 
-      await addManagedMember({ display_name: displayName.trim() });
+      await addManagedMember({ display_name: displayName.trim(), role: 'member' });
 
       // Success - close dialog and reset form
       setDisplayName('');

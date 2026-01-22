@@ -1,4 +1,4 @@
-import { CalendarService, createClient } from '@commontable/api-client';
+import { CalendarService } from '@commontable/api-client';
 import type {
   CalendarEntry,
   CalendarEntryId,
@@ -6,6 +6,8 @@ import type {
   UpdateCalendarEntryInput,
 } from '@commontable/api-client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
+
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * Hook for managing calendar entries within a specific week

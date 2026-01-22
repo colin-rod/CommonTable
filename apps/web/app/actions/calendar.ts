@@ -1,6 +1,6 @@
 'use server';
 
-import { CalendarService, createClient } from '@commontable/api-client';
+import { CalendarService } from '@commontable/api-client';
 import type {
   CalendarEntry,
   CalendarEntryId,
@@ -8,6 +8,8 @@ import type {
   UpdateCalendarEntryInput,
 } from '@commontable/api-client';
 import { revalidatePath } from 'next/cache';
+
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * Action result type for server actions

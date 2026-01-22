@@ -88,21 +88,18 @@ export function CalendarEntryCard({
       // Get recipe with version data to capture current version ID and servings
       const supabase = createClient();
       const recipeService = new RecipeService(supabase);
-      const recipe = await recipeService.getById(entry.recipe_id);
+      const recipe = await recipeService.getWithVersion(entry.recipe_id);
 
-      if (!recipe.current_version_id) {
+      if (!recipe.current_version_id || !recipe.current_version) {
         throw new Error('Recipe has no current version');
       }
-
-      // Get version details for servings
-      const version = await recipeService.getVersionById(recipe.current_version_id);
 
       // Create cooking event with rating
       const result = await createCookingEvent({
         recipe_id: entry.recipe_id,
         recipe_version_id: recipe.current_version_id,
         rating: selectedRating,
-        servings_made: version.servings,
+        servings_made: recipe.current_version.servings,
         calendar_entry_id: entry.id,
       });
 
@@ -130,21 +127,18 @@ export function CalendarEntryCard({
       // Get recipe with version data to capture current version ID and servings
       const supabase = createClient();
       const recipeService = new RecipeService(supabase);
-      const recipe = await recipeService.getById(entry.recipe_id);
+      const recipe = await recipeService.getWithVersion(entry.recipe_id);
 
-      if (!recipe.current_version_id) {
+      if (!recipe.current_version_id || !recipe.current_version) {
         throw new Error('Recipe has no current version');
       }
-
-      // Get version details for servings
-      const version = await recipeService.getVersionById(recipe.current_version_id);
 
       // Create cooking event without rating (rating = null)
       const result = await createCookingEvent({
         recipe_id: entry.recipe_id,
         recipe_version_id: recipe.current_version_id,
         rating: null,
-        servings_made: version.servings,
+        servings_made: recipe.current_version.servings,
         calendar_entry_id: entry.id,
       });
 

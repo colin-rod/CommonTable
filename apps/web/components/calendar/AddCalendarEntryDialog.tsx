@@ -47,7 +47,7 @@ export function AddCalendarEntryDialog({
 }: AddCalendarEntryDialogProps) {
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [plannedDate, setPlannedDate] = useState<string>(
-    initialDate ? initialDate.toISOString().split('T')[0] : '',
+    initialDate ? (initialDate.toISOString().split('T')[0] ?? '') : '',
   );
   const [mealSlot, setMealSlot] = useState<MealSlot>(initialMealSlot || 'dinner');
   const [notes, setNotes] = useState<string>('');
@@ -67,7 +67,7 @@ export function AddCalendarEntryDialog({
 
       // Reset form
       setSelectedRecipe(null);
-      setPlannedDate(initialDate ? initialDate.toISOString().split('T')[0] : '');
+      setPlannedDate(initialDate ? (initialDate.toISOString().split('T')[0] ?? '') : '');
       setMealSlot(initialMealSlot || 'dinner');
       setNotes('');
 
@@ -82,7 +82,7 @@ export function AddCalendarEntryDialog({
 
     // Reset form
     setSelectedRecipe(null);
-    setPlannedDate(initialDate ? initialDate.toISOString().split('T')[0] : '');
+    setPlannedDate(initialDate ? (initialDate.toISOString().split('T')[0] ?? '') : '');
     setMealSlot(initialMealSlot || 'dinner');
     setNotes('');
 

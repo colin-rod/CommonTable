@@ -54,7 +54,7 @@ export function EditCalendarEntryDialog({
     if (entry) {
       const recipe = recipes.find((r) => r.id === entry.recipe_id) || null;
       setSelectedRecipe(recipe);
-      setPlannedDate(new Date(entry.planned_date).toISOString().split('T')[0]);
+      setPlannedDate(new Date(entry.planned_date).toISOString().split('T')[0] ?? '');
       setMealSlot(entry.meal_slot);
       setNotes(entry.notes || '');
     }

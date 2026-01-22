@@ -94,7 +94,7 @@ export default function CreateRecipePage() {
 
   // Not authenticated
   if (!isAuthenticated) {
-    router.push('/login');
+    router.push('/auth/login');
     return null;
   }
 

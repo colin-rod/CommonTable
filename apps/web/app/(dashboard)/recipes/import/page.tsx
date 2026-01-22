@@ -44,7 +44,7 @@ export default function RecipeImportPage() {
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
-    router.push('/login');
+    router.push('/auth/login');
     return null;
   }
 
