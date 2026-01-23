@@ -2,16 +2,33 @@
 
 import { AiTagSuggestionService } from '@commontable/api-client';
 import type {
-  ActionResult,
   AiTagSuggestion,
   AiTagSuggestionId,
   AiTagSuggestionWithTag,
   RecipeVersionId,
 } from '@commontable/types';
+import { AppError } from '@commontable/types';
 import { revalidatePath } from 'next/cache';
 
-import { formatError } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/server';
+
+/**
+ * Action result type for consistent error handling
+ */
+type ActionResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: { message: string; code?: string } };
+
+/**
+ * Format error for client consumption
+ */
+function formatError(error: unknown): { message: string; code?: string } {
+  if (error instanceof AppError) {
+    return { message: error.message, code: error.code };
+  }
+  console.error('Unexpected error in AI tag suggestion action:', error);
+  return { message: 'An unexpected error occurred' };
+}
 
 /**
  * Accept a single AI tag suggestion
