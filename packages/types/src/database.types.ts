@@ -721,10 +721,15 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_tag_suggestions: {
+        Args: { p_suggestions: Json };
+        Returns: undefined;
+      };
       calculate_rolling_score: {
         Args: { p_recipe_id: string };
         Returns: number;
       };
+      call_suggest_tags_batch: { Args: { p_recipes: Json }; Returns: Json };
       create_household_on_signup: {
         Args: { p_display_name: string; p_user_id: string };
         Returns: undefined;
@@ -795,6 +800,17 @@ export type Database = {
           version_number: number;
         }[];
       };
+      get_untagged_recipes: {
+        Args: { batch_size?: number };
+        Returns: {
+          household_id: string;
+          ingredients_json: Json;
+          recipe_id: string;
+          steps_json: Json;
+          title: string;
+          version_id: string;
+        }[];
+      };
       get_user_household_id: { Args: never; Returns: string };
       get_user_household_role: { Args: never; Returns: string };
       get_user_id_from_imports_path: { Args: { path: string }; Returns: string };
@@ -806,6 +822,7 @@ export type Database = {
       };
       is_imports_path: { Args: { path: string }; Returns: boolean };
       migrate_recipe_tags_to_normalized: { Args: never; Returns: undefined };
+      process_batch_tag_suggestions: { Args: never; Returns: undefined };
       recipe_belongs_to_household: {
         Args: { household_id: string; recipe_id: string };
         Returns: boolean;
