@@ -1,7 +1,12 @@
 'use client';
 
 import { RecipeImageService } from '@commontable/api-client';
-import type { RecipeId, CookingEvent } from '@commontable/types';
+import type {
+  RecipeId,
+  CookingEvent,
+  AiTagSuggestionWithTag,
+  AiTagSuggestionId,
+} from '@commontable/types';
 import {
   ArrowBack as ArrowBackIcon,
   Edit as EditIcon,
@@ -23,10 +28,17 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useState, useCallback, useEffect, useMemo } from 'react';
 
+import {
+  getPendingAiTagSuggestions,
+  acceptAiTagSuggestion,
+  rejectAiTagSuggestion,
+  acceptAllAiTagSuggestions,
+} from '@/app/actions/aiTagSuggestion';
 import { getCookingEventsByRecipe } from '@/app/actions/cookingEvent';
 import { deleteRecipe, forkRecipe } from '@/app/actions/recipe';
 import { CookingHistoryList } from '@/components/cooking/CookingHistoryList';
 import { LogMealDialog } from '@/components/cooking/LogMealDialog';
+import { AiSuggestedTagsList } from '@/components/recipe/AiSuggestedTagsList';
 import { DeleteRecipeDialog } from '@/components/recipe/DeleteRecipeDialog';
 import { ForkRecipeDialog } from '@/components/recipe/ForkRecipeDialog';
 import { RecipeDetailView } from '@/components/recipe/RecipeDetailView';
@@ -68,6 +80,8 @@ export default function RecipeDetailPage() {
     open: boolean;
     message: string;
   }>({ open: false, message: '' });
+  const [aiSuggestions, setAiSuggestions] = useState<AiTagSuggestionWithTag[]>([]);
+  const [aiSuggestionsLoading, setAiSuggestionsLoading] = useState(true);
 
   // Image service for getting signed URLs
   const supabase = useMemo(() => createClient(), []);
@@ -91,6 +105,27 @@ export default function RecipeDetailPage() {
 
     fetchCookingEvents();
   }, [recipeId]);
+
+  // Fetch AI tag suggestions
+  useEffect(() => {
+    const fetchAiSuggestions = async () => {
+      if (!recipe?.current_version_id) return;
+
+      try {
+        setAiSuggestionsLoading(true);
+        const result = await getPendingAiTagSuggestions(recipe.current_version_id);
+        if (result.success) {
+          setAiSuggestions(result.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch AI suggestions:', error);
+      } finally {
+        setAiSuggestionsLoading(false);
+      }
+    };
+
+    fetchAiSuggestions();
+  }, [recipe?.current_version_id]);
 
   const handleBack = () => {
     router.push('/recipes');
@@ -189,6 +224,59 @@ export default function RecipeDetailPage() {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  const handleAcceptSuggestion = useCallback(
+    async (suggestionId: AiTagSuggestionId) => {
+      try {
+        const result = await acceptAiTagSuggestion(suggestionId);
+        if (result.success) {
+          // Remove from local state
+          setAiSuggestions((prev) => prev.filter((s) => s.id !== suggestionId));
+          refresh(); // Refresh recipe to show updated tags
+        } else {
+          setSnackbar({ open: true, message: result.error.message });
+        }
+      } catch {
+        setSnackbar({ open: true, message: 'Failed to accept suggestion' });
+      }
+    },
+    [refresh],
+  );
+
+  const handleRejectSuggestion = useCallback(
+    async (suggestionId: AiTagSuggestionId) => {
+      try {
+        const result = await rejectAiTagSuggestion(suggestionId);
+        if (result.success) {
+          // Remove from local state
+          setAiSuggestions((prev) => prev.filter((s) => s.id !== suggestionId));
+          refresh(); // Refresh recipe to show removed tags
+        } else {
+          setSnackbar({ open: true, message: result.error.message });
+        }
+      } catch {
+        setSnackbar({ open: true, message: 'Failed to reject suggestion' });
+      }
+    },
+    [refresh],
+  );
+
+  const handleAcceptAllSuggestions = useCallback(async () => {
+    if (!recipe?.current_version_id) return;
+
+    try {
+      const result = await acceptAllAiTagSuggestions(recipe.current_version_id);
+      if (result.success) {
+        // Clear all suggestions from local state
+        setAiSuggestions([]);
+        refresh(); // Refresh recipe to show updated tags
+      } else {
+        setSnackbar({ open: true, message: result.error.message });
+      }
+    } catch {
+      setSnackbar({ open: true, message: 'Failed to accept all suggestions' });
+    }
+  }, [recipe?.current_version_id, refresh]);
+
   if (loading) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
@@ -280,6 +368,17 @@ export default function RecipeDetailPage() {
           primaryImage={primaryImage}
           getImageUrl={(image) => recipeImageService.getSignedUrl(image.storage_path)}
         />
+
+        {/* AI Suggested Tags */}
+        {!aiSuggestionsLoading && aiSuggestions.length > 0 && recipe.current_version_id && (
+          <AiSuggestedTagsList
+            suggestions={aiSuggestions}
+            recipeVersionId={recipe.current_version_id}
+            onAccept={handleAcceptSuggestion}
+            onReject={handleRejectSuggestion}
+            onAcceptAll={handleAcceptAllSuggestions}
+          />
+        )}
 
         {/* Cooking History */}
         <Box>
