@@ -385,8 +385,8 @@ describe('CookingEventService', () => {
       const result = await service.getByRecipeId(mockRecipeId);
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('00000000-0000-0000-0000-000000000006' as CookingEventId);
-      expect(result[1].id).toBe('00000000-0000-0000-0000-000000000007' as CookingEventId);
+      expect(result[0]!.id).toBe('00000000-0000-0000-0000-000000000006' as CookingEventId);
+      expect(result[1]!.id).toBe('00000000-0000-0000-0000-000000000007' as CookingEventId);
       expect(builder.eq).toHaveBeenCalledWith('recipe_id', mockRecipeId);
       expect(builder.order).toHaveBeenCalledWith('cooked_at', { ascending: false });
     });
@@ -514,7 +514,7 @@ describe('CookingEventService', () => {
       const result = await service.getByHouseholdId(mockHouseholdId);
 
       expect(result).toHaveLength(1);
-      expect(result[0].cooked_by_name).toBe('Unknown member');
+      expect(result[0]!.cooked_by_name).toBe('Unknown member');
     });
   });
 

@@ -76,7 +76,7 @@ describe('MealRequestService', () => {
       const result = await service.list();
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('request-1');
+      expect(result[0]!.id).toBe('request-1');
       expect(mockSupabase.from).toHaveBeenCalledWith('meal_requests');
     });
 
@@ -115,7 +115,7 @@ describe('MealRequestService', () => {
       const result = await service.list({ status: 'open' });
 
       expect(result).toHaveLength(1);
-      expect(result[0].status).toBe('open');
+      expect(result[0]!.status).toBe('open');
     });
 
     it('should throw AppError on database error', async () => {

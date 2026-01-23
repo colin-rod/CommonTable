@@ -276,8 +276,8 @@ describe('CalendarEntryCommentService', () => {
       // Mock auth.getUser returning no user
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: null },
-        error: null,
-      });
+        error: { message: 'User not authenticated', name: 'AuthApiError', status: 401 },
+      } as any);
 
       await expect(service.create(input)).rejects.toThrow(AppError);
       await expect(service.create(input)).rejects.toThrow('User not authenticated');

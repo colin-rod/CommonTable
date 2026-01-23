@@ -139,6 +139,7 @@ describe('RecipeService', () => {
         prep_time_minutes: 10,
         cook_time_minutes: 20,
         notes: 'Use guanciale if available',
+        tags: [],
         user_id: validUserId,
       };
 
@@ -231,6 +232,9 @@ describe('RecipeService', () => {
       const input = {
         household_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
         title: 'Valid Title',
+        tags: [],
+        ingredients_json: [],
+        steps_json: [],
         user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       };
 
@@ -246,6 +250,9 @@ describe('RecipeService', () => {
       const input = {
         household_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
         title: 'Simple Recipe',
+        tags: [],
+        ingredients_json: [],
+        steps_json: [],
         user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
       };
 
@@ -346,6 +353,7 @@ describe('RecipeService', () => {
           current_version_id: 'version-1',
           rolling_score: null,
           tags: [],
+          is_favorite: false,
           last_cooked_at: null,
           created_by: 'user-123',
           created_at: '2024-01-01T00:00:00Z',
@@ -684,7 +692,7 @@ describe('RecipeService', () => {
       });
 
       expect(result).toHaveLength(1);
-      expect(result[0].title).toContain('Pasta');
+      expect(result[0]!.title).toContain('Pasta');
     });
 
     it('should return empty array when no matches found', async () => {
@@ -757,8 +765,8 @@ describe('RecipeService', () => {
         const result = await service.search(query, validHouseholdId);
 
         expect(result).toHaveLength(1);
-        expect(result[0].tags).toContain('italian');
-        expect(result[0].title).toBe('Pasta Carbonara');
+        expect(result[0]!.tags).toContain('italian');
+        expect(result[0]!.title).toBe('Pasta Carbonara');
       });
 
       it('should find recipes with multi-word tags', async () => {
@@ -789,7 +797,7 @@ describe('RecipeService', () => {
         const result = await service.search(query, validHouseholdId);
 
         expect(result).toHaveLength(1);
-        expect(result[0].tags).toContain('quick weeknight');
+        expect(result[0]!.tags).toContain('quick weeknight');
       });
 
       it('should search tags case-insensitively', async () => {
@@ -820,7 +828,7 @@ describe('RecipeService', () => {
         const result = await service.search(query, validHouseholdId);
 
         expect(result).toHaveLength(1);
-        expect(result[0].tags).toContain('italian');
+        expect(result[0]!.tags).toContain('italian');
       });
 
       it('should combine title and tag search', async () => {
@@ -851,8 +859,8 @@ describe('RecipeService', () => {
         const result = await service.search(query, validHouseholdId);
 
         expect(result).toHaveLength(1);
-        expect(result[0].title).toContain('Pasta');
-        expect(result[0].tags).toContain('italian');
+        expect(result[0]!.title).toContain('Pasta');
+        expect(result[0]!.tags).toContain('italian');
       });
 
       it('should return empty array when searching for tag with no matches', async () => {
@@ -910,8 +918,8 @@ describe('RecipeService', () => {
         const result = await service.search(query, validHouseholdId);
 
         expect(result).toHaveLength(2);
-        expect(result[0].tags).toContain('vegetarian');
-        expect(result[1].tags).toContain('vegetarian');
+        expect(result[0]!.tags).toContain('vegetarian');
+        expect(result[1]!.tags).toContain('vegetarian');
       });
     });
   });
@@ -959,8 +967,8 @@ describe('RecipeService', () => {
       });
 
       expect(result).toHaveLength(3);
-      expect(result[0].version_number).toBe(3);
-      expect(result[0].is_current).toBe(true);
+      expect(result[0]!.version_number).toBe(3);
+      expect(result[0]!.is_current).toBe(true);
     });
 
     it('should return empty array for recipe with no versions', async () => {
