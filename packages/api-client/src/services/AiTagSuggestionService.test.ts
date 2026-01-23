@@ -2,6 +2,7 @@ import type {
   AiTagSuggestion,
   AiTagSuggestionId,
   AiTagSuggestionWithTag,
+  HouseholdId,
   RecipeVersionId,
   Tag,
   TagId,
@@ -30,7 +31,7 @@ describe('AiTagSuggestionService', () => {
       const versionId = 'version-123' as RecipeVersionId;
       const mockTag: Tag = {
         id: 'tag-1' as TagId,
-        household_id: 'household-1',
+        household_id: 'household-1' as HouseholdId,
         name: 'italian',
         created_at: new Date(),
         updated_at: new Date(),
