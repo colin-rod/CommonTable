@@ -39,36 +39,28 @@ describe('useRecipes Hook', () => {
       household_id: mockHouseholdId,
       title: 'Pasta Carbonara',
       description: 'Classic Italian pasta',
-      servings: 4,
-      prep_time_minutes: 10,
-      cook_time_minutes: 20,
       tags: ['italian', 'pasta'],
       is_favorite: false,
-      forked_from_id: null,
-      created_by: 'user-123',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
+      rolling_score: null,
+      created_by: 'user-123' as any,
+      created_at: new Date('2024-01-01T00:00:00Z'),
+      updated_at: new Date('2024-01-01T00:00:00Z'),
       last_cooked_at: null,
-      cooked_count: 0,
-      current_version_id: 'version-1',
+      current_version_id: 'version-1' as any,
     },
     {
       id: 'recipe-2' as RecipeId,
       household_id: mockHouseholdId,
       title: 'Caesar Salad',
       description: 'Fresh salad',
-      servings: 2,
-      prep_time_minutes: 5,
-      cook_time_minutes: 0,
       tags: ['salad', 'healthy'],
       is_favorite: true,
-      forked_from_id: null,
-      created_by: 'user-123',
-      created_at: '2024-01-02T00:00:00Z',
-      updated_at: '2024-01-02T00:00:00Z',
-      last_cooked_at: '2024-01-10T00:00:00Z',
-      cooked_count: 3,
-      current_version_id: 'version-2',
+      rolling_score: null,
+      created_by: 'user-123' as any,
+      created_at: new Date('2024-01-02T00:00:00Z'),
+      updated_at: new Date('2024-01-02T00:00:00Z'),
+      last_cooked_at: new Date('2024-01-10T00:00:00Z'),
+      current_version_id: 'version-2' as any,
     },
   ];
 
@@ -188,7 +180,7 @@ describe('useRecipes Hook', () => {
       const newHouseholdId = 'household-456' as HouseholdId;
       const newHousehold: Household = { ...mockHousehold, id: newHouseholdId };
       const newRecipes: Recipe[] = [
-        { ...mockRecipes[0], id: 'recipe-3' as RecipeId, household_id: newHouseholdId },
+        { ...mockRecipes[0]!, id: 'recipe-3' as RecipeId, household_id: newHouseholdId },
       ];
 
       vi.mocked(useAuth).mockReturnValue({
@@ -218,7 +210,7 @@ describe('useRecipes Hook', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const recipeToToggle = mockRecipes[0];
+      const recipeToToggle = mockRecipes[0]!;
       expect(result.current.recipes.find((r) => r.id === recipeToToggle.id)?.is_favorite).toBe(
         false,
       );
@@ -245,7 +237,7 @@ describe('useRecipes Hook', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const recipeToToggle = mockRecipes[0];
+      const recipeToToggle = mockRecipes[0]!;
       const updatedRecipe = { ...recipeToToggle, is_favorite: true };
 
       // Delay the promise to test optimistic update
@@ -281,7 +273,7 @@ describe('useRecipes Hook', () => {
       const toggleError = new Error('Failed to toggle favorite');
       mockRecipeService.toggleFavorite.mockRejectedValue(toggleError);
 
-      await expect(result.current.toggleFavorite(mockRecipes[0].id)).rejects.toThrow(
+      await expect(result.current.toggleFavorite(mockRecipes[0]!.id)).rejects.toThrow(
         'Failed to toggle favorite',
       );
     });
@@ -303,7 +295,7 @@ describe('useRecipes Hook', () => {
       const newRecipes: Recipe[] = [
         ...mockRecipes,
         {
-          ...mockRecipes[0],
+          ...mockRecipes[0]!,
           id: 'recipe-3' as RecipeId,
           title: 'New Recipe',
         },

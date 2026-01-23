@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import type { RecipeImage, RecipeId, RecipeImageId, UserId } from '@commontable/types';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -98,7 +97,7 @@ describe('useRecipeImages Hook', () => {
       });
 
       expect(result.current.images).toHaveLength(1);
-      expect(result.current.images[0].id).toBe(mockImageId);
+      expect(result.current.images[0]!.id).toBe(mockImageId);
     });
 
     it('should set loading to false and empty array when recipeId is null', async () => {

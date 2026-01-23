@@ -12,10 +12,14 @@ describe('InvitationListItem Component', () => {
   const mockInvitation: HouseholdInvitation = {
     id: 'invitation-123' as any,
     household_id: 'household-1' as any,
+    inviter_profile_id: 'profile-1' as any,
     invitee_email: 'john@example.com',
     role: 'member',
-    invited_by: 'user-1' as any,
-    invited_at: new Date('2024-01-15T10:00:00Z'),
+    token: 'token-123',
+    invited_at: '2024-01-15T10:00:00Z',
+    accepted_at: null,
+    created_at: '2024-01-15T10:00:00Z',
+    updated_at: '2024-01-15T10:00:00Z',
     status: 'pending',
   };
 
@@ -24,7 +28,8 @@ describe('InvitationListItem Component', () => {
     id: 'invitation-456' as any,
     invitee_email: 'admin@example.com',
     role: 'admin',
-    invited_at: new Date('2024-01-20T15:30:00Z'),
+    invited_at: '2024-01-20T15:30:00Z',
+    created_at: '2024-01-20T15:30:00Z',
   };
 
   beforeEach(() => {

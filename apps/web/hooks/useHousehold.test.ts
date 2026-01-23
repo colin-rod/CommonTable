@@ -42,12 +42,13 @@ describe('useHousehold Hook', () => {
 
   const mockMembers: HouseholdMemberWithProfile[] = [
     {
-      profile_id: 'user-1',
+      user_id: 'user-1' as any,
       household_id: mockHouseholdId,
       role: 'admin',
       joined_at: '2024-01-01T00:00:00Z',
       profile: {
-        id: 'user-1',
+        id: 'user-1' as any,
+        auth_user_id: 'auth-user-1' as any,
         display_name: 'Admin User',
         member_type: 'authenticated',
         avatar_url: null,
@@ -56,12 +57,13 @@ describe('useHousehold Hook', () => {
       },
     },
     {
-      profile_id: 'user-2',
+      user_id: 'user-2' as any,
       household_id: mockHouseholdId,
       role: 'member',
       joined_at: '2024-01-02T00:00:00Z',
       profile: {
-        id: 'user-2',
+        id: 'user-2' as any,
+        auth_user_id: 'auth-user-2' as any,
         display_name: 'Regular Member',
         member_type: 'authenticated',
         avatar_url: null,
@@ -73,13 +75,17 @@ describe('useHousehold Hook', () => {
 
   const mockInvitations: HouseholdInvitation[] = [
     {
-      id: 'invitation-1',
+      id: 'invitation-1' as any,
       household_id: mockHouseholdId,
-      email: 'newuser@example.com',
+      inviter_profile_id: 'user-1' as any,
+      invitee_email: 'newuser@example.com',
       role: 'member',
-      invited_by: 'user-1',
-      invited_at: '2024-01-10T00:00:00Z',
       status: 'pending',
+      token: 'token-123',
+      invited_at: '2024-01-10T00:00:00Z',
+      accepted_at: null,
+      created_at: '2024-01-10T00:00:00Z',
+      updated_at: '2024-01-10T00:00:00Z',
     },
   ];
 
@@ -148,13 +154,17 @@ describe('useHousehold Hook', () => {
       const updatedInvitations: HouseholdInvitation[] = [
         ...mockInvitations,
         {
-          id: 'invitation-2',
+          id: 'invitation-2' as any,
           household_id: mockHouseholdId,
-          email: 'newmember@example.com',
+          inviter_profile_id: 'user-1' as any,
+          invitee_email: 'newmember@example.com',
           role: 'member',
-          invited_by: 'user-1',
-          invited_at: '2024-01-11T00:00:00Z',
           status: 'pending',
+          token: 'token-456',
+          invited_at: '2024-01-11T00:00:00Z',
+          accepted_at: null,
+          created_at: '2024-01-11T00:00:00Z',
+          updated_at: '2024-01-11T00:00:00Z',
         },
       ];
 
@@ -186,18 +196,20 @@ describe('useHousehold Hook', () => {
 
       const addInput: AddManagedMemberInput = {
         display_name: 'Kid Member',
+        role: 'member',
       };
 
       // Mock updated data after add
       const updatedMembers: HouseholdMemberWithProfile[] = [
         ...mockMembers,
         {
-          profile_id: 'profile-3',
+          user_id: 'profile-3' as any,
           household_id: mockHouseholdId,
           role: 'member',
           joined_at: '2024-01-11T00:00:00Z',
           profile: {
-            id: 'profile-3',
+            id: 'profile-3' as any,
+            auth_user_id: null,
             display_name: 'Kid Member',
             member_type: 'managed',
             avatar_url: null,
@@ -268,7 +280,7 @@ describe('useHousehold Hook', () => {
       const profileIdToRemove = 'user-2';
 
       // Mock updated data after removal
-      const updatedMembers = mockMembers.filter((m) => m.profile_id !== profileIdToRemove);
+      const updatedMembers = mockMembers.filter((m) => m.user_id !== profileIdToRemove);
       mockHouseholdService.listMembers.mockResolvedValue(updatedMembers);
 
       await result.current.removeMember(profileIdToRemove);
@@ -335,6 +347,7 @@ describe('useHousehold Hook', () => {
 
       const addInput: AddManagedMemberInput = {
         display_name: 'Test Member',
+        role: 'member',
       };
 
       await expect(result.current.addManagedMember(addInput)).rejects.toThrow(
@@ -434,7 +447,7 @@ describe('useHousehold Hook', () => {
       // Change household
       const newHouseholdId = 'household-456' as HouseholdId;
       const newHousehold: Household = { ...mockHousehold, id: newHouseholdId };
-      const newMembers: HouseholdMemberWithProfile[] = [mockMembers[0]];
+      const newMembers: HouseholdMemberWithProfile[] = [mockMembers[0]!];
 
       vi.mocked(useAuth).mockReturnValue({
         household: newHousehold,
@@ -476,12 +489,13 @@ describe('useHousehold Hook', () => {
       const newMembers: HouseholdMemberWithProfile[] = [
         ...mockMembers,
         {
-          profile_id: 'user-3',
+          user_id: 'user-3' as any,
           household_id: mockHouseholdId,
           role: 'member',
           joined_at: '2024-01-12T00:00:00Z',
           profile: {
-            id: 'user-3',
+            id: 'user-3' as any,
+            auth_user_id: 'auth-user-3' as any,
             display_name: 'New Member',
             member_type: 'authenticated',
             avatar_url: null,

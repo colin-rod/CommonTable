@@ -23,11 +23,15 @@ describe('CalendarWeekView', () => {
       id: 'recipe-1' as RecipeId,
       household_id: 'household-1' as any,
       title: 'Pasta Carbonara',
+      description: null,
       current_version_id: 'version-1' as any,
+      rolling_score: null,
+      tags: [],
+      is_favorite: false,
+      last_cooked_at: null,
       created_by: 'user-1' as any,
       created_at: new Date(),
       updated_at: new Date(),
-      is_favorite: false,
     },
   ];
 
@@ -180,7 +184,7 @@ describe('CalendarWeekView', () => {
     render(<CalendarWeekView />);
 
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
-    await user.click(addButtons[0]);
+    await user.click(addButtons[0]!);
 
     expect(screen.getByText('Add Meal')).toBeInTheDocument();
   });
@@ -192,7 +196,7 @@ describe('CalendarWeekView', () => {
 
     // Open dialog
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
-    await user.click(addButtons[0]);
+    await user.click(addButtons[0]!);
 
     // Close dialog
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
@@ -216,7 +220,7 @@ describe('CalendarWeekView', () => {
 
     // Open dialog
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
-    await user.click(addButtons[0]);
+    await user.click(addButtons[0]!);
 
     // Fill form
     const dateInput = screen.getByLabelText(/date/i);

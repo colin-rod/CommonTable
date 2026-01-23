@@ -83,7 +83,7 @@ describe('LogMealDialog', () => {
 
     // Material UI Rating component - get the container and trigger change event
     const ratingInputs = screen.getAllByRole('radio');
-    const fourStarInput = ratingInputs[3]; // 4 stars (0-indexed)
+    const fourStarInput = ratingInputs[3]!; // 4 stars (0-indexed)
 
     // Fire change event with value
     fireEvent.click(fourStarInput);
@@ -149,7 +149,7 @@ describe('LogMealDialog', () => {
     render(<LogMealDialog {...defaultProps} onClose={onClose} />);
 
     // Select rating (3 stars = index 2)
-    const threeStarInput = screen.getAllByRole('radio')[2];
+    const threeStarInput = screen.getAllByRole('radio')[2]!;
     fireEvent.click(threeStarInput);
 
     // Add notes

@@ -11,21 +11,29 @@ describe('AddCalendarEntryDialog', () => {
       id: 'recipe-1' as RecipeId,
       household_id: 'household-1' as any,
       title: 'Pasta Carbonara',
+      description: null,
       current_version_id: 'version-1' as any,
+      rolling_score: null,
+      tags: [],
+      is_favorite: false,
+      last_cooked_at: null,
       created_by: 'user-1' as any,
       created_at: new Date(),
       updated_at: new Date(),
-      is_favorite: false,
     },
     {
       id: 'recipe-2' as RecipeId,
       household_id: 'household-1' as any,
       title: 'Chicken Curry',
+      description: null,
       current_version_id: 'version-2' as any,
+      rolling_score: null,
+      tags: [],
+      is_favorite: false,
+      last_cooked_at: null,
       created_by: 'user-1' as any,
       created_at: new Date(),
       updated_at: new Date(),
-      is_favorite: false,
     },
   ];
 
@@ -211,7 +219,7 @@ describe('AddCalendarEntryDialog', () => {
 
   it('should disable buttons while submitting', async () => {
     const user = userEvent.setup();
-    const onSubmit = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    const onSubmit = vi.fn(() => new Promise<void>((resolve) => setTimeout(resolve, 100)));
 
     render(<AddCalendarEntryDialog {...defaultProps} onSubmit={onSubmit} />);
 

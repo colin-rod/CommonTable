@@ -62,18 +62,14 @@ describe('RecipeDetailView Component', () => {
     household_id: 'household-1' as any,
     title: 'Pasta Carbonara',
     description: 'A classic Italian pasta dish',
-    servings: null,
-    prep_time_minutes: null,
-    cook_time_minutes: null,
     tags: ['italian', 'pasta'],
+    rolling_score: 4.5,
     last_cooked_at: new Date('2024-01-15'),
     is_favorite: false,
     current_version_id: 'version-1' as any,
     created_by: 'user-1' as any,
     created_at: new Date('2024-01-01'),
     updated_at: new Date('2024-01-01'),
-    rolling_score: 4.5,
-    rating_count: 10,
     current_version: {
       id: 'version-1' as any,
       recipe_id: 'recipe-123' as any,
@@ -83,7 +79,7 @@ describe('RecipeDetailView Component', () => {
       cook_time_minutes: 20,
       ingredients_json: [
         { name: 'pasta', quantity: 400, unit: 'g' },
-        { name: 'eggs', quantity: 4, unit: null },
+        { name: 'eggs', quantity: 4 },
       ],
       steps_json: [
         { position: 1, text: 'Boil pasta' },
@@ -250,11 +246,15 @@ describe('RecipeDetailView Component', () => {
       id: 'image-1' as any,
       recipe_id: 'recipe-123' as any,
       storage_path: 'recipes/image.jpg',
-      url: null,
       alt_text: 'Delicious pasta',
       display_order: 1,
-      uploaded_by: 'user-1' as any,
-      uploaded_at: new Date('2024-01-01'),
+      is_primary: true,
+      is_public: false,
+      width: null,
+      height: null,
+      file_size_bytes: null,
+      created_by: 'user-1' as any,
+      created_at: new Date('2024-01-01'),
     };
 
     it('should not render image if primaryImage is null', () => {

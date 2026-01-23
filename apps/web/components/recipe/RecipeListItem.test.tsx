@@ -20,9 +20,6 @@ describe('RecipeListItem Component', () => {
     household_id: 'household-1' as any,
     title: 'Pasta Carbonara',
     description: null,
-    servings: 4,
-    prep_time_minutes: null,
-    cook_time_minutes: null,
     tags: ['italian', 'pasta'],
     last_cooked_at: new Date('2024-01-15'),
     is_favorite: false,
@@ -31,7 +28,6 @@ describe('RecipeListItem Component', () => {
     created_at: new Date('2024-01-01'),
     updated_at: new Date('2024-01-01'),
     rolling_score: null,
-    rating_count: 0,
   };
 
   beforeEach(() => {

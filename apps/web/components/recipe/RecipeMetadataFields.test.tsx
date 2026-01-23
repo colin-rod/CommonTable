@@ -2,14 +2,14 @@ import { render, screen } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { describe, it, expect } from 'vitest';
 
-import { RecipeMetadataFields } from './RecipeMetadataFields';
+import { RecipeMetadataFields, type RecipeFormValues } from './RecipeMetadataFields';
 
 // Helper component to wrap RecipeMetadataFields with react-hook-form context
 function TestWrapper({ disabled = false }: { disabled?: boolean }) {
   const {
     control,
     formState: { errors },
-  } = useForm({
+  } = useForm<RecipeFormValues>({
     defaultValues: {
       title: '',
       description: '',
@@ -17,10 +17,18 @@ function TestWrapper({ disabled = false }: { disabled?: boolean }) {
       prep_time_minutes: undefined,
       cook_time_minutes: undefined,
       notes: '',
+      tags: [],
     },
   });
 
-  return <RecipeMetadataFields control={control} errors={errors} disabled={disabled} />;
+  return (
+    <RecipeMetadataFields
+      control={control}
+      errors={errors}
+      disabled={disabled}
+      availableTags={[]}
+    />
+  );
 }
 
 describe('RecipeMetadataFields', () => {
@@ -41,8 +49,8 @@ describe('RecipeMetadataFields', () => {
       const {
         control,
         formState: { errors },
-      } = useForm({
-        defaultValues: { title: '' },
+      } = useForm<RecipeFormValues>({
+        defaultValues: { title: '', tags: [] },
       });
 
       // Simulate validation error
@@ -51,7 +59,9 @@ describe('RecipeMetadataFields', () => {
         title: { type: 'required', message: 'Title is required' },
       };
 
-      return <RecipeMetadataFields control={control} errors={errorsWithTitleError} />;
+      return (
+        <RecipeMetadataFields control={control} errors={errorsWithTitleError} availableTags={[]} />
+      );
     }
 
     render(<TestWrapperWithError />);

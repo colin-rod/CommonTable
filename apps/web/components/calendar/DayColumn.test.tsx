@@ -85,7 +85,7 @@ describe('DayColumn', () => {
 
     // Click add meal for breakfast
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
-    await user.click(addButtons[0]); // Breakfast is first
+    await user.click(addButtons[0]!); // Breakfast is first
 
     expect(onAddMeal).toHaveBeenCalledWith(mockDate, 'breakfast');
   });

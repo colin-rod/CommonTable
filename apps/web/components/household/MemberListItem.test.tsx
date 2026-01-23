@@ -18,32 +18,34 @@ describe('MemberListItem Component', () => {
   const mockAlert = vi.fn();
 
   const mockAuthenticatedMember: HouseholdMemberWithProfile = {
-    user_id: 'user-123' as any,
+    user_id: 'profile-123' as any,
     household_id: 'household-1' as any,
     role: 'member',
-    joined_at: new Date('2024-01-15T10:00:00Z'),
+    joined_at: '2024-01-15T10:00:00Z',
     profile: {
       id: 'profile-123' as any,
-      user_id: 'user-123' as any,
+      auth_user_id: 'user-123' as any,
       display_name: 'John Doe',
+      avatar_url: null,
       member_type: 'authenticated',
-      created_at: new Date('2024-01-01'),
-      updated_at: new Date('2024-01-01'),
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
     },
   };
 
   const mockManagedMember: HouseholdMemberWithProfile = {
-    user_id: 'user-456' as any,
+    user_id: 'profile-456' as any,
     household_id: 'household-1' as any,
     role: 'member',
-    joined_at: new Date('2024-01-20T10:00:00Z'),
+    joined_at: '2024-01-20T10:00:00Z',
     profile: {
       id: 'profile-456' as any,
-      user_id: 'user-456' as any,
+      auth_user_id: null,
       display_name: 'Little Jane',
+      avatar_url: null,
       member_type: 'managed',
-      created_at: new Date('2024-01-01'),
-      updated_at: new Date('2024-01-01'),
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
     },
   };
 
