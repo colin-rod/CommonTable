@@ -9,6 +9,8 @@ export * from './services/HouseholdService';
 export * from './services/MealRequestService';
 export * from './services/RecipeService';
 export * from './services/RecipeImageService';
+export * from './services/TagService';
+export * from './services/AiTagSuggestionService';
 export * from './env';
 
 // Re-export types for convenience
