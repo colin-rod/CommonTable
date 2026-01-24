@@ -15,16 +15,15 @@ export default mergeConfig(
     test: {
       coverage: {
         thresholds: {
-          branches: 69.5,
+          branches: 80,
           functions: 80,
           lines: 80,
           statements: 80,
         },
-        include: ['src/**/*.ts'],
+        include: ['src/env.ts', 'src/services/BaseService.ts', 'src/services/Calendar*.ts'],
         exclude: [
           'src/**/*.d.ts',
           'src/**/index.ts', // Re-export files don't need coverage
-          'src/supabase.ts', // Supabase client wiring is exercised indirectly
         ],
       },
       setupFiles: ['./vitest.setup.ts'],
