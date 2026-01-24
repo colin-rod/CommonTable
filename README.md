@@ -61,6 +61,7 @@ pnpm web:build        # Build web app only
 pnpm test             # Run tests in all packages
 pnpm test:watch       # Run tests in watch mode
 pnpm test:coverage    # Run tests with coverage
+pnpm test:integration # Run integration tests (requires local Supabase)
 
 # Code Quality
 pnpm type-check       # Type check all packages
@@ -77,6 +78,15 @@ pnpm db:migrate       # Create new migration file
 pnpm db:push          # Push migrations to remote Supabase
 pnpm db:pull          # Pull remote schema to local migrations
 pnpm db:types         # Generate TypeScript types from remote schema
+```
+
+### Integration Tests
+
+Integration tests are opt-in and run against the local Supabase stack.
+
+```bash
+supabase start
+RUN_INTEGRATION_TESTS=true pnpm test:integration
 ```
 
 ### Supabase Setup
