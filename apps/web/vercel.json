@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd ../.. && pnpm install && pnpm build --filter=@commontable/web",
+  "installCommand": "echo 'Skipping install, using buildCommand instead'",
+  "framework": "nextjs"
+}
