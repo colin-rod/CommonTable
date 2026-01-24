@@ -10,8 +10,14 @@ import {
   TextField,
   Stack,
   Autocomplete,
+  Typography,
+  Box,
 } from '@mui/material';
 import { useState } from 'react';
+
+import { SuggestedRecipesList } from '../recipes/SuggestedRecipesList';
+
+import { useRecipeSuggestions } from '@/hooks/useRecipeSuggestions';
 
 interface AddCalendarEntryDialogProps {
   open: boolean;
@@ -52,6 +58,15 @@ export function AddCalendarEntryDialog({
   const [mealSlot, setMealSlot] = useState<MealSlot>(initialMealSlot || 'dinner');
   const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch recipe suggestions based on meal slot
+  const { suggestions, loading: suggestionsLoading } = useRecipeSuggestions({
+    context: {
+      mealSlot,
+      plannedDate: plannedDate ? new Date(plannedDate) : undefined,
+    },
+    enabled: open, // Only fetch when dialog is open
+  });
 
   const handleSubmit = async () => {
     if (!plannedDate) return;
@@ -102,20 +117,43 @@ export function AddCalendarEntryDialog({
 
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
-          {/* Recipe Selection */}
-          <Autocomplete
-            options={recipes}
-            getOptionLabel={(recipe) => recipe.title}
-            value={selectedRecipe}
-            onChange={(_, newValue) => setSelectedRecipe(newValue)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Recipe (optional)"
-                helperText="Leave blank for notes-only entry"
-              />
-            )}
-          />
+          {/* Suggested Recipes Section */}
+          <Box>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Suggested Recipes
+            </Typography>
+            <SuggestedRecipesList
+              suggestions={suggestions}
+              onSelectRecipe={(recipeId) => {
+                const recipe = recipes.find((r) => r.id === recipeId);
+                if (recipe) {
+                  setSelectedRecipe(recipe);
+                }
+              }}
+              loading={suggestionsLoading}
+              emptyMessage="No suggestions. Browse all recipes below."
+            />
+          </Box>
+
+          {/* Manual Recipe Selection */}
+          <Box>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Browse All Recipes
+            </Typography>
+            <Autocomplete
+              options={recipes}
+              getOptionLabel={(recipe) => recipe.title}
+              value={selectedRecipe}
+              onChange={(_, newValue) => setSelectedRecipe(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Recipe (optional)"
+                  helperText="Leave blank for notes-only entry"
+                />
+              )}
+            />
+          </Box>
 
           {/* Date */}
           <TextField

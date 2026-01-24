@@ -212,3 +212,31 @@ export interface CookingEventWithRecipeAndProfile extends CookingEvent {
   recipe_title: string;
   cooked_by_name: string;
 }
+
+// Recipe suggestion types (for AI Assist - Issue 8.3)
+
+// Badge types for suggested recipes
+export type SuggestionBadge = 'Favorite' | 'Top Rated' | 'New Recipe' | 'Try Again' | 'Classic';
+
+// Context for generating recipe suggestions
+export interface SuggestionContext {
+  mealSlot?: MealSlot; // Optional meal slot context (breakfast, lunch, dinner, snack)
+  plannedDate?: Date; // Optional planned date (for future seasonal tag matching)
+}
+
+// Weights for suggestion scoring algorithm
+export interface SuggestionWeights {
+  favoriteWeight: number; // Weight for is_favorite flag (default: 0.25)
+  recencyWeight: number; // Weight for last_cooked_at recency (default: 0.15)
+  ratingWeight: number; // Weight for rolling_score (default: 0.20)
+  varietyWeight: number; // Weight for variety/rotation (default: 0.15)
+  tagMatchWeight: number; // Weight for contextual tag matching (default: 0.25)
+}
+
+// Recipe suggestion result
+export interface RecipeSuggestion {
+  recipe: Recipe; // Full recipe object
+  score: number; // Computed suggestion score (0.0 to 1.0+)
+  badge: SuggestionBadge; // Badge to display ('Favorite', 'Top Rated', etc.)
+  matchingTags: string[]; // Tags that matched the suggestion context
+}
