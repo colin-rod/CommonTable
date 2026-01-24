@@ -152,7 +152,7 @@ describe('MemberListItem Component', () => {
       await user.click(deleteButton);
 
       await waitFor(() => {
-        expect(mockRemoveMember).toHaveBeenCalledWith('user-123');
+        expect(mockRemoveMember).toHaveBeenCalledWith('profile-123');
       });
     });
 
@@ -205,7 +205,7 @@ describe('MemberListItem Component', () => {
       expect(mockConfirm).toHaveBeenCalledWith('Remove Little Jane from household?');
 
       await waitFor(() => {
-        expect(mockRemoveMember).toHaveBeenCalledWith('user-456');
+        expect(mockRemoveMember).toHaveBeenCalledWith('profile-456');
       });
     });
   });

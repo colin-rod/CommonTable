@@ -121,6 +121,7 @@ describe('AddMemberDialog Component', () => {
       await waitFor(() => {
         expect(mockAddManagedMember).toHaveBeenCalledWith({
           display_name: 'John Doe',
+          role: 'member',
         });
       });
     });
@@ -140,6 +141,7 @@ describe('AddMemberDialog Component', () => {
       await waitFor(() => {
         expect(mockAddManagedMember).toHaveBeenCalledWith({
           display_name: 'John Doe',
+          role: 'member',
         });
       });
     });

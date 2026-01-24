@@ -48,6 +48,23 @@ vi.mock('@commontable/api-client', () => ({
       created_by: 'user-1' as any,
       created_at: new Date(),
     }),
+    getWithVersion: vi.fn().mockResolvedValue({
+      id: 'recipe-1',
+      current_version_id: 'version-1',
+      current_version: {
+        id: 'version-1',
+        recipe_id: 'recipe-1',
+        version_number: 1,
+        servings: 4,
+        ingredients_json: [],
+        steps_json: [],
+        prep_time_minutes: null,
+        cook_time_minutes: null,
+        notes: null,
+        created_by: 'user-1' as any,
+        created_at: new Date(),
+      },
+    }),
   })),
 }));
 
@@ -346,7 +363,7 @@ describe('CalendarEntryCard', () => {
       await user.click(submitButton);
 
       // Wait for async submission
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(onMarkComplete).toHaveBeenCalledTimes(1);
       });
     });
@@ -366,7 +383,7 @@ describe('CalendarEntryCard', () => {
       await user.click(submitButton);
 
       // Wait for async submission
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(screen.queryByText(/rate this meal/i)).not.toBeInTheDocument();
       });
     });
@@ -388,7 +405,7 @@ describe('CalendarEntryCard', () => {
       await user.click(submitButton);
 
       // Wait for async submission to fail
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(screen.getByText(/rate this meal/i)).toBeInTheDocument();
       });
     });
@@ -436,7 +453,7 @@ describe('CalendarEntryCard', () => {
       const skipRatingButton = screen.getByRole('button', { name: /skip rating/i });
       await user.click(skipRatingButton);
 
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(screen.queryByText(/rate this meal/i)).not.toBeInTheDocument();
       });
     });
@@ -453,7 +470,7 @@ describe('CalendarEntryCard', () => {
       const skipRatingButton = screen.getByRole('button', { name: /skip rating/i });
       await user.click(skipRatingButton);
 
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(onMarkComplete).toHaveBeenCalledTimes(1);
       });
     });

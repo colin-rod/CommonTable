@@ -5,6 +5,15 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { AddCalendarEntryDialog } from './AddCalendarEntryDialog';
 
+vi.mock('@/hooks/useRecipeSuggestions', () => ({
+  useRecipeSuggestions: vi.fn(() => ({
+    suggestions: [],
+    loading: false,
+    error: null,
+    refetch: vi.fn(),
+  })),
+}));
+
 describe('AddCalendarEntryDialog', () => {
   const mockRecipes: Recipe[] = [
     {
