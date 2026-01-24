@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
+import { integrationTestStatusPromise } from '../setup';
 import {
   getTestClient,
   resetDatabase,
@@ -26,7 +27,11 @@ import {
  * - Database migrations must be applied
  */
 
-describe('RLS Policies - Household Isolation', () => {
+const integrationStatus = await integrationTestStatusPromise;
+const describeIntegration =
+  integrationStatus.enabled && integrationStatus.supabaseRunning ? describe : describe.skip;
+
+describeIntegration('RLS Policies - Household Isolation', () => {
   let user1: { userId: string; session: Session };
   let user2: { userId: string; session: Session };
   let household1Id: string;
