@@ -57,6 +57,8 @@ interface MockQueryBuilder {
   single: ReturnType<typeof vi.fn>;
   maybeSingle: ReturnType<typeof vi.fn>;
   range: ReturnType<typeof vi.fn>;
+  in: ReturnType<typeof vi.fn>;
+  then?: (resolve: (value: any) => void, reject?: (reason: any) => void) => Promise<any>;
 }
 
 /**
@@ -78,6 +80,11 @@ function createMockQueryBuilder<T>(resolvedValue?: {
     single: vi.fn().mockResolvedValue(defaultValue),
     maybeSingle: vi.fn().mockResolvedValue(defaultValue),
     range: vi.fn().mockResolvedValue(defaultValue),
+    in: vi.fn().mockReturnThis(),
+    then: (resolve) => {
+      resolve(defaultValue);
+      return Promise.resolve(defaultValue);
+    },
   };
 
   return builder;
@@ -404,7 +411,7 @@ describe('CookingEventService', () => {
 
   describe('getByHouseholdId', () => {
     it('should return all cooking events for a household sorted by date DESC', async () => {
-      const mockEvents: MockCookingEvent[] = [
+      const mockEvents = [
         {
           id: '00000000-0000-0000-0000-000000000006',
           recipe_id: mockRecipeId,
@@ -415,40 +422,58 @@ describe('CookingEventService', () => {
           rating: 5,
           notes: null,
           cooked_by: mockUserId,
+          recipes: { title: 'Pasta Carbonara' },
         },
       ];
 
-      const builder = createMockQueryBuilder({ data: mockEvents, error: null });
-      // order() returns this to allow chaining .range()
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(Promise.resolve({ data: mockEvents, error: null }));
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+      const mockProfiles = [{ id: mockUserId, display_name: 'John Doe' }];
+
+      const eventsBuilder = createMockQueryBuilder({ data: mockEvents, error: null });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(Promise.resolve({ data: mockEvents, error: null }));
+
+      const profilesBuilder = createMockQueryBuilder({ data: mockProfiles, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       const result = await service.getByHouseholdId(mockHouseholdId);
 
       expect(result).toHaveLength(1);
-      expect(builder.eq).toHaveBeenCalledWith('household_id', mockHouseholdId);
-      expect(builder.order).toHaveBeenCalledWith('cooked_at', { ascending: false });
+      expect(eventsBuilder.eq).toHaveBeenCalledWith('household_id', mockHouseholdId);
+      expect(eventsBuilder.order).toHaveBeenCalledWith('cooked_at', { ascending: false });
     });
 
     it('should support pagination with limit and offset', async () => {
       const mockEvents: MockCookingEvent[] = [];
 
-      const builder = createMockQueryBuilder({ data: mockEvents, error: null });
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(Promise.resolve({ data: mockEvents, error: null }));
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+      const eventsBuilder = createMockQueryBuilder({ data: mockEvents, error: null });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(Promise.resolve({ data: mockEvents, error: null }));
+
+      const profilesBuilder = createMockQueryBuilder({ data: [], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       await service.getByHouseholdId(mockHouseholdId, 10, 5);
 
-      expect(builder.range).toHaveBeenCalledWith(5, 14); // offset 5, limit 10 → range(5, 14)
+      expect(eventsBuilder.range).toHaveBeenCalledWith(5, 14); // offset 5, limit 10 → range(5, 14)
     });
 
     it('should return empty array if no events exist', async () => {
-      const builder = createMockQueryBuilder({ data: [], error: null });
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(Promise.resolve({ data: [], error: null }));
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+      const eventsBuilder = createMockQueryBuilder({ data: [], error: null });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(Promise.resolve({ data: [], error: null }));
+
+      // No profiles to fetch when there are no events
+      const profilesBuilder = createMockQueryBuilder({ data: [], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       const result = await service.getByHouseholdId(mockHouseholdId);
 
@@ -472,10 +497,19 @@ describe('CookingEventService', () => {
         },
       ];
 
-      const builder = createMockQueryBuilder({ data: mockEventsWithJoin, error: null });
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(Promise.resolve({ data: mockEventsWithJoin, error: null }));
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+      const mockProfiles = [{ id: mockUserId, display_name: 'John Doe' }];
+
+      const eventsBuilder = createMockQueryBuilder({ data: mockEventsWithJoin, error: null });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(
+        Promise.resolve({ data: mockEventsWithJoin, error: null }),
+      );
+
+      const profilesBuilder = createMockQueryBuilder({ data: mockProfiles, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       const result = await service.getByHouseholdId(mockHouseholdId);
 
@@ -504,12 +538,21 @@ describe('CookingEventService', () => {
         },
       ];
 
-      const builder = createMockQueryBuilder({ data: mockEventsWithMissingProfile, error: null });
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(
+      const eventsBuilder = createMockQueryBuilder({
+        data: mockEventsWithMissingProfile,
+        error: null,
+      });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(
         Promise.resolve({ data: mockEventsWithMissingProfile, error: null }),
       );
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+
+      // Mock profiles query returning empty (profile not found)
+      const profilesBuilder = createMockQueryBuilder({ data: [], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       const result = await service.getByHouseholdId(mockHouseholdId);
 

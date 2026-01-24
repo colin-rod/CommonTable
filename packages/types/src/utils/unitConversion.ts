@@ -277,6 +277,7 @@ export function convertToSystem(
 
   // Convert
   const convertedValue = convert(value, normalized, targetUnit);
+  /* c8 ignore next 3 - defensive code: getPreferredUnit ensures compatible categories */
   if (convertedValue === null) {
     return null;
   }

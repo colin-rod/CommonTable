@@ -23,6 +23,12 @@ export default mergeConfig(
         exclude: [
           'src/**/*.d.ts',
           'src/**/index.ts', // Re-export files don't need coverage
+          'src/api.ts', // Pure interfaces
+          'src/database.ts', // Re-export only
+          'src/database.types.ts', // Supabase-generated types
+          'src/models.ts', // Pure interfaces and types
+          'src/models/**/*.ts', // Type aliases and interfaces
+          'src/supabase.ts', // Type definitions only
         ],
       },
     },

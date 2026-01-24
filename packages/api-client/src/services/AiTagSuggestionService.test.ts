@@ -6,6 +6,7 @@ import type {
   RecipeVersionId,
   Tag,
   TagId,
+  UserId,
 } from '@commontable/types';
 import { NotFoundError } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -33,6 +34,7 @@ describe('AiTagSuggestionService', () => {
         id: 'tag-1' as TagId,
         household_id: 'household-1' as HouseholdId,
         name: 'italian',
+        created_by: 'user-123' as UserId,
         created_at: new Date(),
         updated_at: new Date(),
       };

@@ -22,6 +22,11 @@ import {
   UnauthorizedError,
   ConflictError,
   SyncError,
+  EmailVerificationError,
+  StorageError,
+  ImageLimitExceededError,
+  InvalidFileTypeError,
+  FileTooLargeError,
 } from './errors';
 
 describe('AppError', () => {
@@ -175,6 +180,155 @@ describe('SyncError', () => {
 
   it('should be an instance of AppError', () => {
     const error = new SyncError('Sync failed');
+
+    expect(error).toBeInstanceOf(AppError);
+    expect(error).toBeInstanceOf(Error);
+  });
+});
+
+describe('EmailVerificationError', () => {
+  it('should create an email verification error with 400 status code', () => {
+    const error = new EmailVerificationError('Invalid verification token');
+
+    expect(error.message).toBe('Invalid verification token');
+    expect(error.code).toBe('EMAIL_VERIFICATION_ERROR');
+    expect(error.statusCode).toBe(400);
+    expect(error.name).toBe('EmailVerificationError');
+  });
+
+  it('should include metadata when provided', () => {
+    const metadata = { token: 'abc123', userId: '456' };
+    const error = new EmailVerificationError('Token expired', metadata);
+
+    expect(error.metadata).toEqual(metadata);
+  });
+
+  it('should be an instance of AppError', () => {
+    const error = new EmailVerificationError('Verification failed');
+
+    expect(error).toBeInstanceOf(AppError);
+    expect(error).toBeInstanceOf(Error);
+  });
+});
+
+describe('StorageError', () => {
+  it('should create a storage error with 500 status code', () => {
+    const error = new StorageError('Failed to upload file');
+
+    expect(error.message).toBe('Failed to upload file');
+    expect(error.code).toBe('STORAGE_ERROR');
+    expect(error.statusCode).toBe(500);
+    expect(error.name).toBe('StorageError');
+  });
+
+  it('should include metadata when provided', () => {
+    const metadata = { path: '/uploads/image.jpg', bucket: 'recipes' };
+    const error = new StorageError('Upload failed', metadata);
+
+    expect(error.metadata).toEqual(metadata);
+  });
+
+  it('should be an instance of AppError', () => {
+    const error = new StorageError('Storage operation failed');
+
+    expect(error).toBeInstanceOf(AppError);
+    expect(error).toBeInstanceOf(Error);
+  });
+});
+
+describe('ImageLimitExceededError', () => {
+  it('should create an image limit exceeded error', () => {
+    const error = new ImageLimitExceededError('recipe-123', 10, 10);
+
+    expect(error.message).toBe('Maximum 10 images per recipe');
+    expect(error.code).toBe('IMAGE_LIMIT_EXCEEDED');
+    expect(error.statusCode).toBe(400);
+    expect(error.name).toBe('ImageLimitExceededError');
+  });
+
+  it('should include recipeId, currentCount, and maxCount in metadata', () => {
+    const error = new ImageLimitExceededError('recipe-456', 8, 10);
+
+    expect(error.metadata).toEqual({
+      recipeId: 'recipe-456',
+      currentCount: 8,
+      maxCount: 10,
+    });
+  });
+
+  it('should be an instance of AppError', () => {
+    const error = new ImageLimitExceededError('recipe-789', 10, 10);
+
+    expect(error).toBeInstanceOf(AppError);
+    expect(error).toBeInstanceOf(Error);
+  });
+});
+
+describe('InvalidFileTypeError', () => {
+  it('should create an invalid file type error', () => {
+    const allowedTypes = ['image/jpeg', 'image/png'] as const;
+    const error = new InvalidFileTypeError('image/gif', allowedTypes);
+
+    expect(error.message).toBe(
+      'Invalid file type: image/gif. Allowed types: image/jpeg, image/png',
+    );
+    expect(error.code).toBe('INVALID_FILE_TYPE');
+    expect(error.statusCode).toBe(400);
+    expect(error.name).toBe('InvalidFileTypeError');
+  });
+
+  it('should include providedType and allowedTypes in metadata', () => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'] as const;
+    const error = new InvalidFileTypeError('application/pdf', allowedTypes);
+
+    expect(error.metadata).toEqual({
+      providedType: 'application/pdf',
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    });
+  });
+
+  it('should be an instance of AppError', () => {
+    const allowedTypes = ['image/jpeg'] as const;
+    const error = new InvalidFileTypeError('image/svg', allowedTypes);
+
+    expect(error).toBeInstanceOf(AppError);
+    expect(error).toBeInstanceOf(Error);
+  });
+});
+
+describe('FileTooLargeError', () => {
+  it('should create a file too large error', () => {
+    const fileSize = 6 * 1024 * 1024; // 6MB
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const error = new FileTooLargeError(fileSize, maxSize);
+
+    expect(error.message).toBe('File size 6.00MB exceeds maximum 5MB');
+    expect(error.code).toBe('FILE_TOO_LARGE');
+    expect(error.statusCode).toBe(400);
+    expect(error.name).toBe('FileTooLargeError');
+  });
+
+  it('should include fileSize and maxSize in metadata', () => {
+    const fileSize = 7 * 1024 * 1024;
+    const maxSize = 5 * 1024 * 1024;
+    const error = new FileTooLargeError(fileSize, maxSize);
+
+    expect(error.metadata).toEqual({
+      fileSize: 7 * 1024 * 1024,
+      maxSize: 5 * 1024 * 1024,
+    });
+  });
+
+  it('should format file sizes correctly', () => {
+    const fileSize = 1.5 * 1024 * 1024; // 1.5MB
+    const maxSize = 1 * 1024 * 1024; // 1MB
+    const error = new FileTooLargeError(fileSize, maxSize);
+
+    expect(error.message).toBe('File size 1.50MB exceeds maximum 1MB');
+  });
+
+  it('should be an instance of AppError', () => {
+    const error = new FileTooLargeError(6000000, 5000000);
 
     expect(error).toBeInstanceOf(AppError);
     expect(error).toBeInstanceOf(Error);

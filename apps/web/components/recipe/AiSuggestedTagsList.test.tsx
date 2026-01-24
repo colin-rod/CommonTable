@@ -1,8 +1,10 @@
 import type {
   AiTagSuggestionId,
   AiTagSuggestionWithTag,
+  HouseholdId,
   RecipeVersionId,
   TagId,
+  UserId,
 } from '@commontable/types';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -25,8 +27,9 @@ describe('AiSuggestedTagsList', () => {
       created_at: new Date(),
       tag: {
         id: 'tag-1' as TagId,
-        household_id: 'household-1',
+        household_id: 'household-1' as HouseholdId,
         name: 'italian',
+        created_by: 'user-123' as UserId,
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -42,8 +45,9 @@ describe('AiSuggestedTagsList', () => {
       created_at: new Date(),
       tag: {
         id: 'tag-2' as TagId,
-        household_id: 'household-1',
+        household_id: 'household-1' as HouseholdId,
         name: 'pasta',
+        created_by: 'user-123' as UserId,
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -115,7 +119,7 @@ describe('AiSuggestedTagsList', () => {
 
     // Find delete buttons by aria-label (MUI Chip adds this)
     const deleteButtons = screen.getAllByTestId('CancelIcon');
-    await user.click(deleteButtons[0]);
+    await user.click(deleteButtons[0]!);
 
     await waitFor(() => {
       expect(mockOnReject).toHaveBeenCalledWith('suggestion-1');
@@ -147,7 +151,7 @@ describe('AiSuggestedTagsList', () => {
 
     render(
       <AiSuggestedTagsList
-        suggestions={[mockSuggestions[0]]}
+        suggestions={[mockSuggestions[0]!]}
         recipeVersionId={mockVersionId}
         onAccept={mockOnAccept}
         onReject={mockOnReject}
@@ -184,7 +188,9 @@ describe('AiSuggestedTagsList', () => {
 
   it('should disable chips during loading', async () => {
     const user = userEvent.setup();
-    const mockOnAccept = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    const mockOnAccept = vi
+      .fn()
+      .mockImplementation(() => new Promise<void>((resolve) => setTimeout(resolve, 100)));
     const mockOnReject = vi.fn();
     const mockOnAcceptAll = vi.fn();
 
