@@ -169,7 +169,7 @@ describe('useRecipeSuggestions Hook', () => {
       const { result, rerender } = renderHook(
         ({ context }: { context: SuggestionContext }) => useRecipeSuggestions({ context }),
         {
-          initialProps: { context: { mealSlot: 'dinner' as const } },
+          initialProps: { context: { mealSlot: 'dinner' } as SuggestionContext },
         },
       );
 
@@ -181,7 +181,7 @@ describe('useRecipeSuggestions Hook', () => {
       vi.mocked(getRecipeSuggestions).mockClear();
 
       // Change context
-      rerender({ context: { mealSlot: 'breakfast' as const } });
+      rerender({ context: { mealSlot: 'breakfast' } as SuggestionContext });
 
       await waitFor(() => {
         expect(getRecipeSuggestions).toHaveBeenCalledWith(
