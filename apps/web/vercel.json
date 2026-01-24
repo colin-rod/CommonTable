@@ -1,5 +1,0 @@
-{
-  "buildCommand": "pnpm turbo run build --filter=@commontable/web",
-  "installCommand": "pnpm install --frozen-lockfile",
-  "framework": "nextjs"
-}
