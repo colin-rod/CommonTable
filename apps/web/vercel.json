@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd ../.. && pnpm install && pnpm build --filter=@commontable/web",
-  "installCommand": "echo 'Skipping install, using buildCommand instead'",
+  "buildCommand": "pnpm turbo run build --filter=@commontable/web",
+  "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs"
 }
