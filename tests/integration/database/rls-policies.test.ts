@@ -2,7 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import {
-  getTestClient,
+  getAdminClient,
   resetDatabase,
   createTestUser,
   signOutTestUser,
@@ -44,18 +44,18 @@ describe('RLS Policies - Household Isolation', () => {
     user2 = await createTestUser(credentials2);
 
     // Create households for each user
-    const client = getTestClient();
+    const adminClient = getAdminClient();
 
     // User 1 household
     const household1 = createTestHousehold({ name: 'Household 1' });
     household1Id = household1.id;
-    const { error: h1Error } = await client.from('households').insert(household1);
+    const { error: h1Error } = await adminClient.from('households').insert(household1);
     if (h1Error) throw h1Error;
 
     // User 2 household
     const household2 = createTestHousehold({ name: 'Household 2' });
     household2Id = household2.id;
-    const { error: h2Error } = await client.from('households').insert(household2);
+    const { error: h2Error } = await adminClient.from('households').insert(household2);
     if (h2Error) throw h2Error;
 
     // Add users to their households
@@ -70,10 +70,10 @@ describe('RLS Policies - Household Isolation', () => {
       role: 'admin',
     });
 
-    const { error: m1Error } = await client.from('household_members').insert(member1);
+    const { error: m1Error } = await adminClient.from('household_members').insert(member1);
     if (m1Error) throw m1Error;
 
-    const { error: m2Error } = await client.from('household_members').insert(member2);
+    const { error: m2Error } = await adminClient.from('household_members').insert(member2);
     if (m2Error) throw m2Error;
   });
 

@@ -8,7 +8,12 @@ import type { SupabaseClient, Session } from '@supabase/supabase-js';
  * a local Supabase instance.
  */
 
+const DEFAULT_SUPABASE_URL = 'http://127.0.0.1:54321';
+const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+
 let testClient: SupabaseClient | null = null;
+let adminClient: SupabaseClient | null = null;
 
 /**
  * Get or create test Supabase client
@@ -16,10 +21,8 @@ let testClient: SupabaseClient | null = null;
  */
 export function getTestClient(): SupabaseClient {
   if (!testClient) {
-    const supabaseUrl = process.env.SUPABASE_TEST_URL || 'http://127.0.0.1:54321';
-    const supabaseAnonKey =
-      process.env.SUPABASE_TEST_ANON_KEY ||
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+    const supabaseUrl = process.env.SUPABASE_TEST_URL || DEFAULT_SUPABASE_URL;
+    const supabaseAnonKey = process.env.SUPABASE_TEST_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
     testClient = createClient(supabaseUrl, supabaseAnonKey);
   }
@@ -28,11 +31,32 @@ export function getTestClient(): SupabaseClient {
 }
 
 /**
+ * Get or create admin Supabase client
+ * Requires service role key for setup/seed operations that bypass RLS
+ */
+export function getAdminClient(): SupabaseClient {
+  if (!adminClient) {
+    const supabaseUrl = process.env.SUPABASE_TEST_URL || DEFAULT_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY;
+
+    if (!serviceRoleKey) {
+      throw new Error(
+        'Missing SUPABASE_TEST_SERVICE_ROLE_KEY. Set this env var to the local Supabase service role key for admin test setup operations.'
+      );
+    }
+
+    adminClient = createClient(supabaseUrl, serviceRoleKey);
+  }
+
+  return adminClient;
+}
+
+/**
  * Reset database to clean state
  * Truncates all tables and resets sequences
  */
 export async function resetDatabase(): Promise<void> {
-  const client = getTestClient();
+  const client = getAdminClient();
 
   // List of tables to truncate (in order to respect foreign key constraints)
   const tables = [
@@ -66,7 +90,7 @@ export async function seedDatabase(data: {
   households?: unknown[];
   recipes?: unknown[];
 }): Promise<void> {
-  const client = getTestClient();
+  const client = getAdminClient();
 
   // Seed households
   if (data.households && data.households.length > 0) {
@@ -157,10 +181,8 @@ export async function signOutTestUser(): Promise<void> {
  * Get authenticated client for a specific user session
  */
 export function getAuthenticatedClient(accessToken: string): SupabaseClient {
-  const supabaseUrl = process.env.SUPABASE_TEST_URL || 'http://127.0.0.1:54321';
-  const supabaseAnonKey =
-    process.env.SUPABASE_TEST_ANON_KEY ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+  const supabaseUrl = process.env.SUPABASE_TEST_URL || DEFAULT_SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_TEST_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
   const client = createClient(supabaseUrl, supabaseAnonKey, {
     global: {
@@ -201,4 +223,5 @@ export async function isSupabaseRunning(): Promise<boolean> {
 export async function cleanup(): Promise<void> {
   await signOutTestUser();
   testClient = null;
+  adminClient = null;
 }
