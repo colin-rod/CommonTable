@@ -87,29 +87,31 @@ pnpm db:types         # Generate TypeScript types from remote schema
 
 #### 1. Environment Variables
 
-Get your Supabase credentials from [Project Settings → API](https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd/settings/api):
+Get your Supabase credentials from [Project Settings → API](https://supabase.com/dashboard/project/your-project-id/settings/api):
 
 ```bash
 # Copy example env file
 cp apps/web/.env.example apps/web/.env.local
 
 # Edit apps/web/.env.local with your credentials:
-NEXT_PUBLIC_SUPABASE_URL=https://lrelbxzvndbmfpxhgosd.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-from-dashboard
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-from-dashboard
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+SUPABASE_SECRET_KEY=sb_secret_...
+OPENAI_API_KEY=sk-proj-...
 ```
 
 **Security Notes**:
 
 - `NEXT_PUBLIC_*` variables are exposed to the browser
-- `SUPABASE_SERVICE_ROLE_KEY` is SERVER-ONLY and bypasses RLS
-- Never commit `.env.local` to version control
+- `SUPABASE_SECRET_KEY` is SERVER-ONLY and bypasses RLS
+- **Never commit `.env.local` to version control** (already in `.gitignore`)
+- This project uses Supabase's **new Publishable/Secret key system**, not legacy anon/service_role keys
 
 #### 2. Remote Supabase Project
 
-The project is linked to: `https://lrelbxzvndbmfpxhgosd.supabase.co`
+The project is linked to: `https://your-project-id.supabase.co`
 
-Access **Supabase Dashboard** at [https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd](https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd) to:
+Access **Supabase Dashboard** at [https://supabase.com/dashboard/project/your-project-id](https://supabase.com/dashboard/project/your-project-id) to:
 
 - View tables and data (Table Editor)
 - Test RLS policies (SQL Editor)
