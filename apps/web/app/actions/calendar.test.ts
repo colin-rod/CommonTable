@@ -8,22 +8,31 @@ import {
   markCalendarEntryCompleted,
 } from './calendar';
 
+const { mockSupabaseClient, mockCalendarService, calendarServiceClients } = vi.hoisted(() => ({
+  mockSupabaseClient: {},
+  mockCalendarService: {
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    updateStatus: vi.fn(),
+  },
+  calendarServiceClients: [] as unknown[],
+}));
+
 // Mock next/cache
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }));
 
-// Mock CalendarService
-const mockCalendarService = {
-  create: vi.fn(),
-  update: vi.fn(),
-  delete: vi.fn(),
-  updateStatus: vi.fn(),
-};
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(async () => mockSupabaseClient),
+}));
 
 vi.mock('@commontable/api-client', () => ({
-  CalendarService: vi.fn(() => mockCalendarService),
-  createClient: vi.fn(() => ({})),
+  CalendarService: vi.fn((client: unknown) => {
+    calendarServiceClients.push(client);
+    return mockCalendarService;
+  }),
 }));
 
 describe('calendar server actions', () => {
@@ -42,6 +51,7 @@ describe('calendar server actions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    calendarServiceClients.length = 0;
   });
 
   describe('createCalendarEntry', () => {
@@ -59,6 +69,7 @@ describe('calendar server actions', () => {
 
       expect(result).toEqual({ success: true, data: mockEntry });
       expect(mockCalendarService.create).toHaveBeenCalledWith(input);
+      expect(calendarServiceClients.at(-1)).toBe(mockSupabaseClient);
     });
 
     it('should return error when creation fails', async () => {
@@ -106,6 +117,7 @@ describe('calendar server actions', () => {
 
       expect(result).toEqual({ success: true, data: updatedEntry });
       expect(mockCalendarService.update).toHaveBeenCalledWith('entry-1', input);
+      expect(calendarServiceClients.at(-1)).toBe(mockSupabaseClient);
     });
 
     it('should return error when update fails', async () => {
@@ -130,6 +142,7 @@ describe('calendar server actions', () => {
 
       expect(result).toEqual({ success: true, data: undefined });
       expect(mockCalendarService.delete).toHaveBeenCalledWith('entry-1');
+      expect(calendarServiceClients.at(-1)).toBe(mockSupabaseClient);
     });
 
     it('should return error when deletion fails', async () => {
@@ -151,6 +164,7 @@ describe('calendar server actions', () => {
 
       expect(result).toEqual({ success: true, data: completedEntry });
       expect(mockCalendarService.updateStatus).toHaveBeenCalledWith('entry-1', 'completed');
+      expect(calendarServiceClients.at(-1)).toBe(mockSupabaseClient);
     });
 
     it('should return error when status update fails', async () => {
