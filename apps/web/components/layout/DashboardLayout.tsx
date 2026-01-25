@@ -21,6 +21,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import type { ReactElement, ReactNode, MouseEvent } from 'react';
@@ -35,7 +36,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
  */
 interface NavItem {
   label: string;
-  href: string;
+  href: Route;
   icon: ReactElement;
 }
 
