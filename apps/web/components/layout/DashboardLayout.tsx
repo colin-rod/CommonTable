@@ -173,17 +173,21 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           const isActive = pathname.startsWith(item.href);
 
           return (
-            <ListItemButton
+            <Link
               key={item.href}
-              component={Link}
               href={item.href}
-              onClick={handleDrawerClose}
-              selected={isActive}
-              aria-current={isActive ? 'page' : undefined}
+              passHref
+              style={{ textDecoration: 'none', color: 'inherit' }}
             >
-              <Box sx={{ mr: 2, display: 'flex', color: 'inherit' }}>{item.icon}</Box>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
+              <ListItemButton
+                onClick={handleDrawerClose}
+                selected={isActive}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <Box sx={{ mr: 2, display: 'flex', color: 'inherit' }}>{item.icon}</Box>
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            </Link>
           );
         })}
       </List>

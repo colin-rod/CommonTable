@@ -129,7 +129,6 @@ describe('SuggestedRecipesList Component', () => {
     });
 
     it('should not call onSelectRecipe when loading', async () => {
-      const user = userEvent.setup();
       render(
         <SuggestedRecipesList
           suggestions={mockSuggestions}
