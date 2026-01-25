@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { ThemeProvider } from '@/components/ThemeProvider';
 
 export const metadata: Metadata = {
@@ -24,7 +26,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <OfflineIndicator />
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </ThemeProvider>
       </body>
     </html>
   );
