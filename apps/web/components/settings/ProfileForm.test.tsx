@@ -156,7 +156,7 @@ describe('ProfileForm', () => {
     });
 
     it('should disable submit button while submitting', async () => {
-      const slowSubmit = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 1000)));
+      const slowSubmit = vi.fn(() => new Promise<void>((resolve) => setTimeout(resolve, 1000)));
       render(<ProfileForm user={mockUser as any} onSubmit={slowSubmit} onCancel={mockOnCancel} />);
 
       const saveButton = screen.getByText('Save Changes');

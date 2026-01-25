@@ -141,7 +141,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
    */
   const handleProfile = () => {
     handleUserMenuClose();
-    router.push('/settings/profile');
+    router.push('/settings/profile' as Route);
   };
 
   /**
