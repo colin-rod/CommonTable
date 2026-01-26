@@ -329,7 +329,27 @@ export class AuthService {
       .single();
 
     if (memberError || !memberData) {
-      // User has no household yet
+      // Attempt self-heal for orphaned profiles (missing household_members row)
+      const { data: householdId, error: householdCreateError } = await this.supabase.rpc(
+        'create_household_on_signup',
+        {
+          p_user_id: userId,
+          p_display_name: profile.display_name,
+        },
+      );
+
+      if (!householdCreateError && householdId) {
+        const household = await this.fetchHousehold(householdId);
+        return {
+          id: userId as UserId,
+          email,
+          profile,
+          household,
+          household_role: 'admin',
+        };
+      }
+
+      // User has no household yet (or self-heal failed)
       return {
         id: userId as UserId,
         email,
