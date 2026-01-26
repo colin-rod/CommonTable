@@ -71,9 +71,11 @@ export class AuthService {
       }
 
       // Fetch profile (created by trigger)
+      // The trigger automatically creates the profile with auth_user_id set
       const profile = await this.fetchProfile(data.user.id);
 
       // Create household for new user
+      // This RPC now returns household_id (UUID) instead of void
       const { data: householdId, error: householdError } = await this.supabase.rpc(
         'create_household_on_signup',
         {
@@ -86,6 +88,10 @@ export class AuthService {
         throw new AppError('Failed to create household', 'HOUSEHOLD_CREATE_ERROR', 500, {
           error: householdError,
         });
+      }
+
+      if (!householdId) {
+        throw new AppError('No household ID returned', 'HOUSEHOLD_CREATE_ERROR', 500);
       }
 
       // Fetch household
@@ -275,10 +281,12 @@ export class AuthService {
    * Fetch profile for a user
    */
   private async fetchProfile(userId: string): Promise<Profile> {
+    // Profiles are now looked up by auth_user_id (not id)
+    // The trigger creates profiles with auth_user_id = auth.users.id
     const { data, error } = await this.supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('auth_user_id', userId)
       .single();
 
     if (error || !data) {
@@ -309,14 +317,15 @@ export class AuthService {
    * Fetch complete user data (profile + household)
    */
   private async fetchUserData(userId: string, email: string): Promise<User> {
-    // Fetch profile
+    // Fetch profile (by auth_user_id)
     const profile = await this.fetchProfile(userId);
 
     // Fetch household membership
+    // Note: household_members.user_id references profiles.id (not auth.users.id)
     const { data: memberData, error: memberError } = await this.supabase
       .from('household_members')
       .select('household_id, role, households(*)')
-      .eq('user_id', userId)
+      .eq('user_id', profile.id)
       .single();
 
     if (memberError || !memberData) {

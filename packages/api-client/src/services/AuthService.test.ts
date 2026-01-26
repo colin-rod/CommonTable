@@ -30,8 +30,10 @@ interface MockSession {
 
 interface MockProfile {
   id: string;
+  auth_user_id: string;
   display_name: string;
   avatar_url: string | null;
+  member_type: 'authenticated' | 'managed';
   created_at: string;
   updated_at: string;
 }
@@ -130,9 +132,11 @@ describe('AuthService', () => {
       };
 
       const mockProfile: MockProfile = {
-        id: 'user-123',
+        id: 'profile-123',
+        auth_user_id: 'user-123',
         display_name: 'John Doe',
         avatar_url: null,
+        member_type: 'authenticated',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -252,9 +256,11 @@ describe('AuthService', () => {
       };
 
       const mockProfile: MockProfile = {
-        id: 'user-123',
+        id: 'profile-123',
+        auth_user_id: 'user-123',
         display_name: 'John Doe',
         avatar_url: null,
+        member_type: 'authenticated',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -449,9 +455,11 @@ describe('AuthService', () => {
       };
 
       const mockProfile: MockProfile = {
-        id: 'user-123',
+        id: 'profile-123',
+        auth_user_id: 'user-123',
         display_name: 'John Doe',
         avatar_url: null,
+        member_type: 'authenticated',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

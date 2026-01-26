@@ -732,7 +732,7 @@ export type Database = {
       call_suggest_tags_batch: { Args: { p_recipes: Json }; Returns: Json };
       create_household_on_signup: {
         Args: { p_display_name: string; p_user_id: string };
-        Returns: undefined;
+        Returns: string;
       };
       create_recipe_with_version: {
         Args: {
