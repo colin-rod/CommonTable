@@ -7,13 +7,11 @@ import type {
   Household,
   HouseholdId,
 } from '@commontable/types';
-import { renderHook, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { useAuth } from './useAuth';
 import { useHousehold } from './useHousehold';
-
-import { createClient } from '@/lib/supabase/client';
 
 // Mock Supabase client
 vi.mock('@/lib/supabase/client', () => ({
@@ -170,7 +168,9 @@ describe('useHousehold Hook', () => {
 
       mockHouseholdService.listInvitations.mockResolvedValue(updatedInvitations);
 
-      await result.current.inviteMember(inviteInput);
+      await act(async () => {
+        await result.current.inviteMember(inviteInput);
+      });
 
       expect(mockHouseholdService.inviteAuthenticatedMember).toHaveBeenCalledWith(
         mockHouseholdId,
@@ -221,7 +221,9 @@ describe('useHousehold Hook', () => {
 
       mockHouseholdService.listMembers.mockResolvedValue(updatedMembers);
 
-      await result.current.addManagedMember(addInput);
+      await act(async () => {
+        await result.current.addManagedMember(addInput);
+      });
 
       expect(mockHouseholdService.addManagedMember).toHaveBeenCalledWith(mockHouseholdId, addInput);
 
@@ -283,7 +285,9 @@ describe('useHousehold Hook', () => {
       const updatedMembers = mockMembers.filter((m) => m.user_id !== profileIdToRemove);
       mockHouseholdService.listMembers.mockResolvedValue(updatedMembers);
 
-      await result.current.removeMember(profileIdToRemove);
+      await act(async () => {
+        await result.current.removeMember(profileIdToRemove);
+      });
 
       expect(mockHouseholdService.removeMember).toHaveBeenCalledWith(mockHouseholdId, {
         profile_id: profileIdToRemove,
@@ -297,11 +301,18 @@ describe('useHousehold Hook', () => {
   });
 
   describe('Error handling', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
     beforeEach(() => {
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       vi.mocked(useAuth).mockReturnValue({
         household: mockHousehold,
         householdRole: 'admin',
       } as any);
+    });
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
     });
 
     it('should handle fetch errors', async () => {
@@ -384,9 +395,11 @@ describe('useHousehold Hook', () => {
         role: 'member',
       };
 
-      await expect(result.current.inviteMember(inviteInput)).rejects.toThrow(
-        'Failed to invite member',
-      );
+      await act(async () => {
+        await expect(result.current.inviteMember(inviteInput)).rejects.toThrow(
+          'Failed to invite member',
+        );
+      });
     });
 
     it('should propagate remove member errors', async () => {
@@ -402,9 +415,11 @@ describe('useHousehold Hook', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      await expect(result.current.removeMember('user-2')).rejects.toThrow(
-        'Failed to remove member',
-      );
+      await act(async () => {
+        await expect(result.current.removeMember('user-2')).rejects.toThrow(
+          'Failed to remove member',
+        );
+      });
     });
   });
 
@@ -507,7 +522,9 @@ describe('useHousehold Hook', () => {
 
       mockHouseholdService.listMembers.mockResolvedValue(newMembers);
 
-      result.current.refresh();
+      act(() => {
+        result.current.refresh();
+      });
 
       await waitFor(() => {
         expect(result.current.members).toEqual(newMembers);
