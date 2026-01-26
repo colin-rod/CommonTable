@@ -202,6 +202,7 @@ describe('recipe server actions', () => {
     });
 
     it('should handle unknown errors', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockAuth.getUser.mockResolvedValue({
         data: { user: mockUser },
         error: null,
@@ -223,6 +224,8 @@ describe('recipe server actions', () => {
       };
 
       const result = await createRecipe(input);
+
+      consoleErrorSpy.mockRestore();
 
       expect(result).toEqual({
         success: false,

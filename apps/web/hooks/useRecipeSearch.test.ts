@@ -1,7 +1,7 @@
 import { RecipeService } from '@commontable/api-client';
 import type { RecipeSearchResult, HouseholdId, Household } from '@commontable/types';
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { useAuth } from './useAuth';
 import { useRecipeSearch } from './useRecipeSearch';
@@ -243,6 +243,16 @@ describe('useRecipeSearch Hook', () => {
   });
 
   describe('Error handling', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
+    });
+
     it('should handle search errors', async () => {
       const searchError = new Error('Search failed');
       mockRecipeService.search.mockRejectedValue(searchError);
