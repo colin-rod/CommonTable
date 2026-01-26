@@ -81,9 +81,9 @@ describe('cookingEvent server actions', () => {
     household_id: 'household-1' as any,
     cooked_by: 'user-1' as any,
     cooked_at: new Date(),
+    servings_made: 4,
     rating: 4,
     notes: 'Delicious!',
-    calendar_entry_id: null,
   };
 
   beforeEach(() => {
@@ -228,7 +228,7 @@ describe('cookingEvent server actions', () => {
         {
           ...mockCookingEvent,
           recipe_title: 'Pasta Carbonara',
-          profile_display_name: 'John Doe',
+          cooked_by_name: 'John Doe',
         },
       ];
 

@@ -106,6 +106,8 @@ describe('recipe server actions', () => {
         title: 'Pasta Carbonara',
         description: 'Classic Italian pasta',
         tags: ['pasta', 'italian'],
+        ingredients_json: [],
+        steps_json: [],
       };
 
       const result = await createRecipe(input);
@@ -127,6 +129,9 @@ describe('recipe server actions', () => {
       const input = {
         household_id: 'household-1' as any,
         title: 'Pasta Carbonara',
+        ingredients_json: [],
+        steps_json: [],
+        tags: [],
       };
 
       const result = await createRecipe(input);
@@ -152,6 +157,9 @@ describe('recipe server actions', () => {
       const input = {
         household_id: 'household-1' as any,
         title: 'Pasta Carbonara',
+        ingredients_json: [],
+        steps_json: [],
+        tags: [],
       };
 
       const result = await createRecipe(input);
@@ -180,6 +188,9 @@ describe('recipe server actions', () => {
       const input = {
         household_id: 'household-1' as any,
         title: 'Pasta Carbonara',
+        ingredients_json: [],
+        steps_json: [],
+        tags: [],
       };
 
       const result = await createRecipe(input);
@@ -206,6 +217,9 @@ describe('recipe server actions', () => {
       const input = {
         household_id: 'household-1' as any,
         title: 'Pasta Carbonara',
+        ingredients_json: [],
+        steps_json: [],
+        tags: [],
       };
 
       const result = await createRecipe(input);
@@ -401,9 +415,9 @@ describe('recipe server actions', () => {
         ...mockRecipe,
         id: 'recipe-2' as RecipeId,
         title: 'Forked Pasta',
-        version: {
-          id: 'version-2',
-          recipe_id: 'recipe-2',
+        current_version: {
+          id: 'version-2' as any,
+          recipe_id: 'recipe-2' as RecipeId,
           version_number: 1,
           ingredients_json: [],
           steps_json: [],
@@ -481,9 +495,9 @@ describe('recipe server actions', () => {
     it('should get recipe with version and return success', async () => {
       const recipeWithVersion: RecipeWithVersion = {
         ...mockRecipe,
-        version: {
-          id: 'version-1',
-          recipe_id: 'recipe-1',
+        current_version: {
+          id: 'version-1' as any,
+          recipe_id: 'recipe-1' as RecipeId,
           version_number: 1,
           ingredients_json: [{ name: 'pasta', quantity: 400, unit: 'g' }],
           steps_json: [{ position: 1, text: 'Boil pasta' }],

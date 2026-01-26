@@ -66,7 +66,8 @@ describe('mealRequests server actions', () => {
     household_id: 'household-1' as any,
     requested_by: 'user-1' as any,
     recipe_id: 'recipe-1' as any,
-    meal_slot: 'dinner',
+    requested_date: new Date(),
+    requested_meal_slot: 'dinner',
     notes: 'Want pasta',
     status: 'open',
     priority: 1,
@@ -84,11 +85,10 @@ describe('mealRequests server actions', () => {
       mockMealRequestService.create.mockResolvedValue(mockMealRequest);
 
       const input = {
-        household_id: 'household-1' as any,
-        requested_by: 'user-1' as any,
         recipe_id: 'recipe-1' as any,
-        meal_slot: 'dinner' as const,
         notes: 'Want pasta',
+        requested_date: new Date(),
+        requested_meal_slot: 'dinner' as const,
       };
 
       const result = await createMealRequest(input);
@@ -103,9 +103,10 @@ describe('mealRequests server actions', () => {
       mockMealRequestService.create.mockRejectedValue(error);
 
       const input = {
-        household_id: 'household-1' as any,
-        requested_by: 'user-1' as any,
+        recipe_id: null,
         notes: 'Want pasta',
+        requested_date: new Date(),
+        requested_meal_slot: 'dinner' as const,
       };
 
       const result = await createMealRequest(input);
