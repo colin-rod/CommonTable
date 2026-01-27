@@ -7,6 +7,7 @@ import {
   AppError,
   type HouseholdId,
   type InvitationId,
+  type ProfileId,
 } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
@@ -971,6 +972,421 @@ describe('HouseholdService', () => {
 
       // Verify status filter is applied
       expect(mockBuilder.eq).toHaveBeenCalledWith('status', 'pending');
+    });
+  });
+
+  // =============================================================================
+  // updateHouseholdName
+  // =============================================================================
+
+  describe('updateHouseholdName', () => {
+    it('should update household name successfully', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const newName = 'Smith Family Kitchen';
+      const mockHousehold = {
+        id: householdId,
+        name: newName,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const updateBuilder = createMockQueryBuilder({ data: [mockHousehold], error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(updateBuilder as any);
+
+      const result = await service.updateHouseholdName(householdId, newName);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('households');
+      expect(updateBuilder.update).toHaveBeenCalledWith({ name: newName });
+      expect(updateBuilder.eq).toHaveBeenCalledWith('id', householdId);
+      expect(result).toEqual(mockHousehold);
+    });
+
+    it('should trim whitespace from name', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const nameWithSpaces = '  Smith Family Kitchen  ';
+      const trimmedName = 'Smith Family Kitchen';
+      const mockHousehold = {
+        id: householdId,
+        name: trimmedName,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const updateBuilder = createMockQueryBuilder({ data: [mockHousehold], error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(updateBuilder as any);
+
+      await service.updateHouseholdName(householdId, nameWithSpaces);
+
+      expect(updateBuilder.update).toHaveBeenCalledWith({ name: trimmedName });
+    });
+
+    it('should throw ValidationError for empty name', async () => {
+      const householdId = 'household-123' as HouseholdId;
+
+      await expect(service.updateHouseholdName(householdId, '')).rejects.toThrow(ValidationError);
+    });
+
+    it('should throw ValidationError for name with only whitespace', async () => {
+      const householdId = 'household-123' as HouseholdId;
+
+      await expect(service.updateHouseholdName(householdId, '   ')).rejects.toThrow(
+        ValidationError,
+      );
+    });
+
+    it('should throw ValidationError for name exceeding 100 characters', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const longName = 'a'.repeat(101);
+
+      await expect(service.updateHouseholdName(householdId, longName)).rejects.toThrow(
+        ValidationError,
+      );
+    });
+
+    it('should throw NotFoundError when household does not exist', async () => {
+      const householdId = 'household-999' as HouseholdId;
+      const newName = 'New Name';
+
+      const updateBuilder = createMockQueryBuilder({ data: [], error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(updateBuilder as any);
+
+      await expect(service.updateHouseholdName(householdId, newName)).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it('should throw AppError when database update fails', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const newName = 'New Name';
+      const mockError = { message: 'Database error' };
+
+      const updateBuilder = createMockQueryBuilder({ data: null, error: mockError });
+      vi.mocked(mockSupabase.from).mockReturnValue(updateBuilder as any);
+
+      await expect(service.updateHouseholdName(householdId, newName)).rejects.toThrow(AppError);
+    });
+  });
+
+  // =============================================================================
+  // updateMemberRole
+  // =============================================================================
+
+  describe('updateMemberRole', () => {
+    it('should promote member to admin successfully', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const userId = 'profile-2' as ProfileId;
+      const newRole = 'admin';
+      const mockProfile: MockProfile = {
+        id: userId,
+        auth_user_id: 'auth-2',
+        display_name: 'Regular Member',
+        avatar_url: null,
+        member_type: 'authenticated',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+      const mockMember: MockHouseholdMember = {
+        household_id: householdId,
+        user_id: userId,
+        role: 'admin',
+        joined_at: '2024-01-01T00:00:00Z',
+        profile: mockProfile,
+      };
+
+      // Mock getting profile
+      const profileBuilder = createMockQueryBuilder({ data: mockProfile, error: null });
+      // Mock updating member role
+      const updateBuilder = createMockQueryBuilder({ data: [mockMember], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(profileBuilder as any)
+        .mockReturnValueOnce(updateBuilder as any);
+
+      const result = await service.updateMemberRole(householdId, userId, newRole);
+
+      expect(updateBuilder.update).toHaveBeenCalledWith({ role: newRole });
+      expect(result.role).toBe('admin');
+    });
+
+    it('should demote admin to member successfully', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const userId = 'profile-2' as ProfileId;
+      const newRole = 'member';
+      const mockProfile: MockProfile = {
+        id: userId,
+        auth_user_id: 'auth-2',
+        display_name: 'Admin User',
+        avatar_url: null,
+        member_type: 'authenticated',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+      const mockMember: MockHouseholdMember = {
+        household_id: householdId,
+        user_id: userId,
+        role: 'member',
+        joined_at: '2024-01-01T00:00:00Z',
+        profile: mockProfile,
+      };
+
+      // Mock getting profile
+      const profileBuilder = createMockQueryBuilder({ data: mockProfile, error: null });
+      // Mock checking admin count (2 admins exist)
+      const adminBuilder = createMockQueryBuilder({
+        data: [{ user_id: 'profile-1' }, { user_id: userId }],
+        error: null,
+      });
+      // Mock updating member role
+      const updateBuilder = createMockQueryBuilder({ data: [mockMember], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(profileBuilder as any)
+        .mockReturnValueOnce(adminBuilder as any)
+        .mockReturnValueOnce(updateBuilder as any);
+
+      const result = await service.updateMemberRole(householdId, userId, newRole);
+
+      expect(result.role).toBe('member');
+    });
+
+    it('should throw ConflictError when demoting last admin', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const userId = 'profile-1' as ProfileId;
+      const newRole = 'member';
+      const mockProfile: MockProfile = {
+        id: userId,
+        auth_user_id: 'auth-1',
+        display_name: 'Only Admin',
+        avatar_url: null,
+        member_type: 'authenticated',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      // Mock getting profile
+      const profileBuilder = createMockQueryBuilder({ data: mockProfile, error: null });
+      // Mock checking admin count (only 1 admin)
+      const adminBuilder = createMockQueryBuilder({ data: [{ user_id: userId }], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(profileBuilder as any)
+        .mockReturnValueOnce(adminBuilder as any);
+
+      await expect(service.updateMemberRole(householdId, userId, newRole)).rejects.toThrow(
+        ConflictError,
+      );
+    });
+
+    it('should throw ConflictError when promoting managed member to admin', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const userId = 'profile-managed' as ProfileId;
+      const newRole = 'admin';
+      const mockManagedProfile: MockProfile = {
+        id: userId,
+        auth_user_id: null,
+        display_name: 'Kid Member',
+        avatar_url: null,
+        member_type: 'managed',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      // Mock getting profile
+      const profileBuilder = createMockQueryBuilder({ data: mockManagedProfile, error: null });
+
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(profileBuilder as any);
+
+      await expect(service.updateMemberRole(householdId, userId, newRole)).rejects.toThrow(
+        ConflictError,
+      );
+    });
+
+    it('should throw NotFoundError when member does not exist', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const userId = 'profile-999' as ProfileId;
+      const newRole = 'admin';
+
+      // Mock profile not found
+      const profileBuilder = createMockQueryBuilder({ data: null, error: null });
+
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(profileBuilder as any);
+
+      await expect(service.updateMemberRole(householdId, userId, newRole)).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it('should throw AppError when database update fails', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const userId = 'profile-2' as ProfileId;
+      const newRole = 'admin';
+      const mockProfile: MockProfile = {
+        id: userId,
+        auth_user_id: 'auth-2',
+        display_name: 'Member',
+        avatar_url: null,
+        member_type: 'authenticated',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+      const mockError = { message: 'Database error' };
+
+      // Mock getting profile
+      const profileBuilder = createMockQueryBuilder({ data: mockProfile, error: null });
+      // Mock update fails
+      const updateBuilder = createMockQueryBuilder({ data: null, error: mockError });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(profileBuilder as any)
+        .mockReturnValueOnce(updateBuilder as any);
+
+      await expect(service.updateMemberRole(householdId, userId, newRole)).rejects.toThrow(
+        AppError,
+      );
+    });
+  });
+
+  // =============================================================================
+  // resendInvitation
+  // =============================================================================
+
+  describe('resendInvitation', () => {
+    it('should resend invitation successfully', async () => {
+      const invitationId = 'invite-123' as InvitationId;
+      const mockInvitation: MockHouseholdInvitation = {
+        id: invitationId,
+        household_id: 'household-123',
+        inviter_profile_id: 'profile-1',
+        invitee_email: 'invitee@example.com',
+        role: 'member',
+        status: 'pending',
+        token: 'token-123',
+        invited_at: '2024-01-01T00:00:00Z',
+        accepted_at: null,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      // Mock getting invitation
+      const getBuilder = createMockQueryBuilder({ data: mockInvitation, error: null });
+      // Mock updating invitation timestamp
+      const updateBuilder = createMockQueryBuilder({ data: [mockInvitation], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(getBuilder as any)
+        .mockReturnValueOnce(updateBuilder as any);
+
+      // Mock signInWithOtp
+      vi.mocked(mockSupabase.auth.signInWithOtp).mockResolvedValue({
+        data: {},
+        error: null,
+      } as any);
+
+      const result = await service.resendInvitation(invitationId);
+
+      expect(mockSupabase.auth.signInWithOtp).toHaveBeenCalled();
+      expect(updateBuilder.update).toHaveBeenCalled();
+      expect(result).toEqual(mockInvitation);
+    });
+
+    it('should throw ConflictError for non-pending invitation', async () => {
+      const invitationId = 'invite-123' as InvitationId;
+      const mockAcceptedInvitation: MockHouseholdInvitation = {
+        id: invitationId,
+        household_id: 'household-123',
+        inviter_profile_id: 'profile-1',
+        invitee_email: 'invitee@example.com',
+        role: 'member',
+        status: 'accepted',
+        token: 'token-123',
+        invited_at: '2024-01-01T00:00:00Z',
+        accepted_at: '2024-01-05T00:00:00Z',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-05T00:00:00Z',
+      };
+
+      const getBuilder = createMockQueryBuilder({ data: mockAcceptedInvitation, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(getBuilder as any);
+
+      await expect(service.resendInvitation(invitationId)).rejects.toThrow(ConflictError);
+    });
+
+    it('should throw NotFoundError when invitation does not exist', async () => {
+      const invitationId = 'invite-999' as InvitationId;
+
+      const getBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(getBuilder as any);
+
+      await expect(service.resendInvitation(invitationId)).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  // =============================================================================
+  // updateInvitationStatus
+  // =============================================================================
+
+  describe('updateInvitationStatus', () => {
+    it('should update invitation status to declined', async () => {
+      const invitationId = 'invite-123' as InvitationId;
+      const newStatus = 'declined';
+      const mockInvitation: MockHouseholdInvitation = {
+        id: invitationId,
+        household_id: 'household-123',
+        inviter_profile_id: 'profile-1',
+        invitee_email: 'invitee@example.com',
+        role: 'member',
+        status: 'declined',
+        token: 'token-123',
+        invited_at: '2024-01-01T00:00:00Z',
+        accepted_at: null,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const updateBuilder = createMockQueryBuilder({ data: [mockInvitation], error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(updateBuilder as any);
+
+      const result = await service.updateInvitationStatus(invitationId, newStatus);
+
+      expect(updateBuilder.update).toHaveBeenCalledWith({ status: newStatus });
+      expect(result.status).toBe('declined');
+    });
+
+    it('should update invitation status to expired', async () => {
+      const invitationId = 'invite-123' as InvitationId;
+      const newStatus = 'expired';
+      const mockInvitation: MockHouseholdInvitation = {
+        id: invitationId,
+        household_id: 'household-123',
+        inviter_profile_id: 'profile-1',
+        invitee_email: 'invitee@example.com',
+        role: 'member',
+        status: 'expired',
+        token: 'token-123',
+        invited_at: '2024-01-01T00:00:00Z',
+        accepted_at: null,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const updateBuilder = createMockQueryBuilder({ data: [mockInvitation], error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(updateBuilder as any);
+
+      const result = await service.updateInvitationStatus(invitationId, newStatus);
+
+      expect(result.status).toBe('expired');
+    });
+
+    it('should throw NotFoundError when invitation does not exist', async () => {
+      const invitationId = 'invite-999' as InvitationId;
+      const newStatus = 'declined';
+
+      const updateBuilder = createMockQueryBuilder({ data: [], error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(updateBuilder as any);
+
+      await expect(service.updateInvitationStatus(invitationId, newStatus)).rejects.toThrow(
+        NotFoundError,
+      );
     });
   });
 });

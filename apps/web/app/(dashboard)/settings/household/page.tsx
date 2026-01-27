@@ -1,10 +1,20 @@
 'use client';
 
-import { Add as AddIcon } from '@mui/icons-material';
-import { Container, Typography, Stack, Box, Button, List, CircularProgress } from '@mui/material';
+import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
+import {
+  Container,
+  Typography,
+  Stack,
+  Box,
+  Button,
+  List,
+  CircularProgress,
+  IconButton,
+} from '@mui/material';
 import { useState } from 'react';
 
 import { AddMemberDialog } from '@/components/household/AddMemberDialog';
+import { EditHouseholdNameDialog } from '@/components/household/EditHouseholdNameDialog';
 import { InvitationListItem } from '@/components/household/InvitationListItem';
 import { InviteMemberDialog } from '@/components/household/InviteMemberDialog';
 import { MemberListItem } from '@/components/household/MemberListItem';
@@ -26,9 +36,11 @@ import { useHousehold } from '@/hooks/useHousehold';
  * - Lists instead of tables
  */
 export default function HouseholdSettingsPage() {
-  const { members, invitations, loading, error, isAdmin } = useHousehold();
+  const { household, members, invitations, loading, error, isAdmin, updateHouseholdName } =
+    useHousehold();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
+  const [editNameDialogOpen, setEditNameDialogOpen] = useState(false);
 
   if (loading) {
     return (
@@ -53,11 +65,35 @@ export default function HouseholdSettingsPage() {
     );
   }
 
+  const handleSaveName = async (newName: string) => {
+    await updateHouseholdName(newName);
+    setEditNameDialogOpen(false);
+  };
+
   return (
     <Container maxWidth="md">
       <Stack spacing={4}>
         {/* Page Title */}
         <Typography variant="h5">Household Settings</Typography>
+
+        {/* Household Details Section */}
+        <Box>
+          <Stack spacing={2}>
+            <Typography variant="h6">Household Details</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body1">{household?.name || 'Unnamed Household'}</Typography>
+              {isAdmin && (
+                <IconButton
+                  size="small"
+                  onClick={() => setEditNameDialogOpen(true)}
+                  aria-label="Edit household name"
+                >
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
+          </Stack>
+        </Box>
 
         {/* Members Section */}
         <Box>
@@ -113,6 +149,12 @@ export default function HouseholdSettingsPage() {
       {/* Dialogs */}
       {isAdmin && (
         <>
+          <EditHouseholdNameDialog
+            open={editNameDialogOpen}
+            currentName={household?.name || ''}
+            onClose={() => setEditNameDialogOpen(false)}
+            onSave={handleSaveName}
+          />
           <InviteMemberDialog open={inviteDialogOpen} onClose={() => setInviteDialogOpen(false)} />
           <AddMemberDialog
             open={addMemberDialogOpen}

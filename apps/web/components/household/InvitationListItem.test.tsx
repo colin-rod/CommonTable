@@ -5,9 +5,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { InvitationListItem } from './InvitationListItem';
 
+// Mock useHousehold hook
+vi.mock('@/hooks/useHousehold', () => ({
+  useHousehold: vi.fn(),
+}));
+
+import { useHousehold } from '@/hooks/useHousehold';
+
 describe('InvitationListItem Component', () => {
   const mockConfirm = vi.fn();
   const mockAlert = vi.fn();
+  const mockCancelInvitation = vi.fn();
+  const mockResendInvitation = vi.fn();
 
   const mockInvitation: HouseholdInvitation = {
     id: 'invitation-123' as any,
@@ -34,6 +43,10 @@ describe('InvitationListItem Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useHousehold).mockReturnValue({
+      cancelInvitation: mockCancelInvitation,
+      resendInvitation: mockResendInvitation,
+    } as any);
 
     // Mock window.confirm and window.alert
     global.window.confirm = mockConfirm;
@@ -225,6 +238,126 @@ describe('InvitationListItem Component', () => {
       expect(consoleErrorSpy).not.toHaveBeenCalled();
 
       consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('Resend invitation', () => {
+    it('should show resend button for pending invitations', () => {
+      render(<InvitationListItem invitation={mockInvitation} />);
+
+      expect(screen.getByRole('button', { name: /resend/i })).toBeInTheDocument();
+    });
+
+    it('should call resendInvitation when resend button clicked', async () => {
+      const user = userEvent.setup();
+      mockResendInvitation.mockResolvedValue(undefined);
+
+      render(<InvitationListItem invitation={mockInvitation} />);
+
+      const resendButton = screen.getByRole('button', { name: /resend/i });
+      await user.click(resendButton);
+
+      expect(mockResendInvitation).toHaveBeenCalledWith('invitation-123');
+    });
+
+    it('should disable resend button while resending', async () => {
+      const user = userEvent.setup();
+
+      let resolveResend: () => void;
+      const resendPromise = new Promise<void>((resolve) => {
+        resolveResend = resolve;
+      });
+      mockResendInvitation.mockReturnValue(resendPromise);
+
+      render(<InvitationListItem invitation={mockInvitation} />);
+
+      const resendButton = screen.getByRole('button', { name: /resend/i });
+      await user.click(resendButton);
+
+      // Button should be disabled while resending
+      expect(resendButton).toBeDisabled();
+
+      // Resolve promise
+      resolveResend!();
+    });
+
+    it('should show success snackbar after successful resend', async () => {
+      const user = userEvent.setup();
+      mockResendInvitation.mockResolvedValue(undefined);
+
+      render(<InvitationListItem invitation={mockInvitation} />);
+
+      const resendButton = screen.getByRole('button', { name: /resend/i });
+      await user.click(resendButton);
+
+      // Check for success message
+      expect(await screen.findByText(/invitation resent/i)).toBeInTheDocument();
+    });
+
+    it('should handle errors when resend fails', async () => {
+      const user = userEvent.setup();
+      mockResendInvitation.mockRejectedValue(new Error('Network error'));
+
+      render(<InvitationListItem invitation={mockInvitation} />);
+
+      const resendButton = screen.getByRole('button', { name: /resend/i });
+      await user.click(resendButton);
+
+      // Should show alert with error message
+      expect(mockAlert).toHaveBeenCalledWith('Failed to resend invitation. Please try again.');
+    });
+  });
+
+  describe('Status chip colors', () => {
+    it('should show default color chip for pending invitations', () => {
+      render(<InvitationListItem invitation={mockInvitation} />);
+
+      const chip = screen.getByText('Pending').closest('.MuiChip-root');
+      expect(chip).toHaveClass('MuiChip-colorDefault');
+    });
+
+    it('should show error color chip for declined invitations', () => {
+      const declinedInvitation = { ...mockInvitation, status: 'declined' as any };
+      render(<InvitationListItem invitation={declinedInvitation} />);
+
+      const chip = screen.getByText('Declined').closest('.MuiChip-root');
+      expect(chip).toHaveClass('MuiChip-colorError');
+    });
+
+    it('should show warning color chip for expired invitations', () => {
+      const expiredInvitation = { ...mockInvitation, status: 'expired' as any };
+      render(<InvitationListItem invitation={expiredInvitation} />);
+
+      const chip = screen.getByText('Expired').closest('.MuiChip-root');
+      expect(chip).toHaveClass('MuiChip-colorWarning');
+    });
+  });
+
+  describe('Cancel invitation integration', () => {
+    it('should call cancelInvitation from hook', async () => {
+      const user = userEvent.setup();
+      mockConfirm.mockReturnValue(true);
+      mockCancelInvitation.mockResolvedValue(undefined);
+
+      render(<InvitationListItem invitation={mockInvitation} />);
+
+      const cancelButton = screen.getByTestId('CancelIcon').closest('button')!;
+      await user.click(cancelButton);
+
+      expect(mockCancelInvitation).toHaveBeenCalledWith('invitation-123');
+    });
+
+    it('should handle cancellation errors', async () => {
+      const user = userEvent.setup();
+      mockConfirm.mockReturnValue(true);
+      mockCancelInvitation.mockRejectedValue(new Error('Network error'));
+
+      render(<InvitationListItem invitation={mockInvitation} />);
+
+      const cancelButton = screen.getByTestId('CancelIcon').closest('button')!;
+      await user.click(cancelButton);
+
+      expect(mockAlert).toHaveBeenCalledWith('Failed to cancel invitation. Please try again.');
     });
   });
 });
