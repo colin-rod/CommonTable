@@ -1,12 +1,10 @@
 'use client';
 
 import type { MealRequest, Recipe } from '@commontable/types';
-import {
-  AddCircle as AddToCalendarIcon,
-  Close as DismissIcon,
-  ArrowUpward as PriorityUpIcon,
-  ArrowDownward as PriorityDownIcon,
-} from '@mui/icons-material';
+import AddToCalendarIcon from '@mui/icons-material/AddCircle';
+import PriorityDownIcon from '@mui/icons-material/ArrowDownward';
+import PriorityUpIcon from '@mui/icons-material/ArrowUpward';
+import DismissIcon from '@mui/icons-material/Close';
 import {
   ListItem,
   ListItemButton,

@@ -1,5 +1,5 @@
 import type { HouseholdInvitation } from '@commontable/types';
-import { Cancel as CancelIcon } from '@mui/icons-material';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { ListItem, ListItemText, IconButton, Chip } from '@mui/material';
 import { useState } from 'react';
 

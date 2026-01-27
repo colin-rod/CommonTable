@@ -13,7 +13,7 @@ import {
   Typography,
   Box,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { SuggestedRecipesList } from '../recipes/SuggestedRecipesList';
 
@@ -58,6 +58,13 @@ export function AddCalendarEntryDialog({
   const [mealSlot, setMealSlot] = useState<MealSlot>(initialMealSlot || 'dinner');
   const [notes, setNotes] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setPlannedDate(initialDate ? (initialDate.toISOString().split('T')[0] ?? '') : '');
+      setMealSlot(initialMealSlot || 'dinner');
+    }
+  }, [open, initialDate, initialMealSlot]);
 
   // Fetch recipe suggestions based on meal slot
   const { suggestions, loading: suggestionsLoading } = useRecipeSuggestions({

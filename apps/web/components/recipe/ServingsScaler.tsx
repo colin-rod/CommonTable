@@ -1,7 +1,8 @@
 'use client';
 
 import type { UnitSystem } from '@commontable/types';
-import { Add as AddIcon, Remove as RemoveIcon } from '@mui/icons-material';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import { Button, Stack, Typography, TextField } from '@mui/material';
 import { useState, useCallback, type ChangeEvent, type KeyboardEvent } from 'react';
 

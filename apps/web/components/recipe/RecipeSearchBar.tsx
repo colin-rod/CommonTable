@@ -1,6 +1,6 @@
 'use client';
 
-import { Search as SearchIcon } from '@mui/icons-material';
+import SearchIcon from '@mui/icons-material/Search';
 import { TextField, InputAdornment } from '@mui/material';
 
 interface RecipeSearchBarProps {

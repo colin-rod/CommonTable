@@ -1,5 +1,5 @@
 import type { HouseholdMemberWithProfile } from '@commontable/types';
-import { Delete as DeleteIcon } from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { ListItem, ListItemText, IconButton } from '@mui/material';
 import { useState } from 'react';
 

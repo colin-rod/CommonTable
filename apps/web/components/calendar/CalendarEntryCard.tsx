@@ -2,13 +2,11 @@
 
 import { RecipeService } from '@commontable/api-client';
 import type { CalendarEntry } from '@commontable/types';
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-  Star as StarIcon,
-  StarBorder as StarBorderIcon,
-} from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Box, Typography, IconButton, Chip, Button, Stack, CircularProgress } from '@mui/material';
 import { useState } from 'react';
 

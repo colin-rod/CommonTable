@@ -213,7 +213,13 @@ describe('CookingHistoryItem', () => {
       const user = userEvent.setup();
 
       // Make onUpdate delay to capture loading state
-      mockOnUpdate.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
+      let resolveUpdate: () => void;
+      mockOnUpdate.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveUpdate = resolve;
+          }),
+      );
 
       render(<CookingHistoryItem event={mockEvent} onUpdate={mockOnUpdate} />);
 
@@ -224,7 +230,11 @@ describe('CookingHistoryItem', () => {
       await user.click(saveButton);
 
       // Should show CircularProgress
-      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+      });
+
+      resolveUpdate!();
     });
 
     it('should revert to read-only mode on successful save', async () => {

@@ -1,13 +1,11 @@
 'use client';
 
-import {
-  Menu as MenuIcon,
-  Person as PersonIcon,
-  Restaurant as RestaurantIcon,
-  CalendarToday as CalendarIcon,
-  RequestPage as RequestIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
+import CalendarIcon from '@mui/icons-material/CalendarToday';
+import MenuIcon from '@mui/icons-material/Menu';
+import PersonIcon from '@mui/icons-material/Person';
+import RequestIcon from '@mui/icons-material/RequestPage';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import SettingsIcon from '@mui/icons-material/Settings';
 import {
   AppBar,
   Box,

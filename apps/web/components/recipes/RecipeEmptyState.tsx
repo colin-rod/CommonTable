@@ -1,6 +1,6 @@
 'use client';
 
-import { RestaurantMenu as RestaurantMenuIcon } from '@mui/icons-material';
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import { Stack, Typography, Button } from '@mui/material';
 import { useRouter } from 'next/navigation';
 

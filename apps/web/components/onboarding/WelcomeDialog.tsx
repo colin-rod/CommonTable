@@ -1,10 +1,8 @@
 'use client';
 
-import {
-  Restaurant as RestaurantIcon,
-  CalendarToday as CalendarIcon,
-  RequestPage as RequestIcon,
-} from '@mui/icons-material';
+import CalendarIcon from '@mui/icons-material/CalendarToday';
+import RequestIcon from '@mui/icons-material/RequestPage';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
 import {
   Dialog,
   DialogContent,

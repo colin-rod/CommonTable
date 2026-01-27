@@ -1,5 +1,5 @@
 import type { CalendarEntry, CalendarEntryId, Recipe, RecipeId } from '@commontable/types';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -221,13 +221,19 @@ describe('CalendarWeekView', () => {
     // Open dialog
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
     await user.click(addButtons[0]!);
+    await waitFor(() => {
+      expect(screen.getByText('Add Meal')).toBeInTheDocument();
+    });
 
     // Fill form
-    const dateInput = screen.getByLabelText(/date/i);
-    await user.type(dateInput, '2026-01-20');
+    const dateInput = await screen.findByLabelText(/date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-01-20' } });
 
     // Submit
     const addButton = screen.getByRole('button', { name: /^add$/i });
+    await waitFor(() => {
+      expect(addButton).toBeEnabled();
+    });
     await user.click(addButton);
 
     await waitFor(() => {

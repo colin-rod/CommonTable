@@ -1,7 +1,8 @@
 'use client';
 
 import type { Recipe, RecipeId } from '@commontable/types';
-import { Star as StarIcon, StarBorder as StarBorderIcon } from '@mui/icons-material';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { ListItem, ListItemButton, ListItemText, IconButton, Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import type { MouseEvent } from 'react';

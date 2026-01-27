@@ -238,16 +238,29 @@ describe('EditCalendarEntryDialog', () => {
 
   it('should disable buttons while submitting', async () => {
     const user = userEvent.setup();
-    const onSubmit = vi.fn(() => new Promise<void>((resolve) => setTimeout(resolve, 100)));
+    let resolveSubmit: () => void;
+    const onSubmit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSubmit = resolve;
+        }),
+    );
 
     render(<EditCalendarEntryDialog {...defaultProps} onSubmit={onSubmit} />);
 
     const saveButton = screen.getByRole('button', { name: /save/i });
+    await waitFor(() => {
+      expect(saveButton).toBeEnabled();
+    });
     await user.click(saveButton);
 
-    // Check buttons are disabled
-    expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    await waitFor(() => {
+      expect(saveButton).toBeDisabled();
+      expect(cancelButton).toBeDisabled();
+    });
+
+    resolveSubmit!();
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();

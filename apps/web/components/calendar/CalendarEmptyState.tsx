@@ -1,6 +1,6 @@
 'use client';
 
-import { CalendarToday as CalendarTodayIcon } from '@mui/icons-material';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { Stack, Typography, Button } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
