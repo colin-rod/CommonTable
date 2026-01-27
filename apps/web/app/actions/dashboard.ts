@@ -3,7 +3,9 @@
 import type {
   CalendarEntry,
   CalendarEntryId,
+  CalendarEntryStatus,
   HouseholdId,
+  MealSlot,
   RecipeId,
   UserId,
 } from '@commontable/types';
@@ -73,8 +75,8 @@ export async function getUpcomingCalendarEntries(): Promise<
       household_id: entry.household_id as HouseholdId,
       recipe_id: entry.recipe_id as RecipeId | null,
       planned_date: new Date(entry.planned_date),
-      meal_slot: entry.meal_slot,
-      status: entry.status,
+      meal_slot: entry.meal_slot as MealSlot,
+      status: entry.status as CalendarEntryStatus,
       notes: entry.notes,
       created_by: entry.created_by as UserId,
       created_at: new Date(entry.created_at),

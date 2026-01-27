@@ -41,7 +41,7 @@ describe('HomePage', () => {
     // In actual runtime, redirect throws, preventing render
     try {
       await HomePage();
-    } catch (error) {
+    } catch (_error) {
       // Redirect throws in Next.js, which is expected
     }
 
