@@ -6,13 +6,14 @@ import {
   getPendingMealRequestsCount,
 } from './dashboard';
 
-const { mockSupabaseClient } = vi.hoisted(() => ({
+const { mockSupabaseClient, mockGetCurrentUserHouseholdId } = vi.hoisted(() => ({
   mockSupabaseClient: {
     from: vi.fn(),
     auth: {
       getUser: vi.fn(),
     },
   },
+  mockGetCurrentUserHouseholdId: vi.fn(),
 }));
 
 // Mock next/cache
@@ -24,14 +25,17 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(async () => mockSupabaseClient),
 }));
 
+vi.mock('@/lib/server/household', () => ({
+  getCurrentUserHouseholdId: mockGetCurrentUserHouseholdId,
+}));
+
 describe('dashboard server actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('getUpcomingCalendarEntries', () => {
-    const mockUser = { id: 'user-123' };
-    const mockHouseholdMember = { household_id: 'household-1' };
+    const mockHouseholdId = 'household-1';
 
     const today = new Date('2026-01-26T12:00:00Z');
     const tomorrow = new Date('2026-01-27T12:00:00Z');
@@ -39,6 +43,7 @@ describe('dashboard server actions', () => {
     beforeEach(() => {
       vi.useFakeTimers();
       vi.setSystemTime(today);
+      mockGetCurrentUserHouseholdId.mockResolvedValue(mockHouseholdId);
     });
 
     afterEach(() => {
@@ -87,17 +92,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ data: mockEntries, error: null });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getUpcomingCalendarEntries();
 
@@ -140,17 +135,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ data: mockEntries, error: null });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       await getUpcomingCalendarEntries();
 
@@ -185,17 +170,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ data: mockEntries, error: null });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getUpcomingCalendarEntries();
 
@@ -247,17 +222,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ data: mockEntries, error: null });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       await getUpcomingCalendarEntries();
 
@@ -279,17 +244,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ data: null, error });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getUpcomingCalendarEntries();
 
@@ -300,7 +255,7 @@ describe('dashboard server actions', () => {
     });
 
     it('should return error when user is not authenticated', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: null } });
+      mockGetCurrentUserHouseholdId.mockRejectedValue(new Error('User not authenticated'));
 
       const result = await getUpcomingCalendarEntries();
 
@@ -311,12 +266,7 @@ describe('dashboard server actions', () => {
     });
 
     it('should return error when user is not in a household', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      });
+      mockGetCurrentUserHouseholdId.mockRejectedValue(new Error('User not in a household'));
 
       const result = await getUpcomingCalendarEntries();
 
@@ -328,8 +278,11 @@ describe('dashboard server actions', () => {
   });
 
   describe('getPendingAiTagSuggestionsCount', () => {
-    const mockUser = { id: 'user-123' };
-    const mockHouseholdMember = { household_id: 'household-1' };
+    const mockHouseholdId = 'household-1';
+
+    beforeEach(() => {
+      mockGetCurrentUserHouseholdId.mockResolvedValue(mockHouseholdId);
+    });
 
     it('should return count of pending AI tag suggestions', async () => {
       const mockQueryChain = {
@@ -342,20 +295,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ count: 5, error: null });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        if (table === 'ai_tag_suggestions') {
-          return mockQueryChain;
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getPendingAiTagSuggestionsCount();
 
@@ -379,17 +319,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ count: null, error: null });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getPendingAiTagSuggestionsCount();
 
@@ -400,7 +330,7 @@ describe('dashboard server actions', () => {
     });
 
     it('should return error when user is not authenticated', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: null } });
+      mockGetCurrentUserHouseholdId.mockRejectedValue(new Error('User not authenticated'));
 
       const result = await getPendingAiTagSuggestionsCount();
 
@@ -411,12 +341,7 @@ describe('dashboard server actions', () => {
     });
 
     it('should return error when user is not in a household', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      });
+      mockGetCurrentUserHouseholdId.mockRejectedValue(new Error('User not in a household'));
 
       const result = await getPendingAiTagSuggestionsCount();
 
@@ -438,17 +363,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ count: null, error });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getPendingAiTagSuggestionsCount();
 
@@ -460,8 +375,11 @@ describe('dashboard server actions', () => {
   });
 
   describe('getPendingMealRequestsCount', () => {
-    const mockUser = { id: 'user-123' };
-    const mockHouseholdMember = { household_id: 'household-1' };
+    const mockHouseholdId = 'household-1';
+
+    beforeEach(() => {
+      mockGetCurrentUserHouseholdId.mockResolvedValue(mockHouseholdId);
+    });
 
     it('should return count of open meal requests', async () => {
       const mockQueryChain = {
@@ -474,20 +392,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ count: 3, error: null });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        if (table === 'meal_requests') {
-          return mockQueryChain;
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getPendingMealRequestsCount();
 
@@ -511,17 +416,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ count: null, error: null });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getPendingMealRequestsCount();
 
@@ -532,7 +427,7 @@ describe('dashboard server actions', () => {
     });
 
     it('should return error when user is not authenticated', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: null } });
+      mockGetCurrentUserHouseholdId.mockRejectedValue(new Error('User not authenticated'));
 
       const result = await getPendingMealRequestsCount();
 
@@ -543,12 +438,7 @@ describe('dashboard server actions', () => {
     });
 
     it('should return error when user is not in a household', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockReturnValue({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      });
+      mockGetCurrentUserHouseholdId.mockRejectedValue(new Error('User not in a household'));
 
       const result = await getPendingMealRequestsCount();
 
@@ -570,17 +460,7 @@ describe('dashboard server actions', () => {
         .mockReturnValueOnce(mockQueryChain)
         .mockResolvedValueOnce({ count: null, error });
 
-      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
-      mockSupabaseClient.from.mockImplementation((table: string) => {
-        if (table === 'household_members') {
-          return {
-            select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
-            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
-          };
-        }
-        return mockQueryChain;
-      });
+      mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
       const result = await getPendingMealRequestsCount();
 

@@ -10,6 +10,7 @@ import type {
   UserId,
 } from '@commontable/types';
 
+import { getCurrentUserHouseholdId } from '@/lib/server/household';
 import { createClient } from '@/lib/supabase/server';
 import { formatError, type ActionResult } from '@/lib/utils/server-actions';
 
@@ -31,25 +32,8 @@ export async function getUpcomingCalendarEntries(): Promise<
   try {
     const supabase = await createClient();
 
-    // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get user's household ID
-    const { data: householdMember } = await supabase
-      .from('household_members')
-      .select('household_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!householdMember) {
-      throw new Error('User not in a household');
-    }
+    // Validate user has household (throws if not) - RLS policies handle filtering
+    await getCurrentUserHouseholdId();
 
     // Calculate date range: today to +7 days
     const today = new Date();
@@ -100,31 +84,14 @@ export async function getPendingAiTagSuggestionsCount(): Promise<ActionResult<nu
   try {
     const supabase = await createClient();
 
-    // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get user's household ID
-    const { data: householdMember } = await supabase
-      .from('household_members')
-      .select('household_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!householdMember) {
-      throw new Error('User not in a household');
-    }
+    // Get user's household ID (correctly via profile)
+    const householdId = await getCurrentUserHouseholdId();
 
     // Count pending AI tag suggestions
     const { count, error } = await supabase
       .from('ai_tag_suggestions')
       .select('*', { count: 'exact', head: true })
-      .eq('household_id', householdMember.household_id)
+      .eq('household_id', householdId)
       .eq('status', 'pending');
 
     if (error) throw error;
@@ -145,31 +112,14 @@ export async function getPendingMealRequestsCount(): Promise<ActionResult<number
   try {
     const supabase = await createClient();
 
-    // Get current user
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get user's household ID
-    const { data: householdMember } = await supabase
-      .from('household_members')
-      .select('household_id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!householdMember) {
-      throw new Error('User not in a household');
-    }
+    // Get user's household ID (correctly via profile)
+    const householdId = await getCurrentUserHouseholdId();
 
     // Count open meal requests
     const { count, error } = await supabase
       .from('meal_requests')
       .select('*', { count: 'exact', head: true })
-      .eq('household_id', householdMember.household_id)
+      .eq('household_id', householdId)
       .eq('status', 'open');
 
     if (error) throw error;
