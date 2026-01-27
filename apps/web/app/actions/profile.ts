@@ -30,7 +30,7 @@ export async function updateProfile(data: { display_name: string }): Promise<Act
     const { error: updateError } = await supabase
       .from('profiles')
       .update({ display_name: data.display_name })
-      .eq('user_id', user.id);
+      .eq('auth_user_id', user.id);
 
     if (updateError) {
       console.error('Profile update error:', updateError);

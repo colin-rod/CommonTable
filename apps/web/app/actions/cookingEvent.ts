@@ -144,10 +144,20 @@ export async function getCookingEventsByHousehold(
       throw new Error('User not authenticated');
     }
 
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      throw new Error('User profile not found');
+    }
+
     const { data: householdMember } = await supabase
       .from('household_members')
       .select('household_id')
-      .eq('user_id', user.id)
+      .eq('user_id', profile.id)
       .single();
 
     if (!householdMember) {
