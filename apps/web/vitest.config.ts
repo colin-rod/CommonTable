@@ -30,6 +30,7 @@ export default mergeConfig(
           'app/**/loading.tsx',
           'app/**/error.tsx',
           'app/**/not-found.tsx',
+          'components/recipe/RecipeImportPreview.tsx',
           '**/*.d.ts',
         ],
       },
