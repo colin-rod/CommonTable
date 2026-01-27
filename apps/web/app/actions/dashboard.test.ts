@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { getUpcomingCalendarEntries } from './dashboard';
+import {
+  getUpcomingCalendarEntries,
+  getPendingAiTagSuggestionsCount,
+  getPendingMealRequestsCount,
+} from './dashboard';
 
 const { mockSupabaseClient } = vi.hoisted(() => ({
   mockSupabaseClient: {
@@ -319,6 +323,270 @@ describe('dashboard server actions', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toContain('not in a household');
+      }
+    });
+  });
+
+  describe('getPendingAiTagSuggestionsCount', () => {
+    const mockUser = { id: 'user-123' };
+    const mockHouseholdMember = { household_id: 'household-1' };
+
+    it('should return count of pending AI tag suggestions', async () => {
+      const mockQueryChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      // First eq() for household_id, second eq() for status 'pending'
+      mockQueryChain.eq
+        .mockReturnValueOnce(mockQueryChain)
+        .mockResolvedValueOnce({ count: 5, error: null });
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'household_members') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
+          };
+        }
+        if (table === 'ai_tag_suggestions') {
+          return mockQueryChain;
+        }
+        return mockQueryChain;
+      });
+
+      const result = await getPendingAiTagSuggestionsCount();
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toBe(5);
+      }
+
+      expect(mockQueryChain.select).toHaveBeenCalledWith('*', { count: 'exact', head: true });
+      expect(mockQueryChain.eq).toHaveBeenCalledWith('household_id', 'household-1');
+      expect(mockQueryChain.eq).toHaveBeenCalledWith('status', 'pending');
+    });
+
+    it('should return 0 when no pending suggestions exist', async () => {
+      const mockQueryChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      mockQueryChain.eq
+        .mockReturnValueOnce(mockQueryChain)
+        .mockResolvedValueOnce({ count: null, error: null });
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'household_members') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
+          };
+        }
+        return mockQueryChain;
+      });
+
+      const result = await getPendingAiTagSuggestionsCount();
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toBe(0);
+      }
+    });
+
+    it('should return error when user is not authenticated', async () => {
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: null } });
+
+      const result = await getPendingAiTagSuggestionsCount();
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('not authenticated');
+      }
+    });
+
+    it('should return error when user is not in a household', async () => {
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+      mockSupabaseClient.from.mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      });
+
+      const result = await getPendingAiTagSuggestionsCount();
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('not in a household');
+      }
+    });
+
+    it('should return error when database query fails', async () => {
+      const error = new Error('Database error');
+
+      const mockQueryChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      mockQueryChain.eq
+        .mockReturnValueOnce(mockQueryChain)
+        .mockResolvedValueOnce({ count: null, error });
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'household_members') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
+          };
+        }
+        return mockQueryChain;
+      });
+
+      const result = await getPendingAiTagSuggestionsCount();
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('Database error');
+      }
+    });
+  });
+
+  describe('getPendingMealRequestsCount', () => {
+    const mockUser = { id: 'user-123' };
+    const mockHouseholdMember = { household_id: 'household-1' };
+
+    it('should return count of open meal requests', async () => {
+      const mockQueryChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      // First eq() for household_id, second eq() for status 'open'
+      mockQueryChain.eq
+        .mockReturnValueOnce(mockQueryChain)
+        .mockResolvedValueOnce({ count: 3, error: null });
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'household_members') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
+          };
+        }
+        if (table === 'meal_requests') {
+          return mockQueryChain;
+        }
+        return mockQueryChain;
+      });
+
+      const result = await getPendingMealRequestsCount();
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toBe(3);
+      }
+
+      expect(mockQueryChain.select).toHaveBeenCalledWith('*', { count: 'exact', head: true });
+      expect(mockQueryChain.eq).toHaveBeenCalledWith('household_id', 'household-1');
+      expect(mockQueryChain.eq).toHaveBeenCalledWith('status', 'open');
+    });
+
+    it('should return 0 when no open meal requests exist', async () => {
+      const mockQueryChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      mockQueryChain.eq
+        .mockReturnValueOnce(mockQueryChain)
+        .mockResolvedValueOnce({ count: null, error: null });
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'household_members') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
+          };
+        }
+        return mockQueryChain;
+      });
+
+      const result = await getPendingMealRequestsCount();
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toBe(0);
+      }
+    });
+
+    it('should return error when user is not authenticated', async () => {
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: null } });
+
+      const result = await getPendingMealRequestsCount();
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('not authenticated');
+      }
+    });
+
+    it('should return error when user is not in a household', async () => {
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+      mockSupabaseClient.from.mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      });
+
+      const result = await getPendingMealRequestsCount();
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('not in a household');
+      }
+    });
+
+    it('should return error when database query fails', async () => {
+      const error = new Error('Database error');
+
+      const mockQueryChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+      };
+
+      mockQueryChain.eq
+        .mockReturnValueOnce(mockQueryChain)
+        .mockResolvedValueOnce({ count: null, error });
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({ data: { user: mockUser } });
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        if (table === 'household_members') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: mockHouseholdMember, error: null }),
+          };
+        }
+        return mockQueryChain;
+      });
+
+      const result = await getPendingMealRequestsCount();
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toBe('Database error');
       }
     });
   });

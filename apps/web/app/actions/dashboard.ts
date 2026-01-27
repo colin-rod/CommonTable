@@ -90,3 +90,93 @@ export async function getUpcomingCalendarEntries(): Promise<
     return { success: false, error: formatError(error) };
   }
 }
+
+/**
+ * Get count of pending AI tag suggestions for the user's household
+ *
+ * @returns ActionResult with count or error
+ */
+export async function getPendingAiTagSuggestionsCount(): Promise<ActionResult<number>> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get user's household ID
+    const { data: householdMember } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!householdMember) {
+      throw new Error('User not in a household');
+    }
+
+    // Count pending AI tag suggestions
+    const { count, error } = await supabase
+      .from('ai_tag_suggestions')
+      .select('*', { count: 'exact', head: true })
+      .eq('household_id', householdMember.household_id)
+      .eq('status', 'pending');
+
+    if (error) throw error;
+
+    return { success: true, data: count || 0 };
+  } catch (error) {
+    console.error('getPendingAiTagSuggestionsCount failed:', error);
+    return { success: false, error: formatError(error) };
+  }
+}
+
+/**
+ * Get count of open meal requests for the user's household
+ *
+ * @returns ActionResult with count or error
+ */
+export async function getPendingMealRequestsCount(): Promise<ActionResult<number>> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get user's household ID
+    const { data: householdMember } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!householdMember) {
+      throw new Error('User not in a household');
+    }
+
+    // Count open meal requests
+    const { count, error } = await supabase
+      .from('meal_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('household_id', householdMember.household_id)
+      .eq('status', 'open');
+
+    if (error) throw error;
+
+    return { success: true, data: count || 0 };
+  } catch (error) {
+    console.error('getPendingMealRequestsCount failed:', error);
+    return { success: false, error: formatError(error) };
+  }
+}

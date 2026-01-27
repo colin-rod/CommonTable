@@ -62,14 +62,115 @@ describe('QuickActions', () => {
   });
 
   it('should have correct button variant and color', () => {
-    render(<QuickActions />);
+    render(<QuickActions pendingTagsCount={0} pendingRequestsCount={0} />);
 
-    const buttons = screen.getAllByRole('button');
+    // First 3 buttons should be contained primary (main actions)
+    const addRecipeButton = screen.getByRole('button', { name: /add recipe/i });
+    const planMealsButton = screen.getByRole('button', { name: /plan this week's meals/i });
+    const browseRecipesButton = screen.getByRole('button', { name: /browse all recipes/i });
 
-    // All buttons should be MUI contained primary buttons
-    buttons.forEach((button) => {
-      expect(button).toHaveClass('MuiButton-contained');
-      expect(button).toHaveClass('MuiButton-containedPrimary');
-    });
+    expect(addRecipeButton).toHaveClass('MuiButton-contained');
+    expect(addRecipeButton).toHaveClass('MuiButton-containedPrimary');
+    expect(planMealsButton).toHaveClass('MuiButton-contained');
+    expect(planMealsButton).toHaveClass('MuiButton-containedPrimary');
+    expect(browseRecipesButton).toHaveClass('MuiButton-contained');
+    expect(browseRecipesButton).toHaveClass('MuiButton-containedPrimary');
+
+    // Last 4 buttons should be outlined (secondary actions)
+    const importRecipeButton = screen.getByRole('button', { name: /import recipe/i });
+    const suggestionsButton = screen.getByRole('button', { name: /recipe suggestions/i });
+    const tagReviewButton = screen.getByRole('button', { name: /ai tag review/i });
+    const mealRequestsButton = screen.getByRole('button', { name: /meal requests/i });
+
+    expect(importRecipeButton).toHaveClass('MuiButton-outlined');
+    expect(suggestionsButton).toHaveClass('MuiButton-outlined');
+    expect(tagReviewButton).toHaveClass('MuiButton-outlined');
+    expect(mealRequestsButton).toHaveClass('MuiButton-outlined');
+  });
+
+  it('should render 4 additional secondary action buttons', () => {
+    render(<QuickActions pendingTagsCount={5} pendingRequestsCount={3} />);
+
+    expect(screen.getByRole('button', { name: /import recipe/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /recipe suggestions/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ai tag review/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /meal requests/i })).toBeInTheDocument();
+  });
+
+  it('should navigate to /recipes/import when "Import Recipe" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<QuickActions pendingTagsCount={0} pendingRequestsCount={0} />);
+
+    const importRecipeButton = screen.getByRole('button', { name: /import recipe/i });
+    await user.click(importRecipeButton);
+
+    expect(mockPush).toHaveBeenCalledWith('/recipes/import');
+  });
+
+  it('should navigate to /suggestions when "Recipe Suggestions" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<QuickActions pendingTagsCount={0} pendingRequestsCount={0} />);
+
+    const suggestionsButton = screen.getByRole('button', { name: /recipe suggestions/i });
+    await user.click(suggestionsButton);
+
+    expect(mockPush).toHaveBeenCalledWith('/suggestions');
+  });
+
+  it('should navigate to /tags/review when "AI Tag Review" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<QuickActions pendingTagsCount={5} pendingRequestsCount={0} />);
+
+    const tagReviewButton = screen.getByRole('button', { name: /ai tag review/i });
+    await user.click(tagReviewButton);
+
+    expect(mockPush).toHaveBeenCalledWith('/tags/review');
+  });
+
+  it('should navigate to /requests when "Meal Requests" button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<QuickActions pendingTagsCount={0} pendingRequestsCount={3} />);
+
+    const mealRequestsButton = screen.getByRole('button', { name: /meal requests/i });
+    await user.click(mealRequestsButton);
+
+    expect(mockPush).toHaveBeenCalledWith('/requests');
+  });
+
+  it('should display badge count for AI Tag Review when count > 0', () => {
+    render(<QuickActions pendingTagsCount={5} pendingRequestsCount={0} />);
+
+    // Badge should show count
+    expect(screen.getByText('5')).toBeInTheDocument();
+  });
+
+  it('should display badge count for Meal Requests when count > 0', () => {
+    render(<QuickActions pendingTagsCount={0} pendingRequestsCount={3} />);
+
+    // Badge should show count
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  it('should not display badge when counts are 0', () => {
+    render(<QuickActions pendingTagsCount={0} pendingRequestsCount={0} />);
+
+    // No badges should be visible with MuiBadge class showing content
+    const badges = screen.queryAllByText('0');
+    expect(badges).toHaveLength(0);
+  });
+
+  it('should have secondary buttons with outlined variant', () => {
+    render(<QuickActions pendingTagsCount={0} pendingRequestsCount={0} />);
+
+    const importRecipeButton = screen.getByRole('button', { name: /import recipe/i });
+    const suggestionsButton = screen.getByRole('button', { name: /recipe suggestions/i });
+    const tagReviewButton = screen.getByRole('button', { name: /ai tag review/i });
+    const mealRequestsButton = screen.getByRole('button', { name: /meal requests/i });
+
+    // Secondary buttons should be outlined
+    expect(importRecipeButton).toHaveClass('MuiButton-outlined');
+    expect(suggestionsButton).toHaveClass('MuiButton-outlined');
+    expect(tagReviewButton).toHaveClass('MuiButton-outlined');
+    expect(mealRequestsButton).toHaveClass('MuiButton-outlined');
   });
 });
