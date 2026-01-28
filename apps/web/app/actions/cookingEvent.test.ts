@@ -18,28 +18,44 @@ const {
   mockSupabaseClient,
   mockCookingEventService,
   mockAuth,
+  mockProfilesTable,
   mockHouseholdMembersTable,
   cookingEventServiceClients,
-} = vi.hoisted(() => ({
-  mockSupabaseClient: {},
-  mockCookingEventService: {
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    getById: vi.fn(),
-    getByRecipeId: vi.fn(),
-    getByHouseholdId: vi.fn(),
-  },
-  mockAuth: {
-    getUser: vi.fn(),
-  },
-  mockHouseholdMembersTable: {
-    select: vi.fn(() => mockHouseholdMembersTable),
-    eq: vi.fn(() => mockHouseholdMembersTable),
+} = vi.hoisted(() => {
+  const profilesTable = {
+    select: vi.fn(),
+    eq: vi.fn(),
     single: vi.fn(),
-  },
-  cookingEventServiceClients: [] as unknown[],
-}));
+  };
+  profilesTable.select.mockReturnValue(profilesTable);
+  profilesTable.eq.mockReturnValue(profilesTable);
+
+  const householdMembersTable = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    single: vi.fn(),
+  };
+  householdMembersTable.select.mockReturnValue(householdMembersTable);
+  householdMembersTable.eq.mockReturnValue(householdMembersTable);
+
+  return {
+    mockSupabaseClient: {},
+    mockCookingEventService: {
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      getById: vi.fn(),
+      getByRecipeId: vi.fn(),
+      getByHouseholdId: vi.fn(),
+    },
+    mockAuth: {
+      getUser: vi.fn(),
+    },
+    mockProfilesTable: profilesTable,
+    mockHouseholdMembersTable: householdMembersTable,
+    cookingEventServiceClients: [] as unknown[],
+  };
+});
 
 // Mock next/cache
 vi.mock('next/cache', () => ({
@@ -51,6 +67,7 @@ vi.mock('@/lib/supabase/server', () => ({
     ...mockSupabaseClient,
     auth: mockAuth,
     from: (table: string) => {
+      if (table === 'profiles') return mockProfilesTable;
       if (table === 'household_members') return mockHouseholdMembersTable;
       return {};
     },
@@ -219,6 +236,11 @@ describe('cookingEvent server actions', () => {
         error: null,
       });
 
+      mockProfilesTable.single.mockResolvedValue({
+        data: { id: 'profile-1' },
+        error: null,
+      });
+
       mockHouseholdMembersTable.single.mockResolvedValue({
         data: { household_id: 'household-1' },
         error: null,
@@ -261,6 +283,11 @@ describe('cookingEvent server actions', () => {
         error: null,
       });
 
+      mockProfilesTable.single.mockResolvedValue({
+        data: { id: 'profile-1' },
+        error: null,
+      });
+
       mockHouseholdMembersTable.single.mockResolvedValue({
         data: null,
         error: null,
@@ -278,6 +305,11 @@ describe('cookingEvent server actions', () => {
     it('should use default limit and offset when not provided', async () => {
       mockAuth.getUser.mockResolvedValue({
         data: { user: { id: 'user-1' } },
+        error: null,
+      });
+
+      mockProfilesTable.single.mockResolvedValue({
+        data: { id: 'profile-1' },
         error: null,
       });
 

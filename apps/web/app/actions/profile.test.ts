@@ -61,7 +61,7 @@ describe('profile server actions', () => {
       expect(result).toEqual({ success: true, data: undefined });
       expect(mockAuth.getUser).toHaveBeenCalled();
       expect(mockProfilesTable.update).toHaveBeenCalledWith({ display_name: 'New Display Name' });
-      expect(mockProfilesTable.eq).toHaveBeenCalledWith('user_id', 'user-1');
+      expect(mockProfilesTable.eq).toHaveBeenCalledWith('auth_user_id', 'user-1');
     });
 
     it('should return error when user is not authenticated', async () => {
