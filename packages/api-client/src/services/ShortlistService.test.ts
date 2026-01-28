@@ -208,4 +208,92 @@ describe('ShortlistService', () => {
       );
     });
   });
+
+  // =============================================================================
+  // getAll
+  // =============================================================================
+
+  describe('getAll', () => {
+    const validHouseholdId = 'd4e5f6a7-b8c9-0123-def1-234567890123' as HouseholdId;
+
+    it('should return all shortlisted recipes with user attribution', async () => {
+      const mockData = [
+        {
+          id: 'shortlist-1',
+          recipe_id: 'recipe-123',
+          added_by_user_id: 'user-456',
+          added_at: '2026-01-28T10:00:00Z',
+          recipes: {
+            id: 'recipe-123',
+            title: 'Pasta Carbonara',
+            household_id: validHouseholdId,
+            description: 'Classic Italian pasta',
+            current_version_id: 'version-1',
+            rolling_score: null,
+            tags: ['pasta', 'italian'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: 'user-456',
+            created_at: '2026-01-20T10:00:00Z',
+            updated_at: '2026-01-20T10:00:00Z',
+          },
+          profiles: {
+            id: 'user-456',
+            full_name: 'John Doe',
+            email: 'john@example.com',
+          },
+        },
+      ];
+
+      const mockBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+      };
+
+      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+
+      const result = await service.getAll(validHouseholdId);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].recipe.title).toBe('Pasta Carbonara');
+      expect(result[0].addedBy.name).toBe('John Doe');
+      expect(result[0].addedBy.id).toBe('user-456');
+      expect(result[0].addedAt).toBeInstanceOf(Date);
+      expect(mockSupabase.from).toHaveBeenCalledWith('recipe_shortlists');
+      expect(mockBuilder.select).toHaveBeenCalledWith('*, recipes(*), profiles(id, full_name)');
+      expect(mockBuilder.eq).toHaveBeenCalledWith('household_id', validHouseholdId);
+    });
+
+    it('should return empty array if no recipes shortlisted', async () => {
+      const mockBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
+
+      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+
+      const result = await service.getAll(validHouseholdId);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should throw AppError if database operation fails', async () => {
+      const dbError = {
+        code: 'FETCH_ERROR',
+        message: 'Database connection failed',
+      };
+
+      const mockBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: null, error: dbError }),
+      };
+
+      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+
+      await expect(service.getAll(validHouseholdId)).rejects.toThrow(AppError);
+      await expect(service.getAll(validHouseholdId)).rejects.toThrow(
+        'Failed to get shortlisted recipes',
+      );
+    });
+  });
 });

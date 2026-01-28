@@ -1,4 +1,11 @@
-import { type RecipeId, type UserId, type Database, AppError } from '@commontable/types';
+import {
+  type RecipeId,
+  type HouseholdId,
+  type UserId,
+  type ShortlistItem,
+  type Database,
+  AppError,
+} from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { BaseService } from './BaseService';
@@ -76,6 +83,42 @@ export class ShortlistService extends BaseService {
       console.error('ShortlistService.remove failed:', error);
       throw new AppError('Failed to remove recipe from shortlist', 'DELETE_ERROR', 500, {
         recipeId,
+      });
+    }
+  }
+
+  /**
+   * Get all shortlisted recipes for household
+   * Includes recipe details and user attribution
+   *
+   * @param householdId - Household ID to get shortlist for
+   * @returns Array of shortlisted recipes with user attribution
+   * @throws {AppError} If database operation fails
+   */
+  async getAll(householdId: HouseholdId): Promise<ShortlistItem[]> {
+    try {
+      const { data, error } = await this.supabase
+        .from('recipe_shortlists')
+        .select('*, recipes(*), profiles(id, full_name)')
+        .eq('household_id', householdId);
+
+      if (error) throw error;
+      if (!data) return [];
+
+      // Transform database response to ShortlistItem format
+      return data.map((row) => ({
+        id: row.id,
+        recipe: row.recipes,
+        addedBy: {
+          id: row.added_by_user_id,
+          name: row.profiles?.full_name || 'Unknown User',
+        },
+        addedAt: new Date(row.added_at),
+      }));
+    } catch (error: unknown) {
+      console.error('ShortlistService.getAll failed:', error);
+      throw new AppError('Failed to get shortlisted recipes', 'FETCH_ERROR', 500, {
+        householdId,
       });
     }
   }
