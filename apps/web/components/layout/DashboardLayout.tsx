@@ -208,6 +208,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         sx={{
           width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
           ml: { sm: `${DRAWER_WIDTH}px` },
+          zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
         <Toolbar>
@@ -265,7 +266,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         variant="permanent"
         sx={{
           display: { xs: 'none', sm: 'block' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH },
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: DRAWER_WIDTH,
+            position: 'static',
+          },
         }}
         open
       >
@@ -277,7 +284,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         component="main"
         sx={{
           flexGrow: 1,
-          width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
+          p: 3,
+          overflow: 'auto',
+          minWidth: 0,
         }}
       >
         {/* Toolbar spacer to prevent content from being hidden under AppBar */}
