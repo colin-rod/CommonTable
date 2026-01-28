@@ -43,7 +43,7 @@ describe('ShortlistFAB', () => {
     });
 
     it('should have fixed position styling', () => {
-      const { container } = render(<ShortlistFAB onClick={mockOnClick} />);
+      render(<ShortlistFAB onClick={mockOnClick} />);
 
       // FAB should be rendered (positioning is handled by MUI sx prop)
       const fab = screen.getByRole('button', { name: /shortlist/i });

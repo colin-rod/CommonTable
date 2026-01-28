@@ -1,6 +1,6 @@
 'use client';
 
-import type { RecipeId, UserId } from '@commontable/types';
+import type { RecipeId, SortOption, UserId } from '@commontable/types';
 import {
   Box,
   Button,
@@ -15,6 +15,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useMemo, useState } from 'react';
 
 import { RecipeGrid } from './RecipeGrid';
 
@@ -24,17 +25,21 @@ import { useShortlistStore } from '@/stores/useShortlistStore';
 
 export function WhatCanICookPanel() {
   const { recipes, loading, error } = useRecipes();
-  const {
-    filteredRecipes,
-    selectedTags,
-    availableTags,
-    showFavoritesOnly,
-    sortBy,
-    toggleTag,
-    toggleFavorites,
-    setSortBy,
-    clearFilters,
-  } = useRecipeFilters(recipes);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('last-cooked');
+
+  // Get available tags from recipes
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    recipes.forEach((recipe) => {
+      recipe.tags.forEach((tag) => tagSet.add(tag));
+    });
+    return Array.from(tagSet).sort();
+  }, [recipes]);
+
+  // Apply filters
+  const filteredRecipes = useRecipeFilters(recipes, selectedTags, showFavoritesOnly, sortBy);
 
   const { add: addToShortlist, hasRecipe } = useShortlistStore();
 
@@ -42,6 +47,17 @@ export function WhatCanICookPanel() {
     // TODO: Get current user ID from auth context
     const userId = 'temp-user-id' as UserId;
     await addToShortlist(recipeId, userId);
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedTags([]);
+    setShowFavoritesOnly(false);
   };
 
   const hasActiveFilters = selectedTags.length > 0 || showFavoritesOnly;
@@ -95,7 +111,12 @@ export function WhatCanICookPanel() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
           {/* Favorites Toggle */}
           <FormControlLabel
-            control={<Checkbox checked={showFavoritesOnly} onChange={() => toggleFavorites()} />}
+            control={
+              <Checkbox
+                checked={showFavoritesOnly}
+                onChange={(e) => setShowFavoritesOnly(e.target.checked)}
+              />
+            }
             label="Favorites only"
           />
 
@@ -107,10 +128,10 @@ export function WhatCanICookPanel() {
               id="sort-by"
               value={sortBy}
               label="Sort by"
-              onChange={(e) => setSortBy(e.target.value as 'last_cooked' | 'title' | 'rating')}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
             >
-              <MenuItem value="last_cooked">Last Cooked</MenuItem>
-              <MenuItem value="title">Title (A-Z)</MenuItem>
+              <MenuItem value="last-cooked">Last Cooked</MenuItem>
+              <MenuItem value="alphabetical">Title (A-Z)</MenuItem>
               <MenuItem value="rating">Rating</MenuItem>
             </Select>
           </FormControl>

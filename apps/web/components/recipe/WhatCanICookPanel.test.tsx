@@ -15,7 +15,7 @@ vi.mock('@/hooks/useRecipes', () => ({
 }));
 
 vi.mock('@/hooks/useRecipeFilters', () => ({
-  useRecipeFilters: () => mockUseRecipeFilters(),
+  useRecipeFilters: mockUseRecipeFilters,
 }));
 
 vi.mock('@/stores/useShortlistStore', () => ({
@@ -59,17 +59,8 @@ describe('WhatCanICookPanel', () => {
       toggleFavorite: mockToggleFavorite,
     });
 
-    mockUseRecipeFilters.mockReturnValue({
-      filteredRecipes: mockRecipes,
-      selectedTags: [],
-      availableTags: ['pasta', 'italian', 'pizza', 'chicken', 'curry', 'indian'],
-      showFavoritesOnly: false,
-      sortBy: 'last_cooked',
-      toggleTag: vi.fn(),
-      toggleFavorites: vi.fn(),
-      setSortBy: vi.fn(),
-      clearFilters: vi.fn(),
-    });
+    // Mock useRecipeFilters to return the same recipes (no filtering)
+    mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
     mockUseShortlistStore.mockReturnValue({
       items: [],
