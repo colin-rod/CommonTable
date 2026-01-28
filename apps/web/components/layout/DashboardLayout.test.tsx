@@ -70,9 +70,8 @@ describe('DashboardLayout', () => {
       );
 
       // Both permanent drawer (desktop) and temporary drawer (mobile) render navigation
-      const recipesLinks = screen.getAllByText('Recipes');
-      expect(recipesLinks.length).toBeGreaterThanOrEqual(1);
-
+      expect(screen.getAllByText('Discovery').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Recipes').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Calendar').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Requests').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);

@@ -1,6 +1,7 @@
 'use client';
 
 import CalendarIcon from '@mui/icons-material/CalendarToday';
+import ExploreIcon from '@mui/icons-material/Explore';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import RequestIcon from '@mui/icons-material/RequestPage';
@@ -42,6 +43,11 @@ interface NavItem {
  * Navigation items configuration
  */
 const navItems: NavItem[] = [
+  {
+    label: 'Discovery',
+    href: '/discovery',
+    icon: <ExploreIcon />,
+  },
   {
     label: 'Recipes',
     href: '/recipes',
