@@ -55,4 +55,28 @@ export class ShortlistService extends BaseService {
       });
     }
   }
+
+  /**
+   * Remove recipe from household shortlist
+   * Idempotent: No error if recipe doesn't exist in shortlist
+   *
+   * @param recipeId - Recipe ID to remove
+   * @returns Promise that resolves when recipe is removed
+   * @throws {AppError} If database operation fails
+   */
+  async remove(recipeId: RecipeId): Promise<void> {
+    try {
+      const { error } = await this.supabase
+        .from('recipe_shortlists')
+        .delete()
+        .eq('recipe_id', recipeId);
+
+      if (error) throw error;
+    } catch (error: unknown) {
+      console.error('ShortlistService.remove failed:', error);
+      throw new AppError('Failed to remove recipe from shortlist', 'DELETE_ERROR', 500, {
+        recipeId,
+      });
+    }
+  }
 }

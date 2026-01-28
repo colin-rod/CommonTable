@@ -153,4 +153,59 @@ describe('ShortlistService', () => {
       );
     });
   });
+
+  // =============================================================================
+  // remove
+  // =============================================================================
+
+  describe('remove', () => {
+    const validRecipeId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' as RecipeId;
+
+    it('should remove recipe from household shortlist', async () => {
+      const mockBuilder = {
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      };
+
+      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+
+      await service.remove(validRecipeId);
+
+      // Verify database delete call
+      expect(mockSupabase.from).toHaveBeenCalledWith('recipe_shortlists');
+      expect(mockBuilder.delete).toHaveBeenCalled();
+      expect(mockBuilder.eq).toHaveBeenCalledWith('recipe_id', validRecipeId);
+    });
+
+    it('should be idempotent (no error if recipe not in shortlist)', async () => {
+      const mockBuilder = {
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      };
+
+      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+
+      // Should NOT throw error if recipe doesn't exist
+      await expect(service.remove(validRecipeId)).resolves.toBeUndefined();
+    });
+
+    it('should throw AppError if database operation fails', async () => {
+      const dbError = {
+        code: 'DELETE_ERROR',
+        message: 'Database connection failed',
+      };
+
+      const mockBuilder = {
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: dbError }),
+      };
+
+      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+
+      await expect(service.remove(validRecipeId)).rejects.toThrow(AppError);
+      await expect(service.remove(validRecipeId)).rejects.toThrow(
+        'Failed to remove recipe from shortlist',
+      );
+    });
+  });
 });
