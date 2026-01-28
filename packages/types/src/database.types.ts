@@ -532,45 +532,6 @@ export type Database = {
           },
         ];
       };
-      recipe_shortlists: {
-        Row: {
-          added_at: string;
-          added_by_user_id: string;
-          household_id: string;
-          id: string;
-          recipe_id: string;
-        };
-        Insert: {
-          added_at?: string;
-          added_by_user_id: string;
-          household_id: string;
-          id?: string;
-          recipe_id: string;
-        };
-        Update: {
-          added_at?: string;
-          added_by_user_id?: string;
-          household_id?: string;
-          id?: string;
-          recipe_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'recipe_shortlists_household_id_fkey';
-            columns: ['household_id'];
-            isOneToOne: false;
-            referencedRelation: 'households';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'recipe_shortlists_recipe_id_fkey';
-            columns: ['recipe_id'];
-            isOneToOne: false;
-            referencedRelation: 'recipes';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       recipe_version_tags: {
         Row: {
           created_at: string;
