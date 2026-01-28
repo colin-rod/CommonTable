@@ -12,6 +12,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 import { useShortlistStore } from '@/stores/useShortlistStore';
 
@@ -21,7 +22,13 @@ interface ShortlistDrawerProps {
 }
 
 export function ShortlistDrawer({ open, onClose }: ShortlistDrawerProps) {
+  const router = useRouter();
   const { items, loading, error, remove } = useShortlistStore();
+
+  const handleRecipeClick = (recipeId: string) => {
+    router.push(`/recipes/${recipeId}`);
+    onClose(); // Close drawer after navigation
+  };
 
   return (
     <Drawer
@@ -83,11 +90,7 @@ export function ShortlistDrawer({ open, onClose }: ShortlistDrawerProps) {
                   </IconButton>
                 }
               >
-                <ListItemButton
-                  onClick={() => {
-                    /* TODO: Navigate to recipe */
-                  }}
-                >
+                <ListItemButton onClick={() => handleRecipeClick(item.recipe.id)}>
                   <ListItemText
                     primary={item.recipe.title}
                     secondary={`Added by ${item.addedBy.name}`}

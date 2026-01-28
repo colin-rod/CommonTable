@@ -1,9 +1,15 @@
 import type { ShortlistItem, RecipeId, UserId, HouseholdId } from '@commontable/types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useRouter } from 'next/navigation';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { ShortlistDrawer } from './ShortlistDrawer';
+
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
+}));
 
 // Mock useShortlistStore
 const mockUseShortlistStore = vi.fn();
@@ -45,9 +51,20 @@ const mockShortlistItems: ShortlistItem[] = [
 describe('ShortlistDrawer', () => {
   const mockOnClose = vi.fn();
   const mockRemove = vi.fn();
+  const mockPush = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mock router
+    vi.mocked(useRouter).mockReturnValue({
+      push: mockPush,
+      replace: vi.fn(),
+      refresh: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      prefetch: vi.fn(),
+    } as any);
 
     // Default mock: empty shortlist
     mockUseShortlistStore.mockReturnValue({
@@ -177,6 +194,28 @@ describe('ShortlistDrawer', () => {
       await user.click(removeButton);
 
       expect(mockRemove).toHaveBeenCalledWith('recipe-1' as RecipeId);
+    });
+
+    it('should navigate to recipe when recipe item clicked', async () => {
+      const user = userEvent.setup();
+
+      mockUseShortlistStore.mockReturnValue({
+        items: [mockShortlistItems[0]],
+        loading: false,
+        error: null,
+        remove: mockRemove,
+      });
+
+      render(<ShortlistDrawer open={true} onClose={mockOnClose} />);
+
+      // Click on the recipe text (ListItemButton contains both title and secondary text)
+      const recipeButton = screen.getByText('Pasta Carbonara');
+      await user.click(recipeButton);
+
+      // Should navigate to recipe detail page
+      expect(mockPush).toHaveBeenCalledWith('/recipes/recipe-1');
+      // Should close drawer after navigation
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
   });
 
