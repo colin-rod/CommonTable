@@ -72,18 +72,8 @@ describe('DiscoveryPage', () => {
       error: null,
     });
 
-    // Mock useRecipeFilters
-    mockUseRecipeFilters.mockReturnValue({
-      filteredRecipes: [],
-      selectedTags: [],
-      availableTags: [],
-      showFavoritesOnly: false,
-      sortBy: 'last_cooked',
-      toggleTag: vi.fn(),
-      toggleFavorites: vi.fn(),
-      setSortBy: vi.fn(),
-      clearFilters: vi.fn(),
-    });
+    // Mock useRecipeFilters to return empty array (matches actual hook return type)
+    mockUseRecipeFilters.mockReturnValue([]);
   });
 
   describe('Basic Rendering', () => {

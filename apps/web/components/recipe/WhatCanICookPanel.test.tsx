@@ -15,7 +15,7 @@ vi.mock('@/hooks/useRecipes', () => ({
 }));
 
 vi.mock('@/hooks/useRecipeFilters', () => ({
-  useRecipeFilters: mockUseRecipeFilters,
+  useRecipeFilters: () => mockUseRecipeFilters(),
 }));
 
 vi.mock('@/stores/useShortlistStore', () => ({
@@ -113,17 +113,7 @@ describe('WhatCanICookPanel', () => {
     });
 
     it('should render empty state when no recipes match filters', () => {
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: [],
-        selectedTags: ['pasta'],
-        availableTags: ['pasta', 'italian'],
-        showFavoritesOnly: false,
-        sortBy: 'last_cooked',
-        toggleTag: vi.fn(),
-        toggleFavorites: vi.fn(),
-        setSortBy: vi.fn(),
-        clearFilters: vi.fn(),
-      });
+      mockUseRecipeFilters.mockReturnValue([]);
 
       render(<WhatCanICookPanel />);
 
@@ -140,93 +130,76 @@ describe('WhatCanICookPanel', () => {
       expect(screen.getByRole('button', { name: /chicken/i })).toBeInTheDocument();
     });
 
-    it('should show selected tags with active styling', () => {
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: mockRecipes,
-        selectedTags: ['pasta', 'italian'],
-        availableTags: ['pasta', 'italian', 'pizza'],
-        showFavoritesOnly: false,
-        sortBy: 'last_cooked',
-        toggleTag: vi.fn(),
-        toggleFavorites: vi.fn(),
-        setSortBy: vi.fn(),
-        clearFilters: vi.fn(),
-      });
+    it('should show selected tags with active styling', async () => {
+      const user = userEvent.setup();
+      mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
       render(<WhatCanICookPanel />);
 
+      // Click pasta tag to select it
       const pastaChip = screen.getByRole('button', { name: /pasta/i });
-      const italianChip = screen.getByRole('button', { name: /italian/i });
+      await user.click(pastaChip);
 
-      // Selected chips should have 'filled' variant
+      // Selected chip should have 'filled' variant
       expect(pastaChip).toHaveClass('MuiChip-filled');
-      expect(italianChip).toHaveClass('MuiChip-filled');
     });
 
     it('should call toggleTag when tag chip clicked', async () => {
       const user = userEvent.setup();
-      const mockToggleTag = vi.fn();
-
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: mockRecipes,
-        selectedTags: [],
-        availableTags: ['pasta', 'italian'],
-        showFavoritesOnly: false,
-        sortBy: 'last_cooked',
-        toggleTag: mockToggleTag,
-        toggleFavorites: vi.fn(),
-        setSortBy: vi.fn(),
-        clearFilters: vi.fn(),
-      });
+      mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
       render(<WhatCanICookPanel />);
 
       const pastaChip = screen.getByRole('button', { name: /pasta/i });
+
+      // Verify chip is initially unselected (outlined variant)
+      expect(pastaChip).toHaveClass('MuiChip-outlined');
+
       await user.click(pastaChip);
 
-      expect(mockToggleTag).toHaveBeenCalledWith('pasta');
+      // After click, chip should be selected (filled variant)
+      expect(pastaChip).toHaveClass('MuiChip-filled');
     });
 
-    it('should render clear filters button when filters active', () => {
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: mockRecipes,
-        selectedTags: ['pasta'],
-        availableTags: ['pasta', 'italian'],
-        showFavoritesOnly: false,
-        sortBy: 'last_cooked',
-        toggleTag: vi.fn(),
-        toggleFavorites: vi.fn(),
-        setSortBy: vi.fn(),
-        clearFilters: vi.fn(),
-      });
+    it('should render clear filters button when filters active', async () => {
+      const user = userEvent.setup();
+      mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
       render(<WhatCanICookPanel />);
 
+      // Initially no clear filters button
+      expect(screen.queryByRole('button', { name: /clear filters/i })).not.toBeInTheDocument();
+
+      // Click a tag to activate filters
+      const pastaChip = screen.getByRole('button', { name: /pasta/i });
+      await user.click(pastaChip);
+
+      // Now clear filters button should appear
       expect(screen.getByRole('button', { name: /clear filters/i })).toBeInTheDocument();
     });
 
-    it('should call clearFilters when clear button clicked', async () => {
+    it('should clear filters when clear button clicked', async () => {
       const user = userEvent.setup();
-      const mockClearFilters = vi.fn();
-
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: mockRecipes,
-        selectedTags: ['pasta'],
-        availableTags: ['pasta', 'italian'],
-        showFavoritesOnly: false,
-        sortBy: 'last_cooked',
-        toggleTag: vi.fn(),
-        toggleFavorites: vi.fn(),
-        setSortBy: vi.fn(),
-        clearFilters: mockClearFilters,
-      });
+      mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
       render(<WhatCanICookPanel />);
 
+      // Click a tag to activate filters
+      const pastaChip = screen.getByRole('button', { name: /pasta/i });
+      await user.click(pastaChip);
+
+      // Verify chip is selected
+      expect(pastaChip).toHaveClass('MuiChip-filled');
+
+      // Click clear filters button
       const clearButton = screen.getByRole('button', { name: /clear filters/i });
       await user.click(clearButton);
 
-      expect(mockClearFilters).toHaveBeenCalled();
+      // Verify chip is no longer selected
+      expect(pastaChip).toHaveClass('MuiChip-outlined');
+
+      // Clear filters button should be gone
+      expect(screen.queryByRole('button', { name: /clear filters/i })).not.toBeInTheDocument();
     });
   });
 
@@ -237,47 +210,42 @@ describe('WhatCanICookPanel', () => {
       expect(screen.getByRole('checkbox', { name: /favorites only/i })).toBeInTheDocument();
     });
 
-    it('should show checkbox as checked when showFavoritesOnly is true', () => {
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: mockRecipes,
-        selectedTags: [],
-        availableTags: ['pasta', 'italian'],
-        showFavoritesOnly: true,
-        sortBy: 'last_cooked',
-        toggleTag: vi.fn(),
-        toggleFavorites: vi.fn(),
-        setSortBy: vi.fn(),
-        clearFilters: vi.fn(),
-      });
+    it('should show checkbox as checked when showFavoritesOnly is true', async () => {
+      const user = userEvent.setup();
+      mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
       render(<WhatCanICookPanel />);
 
       const checkbox = screen.getByRole('checkbox', { name: /favorites only/i });
+
+      // Initially unchecked
+      expect(checkbox).not.toBeChecked();
+
+      // Click to check
+      await user.click(checkbox);
+
+      // Now checked
       expect(checkbox).toBeChecked();
     });
 
-    it('should call toggleFavorites when checkbox clicked', async () => {
+    it('should toggle favorites checkbox when clicked', async () => {
       const user = userEvent.setup();
-      const mockToggleFavorites = vi.fn();
-
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: mockRecipes,
-        selectedTags: [],
-        availableTags: ['pasta', 'italian'],
-        showFavoritesOnly: false,
-        sortBy: 'last_cooked',
-        toggleTag: vi.fn(),
-        toggleFavorites: mockToggleFavorites,
-        setSortBy: vi.fn(),
-        clearFilters: vi.fn(),
-      });
+      mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
       render(<WhatCanICookPanel />);
 
       const checkbox = screen.getByRole('checkbox', { name: /favorites only/i });
-      await user.click(checkbox);
 
-      expect(mockToggleFavorites).toHaveBeenCalled();
+      // Initially unchecked
+      expect(checkbox).not.toBeChecked();
+
+      // Click once
+      await user.click(checkbox);
+      expect(checkbox).toBeChecked();
+
+      // Click again
+      await user.click(checkbox);
+      expect(checkbox).not.toBeChecked();
     });
   });
 
@@ -288,52 +256,48 @@ describe('WhatCanICookPanel', () => {
       expect(screen.getByLabelText(/sort by/i)).toBeInTheDocument();
     });
 
-    it('should show current sort option', () => {
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: mockRecipes,
-        selectedTags: [],
-        availableTags: ['pasta', 'italian'],
-        showFavoritesOnly: false,
-        sortBy: 'title',
-        toggleTag: vi.fn(),
-        toggleFavorites: vi.fn(),
-        setSortBy: vi.fn(),
-        clearFilters: vi.fn(),
-      });
+    it('should show current sort option', async () => {
+      const user = userEvent.setup();
+      mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
       render(<WhatCanICookPanel />);
 
       // MUI Select renders as combobox with text content
       const select = screen.getByRole('combobox', { name: /sort by/i });
+
+      // Initially shows "Last Cooked" (default)
+      expect(select).toHaveTextContent('Last Cooked');
+
+      // Click to open dropdown
+      await user.click(select);
+
+      // Click "Title (A-Z)" option
+      const titleOption = await screen.findByRole('option', { name: /title/i });
+      await user.click(titleOption);
+
+      // Now shows "Title (A-Z)"
       expect(select).toHaveTextContent('Title (A-Z)');
     });
 
-    it('should call setSortBy when sort option changed', async () => {
+    it('should change sort option when dropdown selection changes', async () => {
       const user = userEvent.setup();
-      const mockSetSortBy = vi.fn();
-
-      mockUseRecipeFilters.mockReturnValue({
-        filteredRecipes: mockRecipes,
-        selectedTags: [],
-        availableTags: ['pasta', 'italian'],
-        showFavoritesOnly: false,
-        sortBy: 'last_cooked',
-        toggleTag: vi.fn(),
-        toggleFavorites: vi.fn(),
-        setSortBy: mockSetSortBy,
-        clearFilters: vi.fn(),
-      });
+      mockUseRecipeFilters.mockReturnValue(mockRecipes);
 
       render(<WhatCanICookPanel />);
 
       const select = screen.getByRole('combobox', { name: /sort by/i });
+
+      // Initially shows "Last Cooked"
+      expect(select).toHaveTextContent('Last Cooked');
+
       await user.click(select);
 
       // Click the "Title (A-Z)" option in the dropdown
       const titleOption = await screen.findByRole('option', { name: /title/i });
       await user.click(titleOption);
 
-      expect(mockSetSortBy).toHaveBeenCalledWith('title');
+      // Verify sort option changed
+      expect(select).toHaveTextContent('Title (A-Z)');
     });
 
     it('should render all sort options', async () => {
