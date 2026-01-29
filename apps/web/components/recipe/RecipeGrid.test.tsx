@@ -1,4 +1,4 @@
-import type { Recipe, RecipeId, HouseholdId, UserId } from '@commontable/types';
+import type { Recipe, RecipeId, RecipeVersionId, HouseholdId, UserId } from '@commontable/types';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -14,7 +14,7 @@ const createMockRecipe = (id: string, title: string): Recipe => ({
   household_id: 'household-456' as HouseholdId,
   title,
   description: `Description for ${title}`,
-  current_version_id: 'version-1',
+  current_version_id: 'version-1' as RecipeVersionId,
   rolling_score: 4.5,
   tags: ['tag1', 'tag2'],
   is_favorite: false,
@@ -88,7 +88,7 @@ describe('RecipeGrid', () => {
       );
 
       const buttons = screen.getAllByRole('button', { name: /add to shortlist/i });
-      await user.click(buttons[0]);
+      await user.click(buttons[0]!);
 
       expect(onAddToShortlist).toHaveBeenCalledWith('recipe-1' as RecipeId);
     });

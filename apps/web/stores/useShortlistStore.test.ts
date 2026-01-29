@@ -1,5 +1,11 @@
 import { ShortlistService } from '@commontable/api-client';
-import type { RecipeId, UserId, HouseholdId, ShortlistItem } from '@commontable/types';
+import type {
+  RecipeId,
+  RecipeVersionId,
+  UserId,
+  HouseholdId,
+  ShortlistItem,
+} from '@commontable/types';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
@@ -23,14 +29,14 @@ const mockShortlistItem1: ShortlistItem = {
     title: 'Pasta Carbonara',
     household_id: mockHouseholdId,
     description: 'Classic Italian pasta',
-    current_version_id: 'version-1',
+    current_version_id: 'version-1' as RecipeVersionId,
     rolling_score: null,
     tags: ['pasta', 'italian'],
     is_favorite: false,
     last_cooked_at: null,
     created_by: mockUserId,
-    created_at: '2026-01-20T10:00:00Z',
-    updated_at: '2026-01-20T10:00:00Z',
+    created_at: new Date('2026-01-20T10:00:00Z'),
+    updated_at: new Date('2026-01-20T10:00:00Z'),
   },
   addedBy: {
     id: mockUserId,
@@ -46,14 +52,14 @@ const mockShortlistItem2: ShortlistItem = {
     title: 'Pizza Margherita',
     household_id: mockHouseholdId,
     description: 'Simple pizza',
-    current_version_id: 'version-2',
+    current_version_id: 'version-2' as RecipeVersionId,
     rolling_score: null,
     tags: ['pizza', 'italian'],
     is_favorite: false,
     last_cooked_at: null,
     created_by: mockUserId,
-    created_at: '2026-01-21T10:00:00Z',
-    updated_at: '2026-01-21T10:00:00Z',
+    created_at: new Date('2026-01-21T10:00:00Z'),
+    updated_at: new Date('2026-01-21T10:00:00Z'),
   },
   addedBy: {
     id: mockUserId,
@@ -222,7 +228,7 @@ describe('useShortlistStore', () => {
 
       await waitFor(() => {
         expect(result.current.items.length).toBe(1);
-        expect(result.current.items[0].recipe.id).toBe(mockRecipeId2);
+        expect(result.current.items[0]!.recipe.id).toBe(mockRecipeId2);
       });
 
       expect(mockService.remove).toHaveBeenCalledWith(mockRecipeId1);

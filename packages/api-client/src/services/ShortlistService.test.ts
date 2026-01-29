@@ -88,16 +88,26 @@ describe('ShortlistService', () => {
     // Valid UUIDs for testing
     const validRecipeId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' as RecipeId;
     const validUserId = 'b2c3d4e5-f6a7-8901-bcde-f12345678901' as UserId;
+    const validHouseholdId = 'd4e5f6a7-b8c9-0123-def1-234567890123' as HouseholdId;
     const validShortlistId = 'c3d4e5f6-a7b8-9012-cdef-123456789012';
 
-    it('should add recipe to household shortlist', async () => {
+    it('should add recipe to household shortlist with household_id', async () => {
       const mockShortlist: MockShortlist = {
         id: validShortlistId,
-        household_id: 'd4e5f6a7-b8c9-0123-def1-234567890123',
+        household_id: validHouseholdId,
         recipe_id: validRecipeId,
         added_by_user_id: validUserId,
         added_at: new Date().toISOString(),
       };
+
+      // Mock RPC call to get household_id
+      vi.mocked(mockSupabase.rpc).mockResolvedValueOnce({
+        data: validHouseholdId,
+        error: null,
+        count: null,
+        status: 200,
+        statusText: 'OK',
+      } as any);
 
       const insertBuilder = createMockQueryBuilder<MockShortlist>({
         data: mockShortlist,
@@ -108,13 +118,38 @@ describe('ShortlistService', () => {
 
       await service.add(validRecipeId, validUserId);
 
+      // Verify RPC call to get household_id
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('get_user_household_id');
+
       // Verify database insert call
       expect(mockSupabase.from).toHaveBeenCalledWith('recipe_shortlists');
       expect(insertBuilder.insert).toHaveBeenCalledWith({
         recipe_id: validRecipeId,
+        household_id: validHouseholdId,
         added_by_user_id: validUserId,
       });
       expect(insertBuilder.single).toHaveBeenCalled();
+    });
+
+    it('should throw AppError if household_id cannot be retrieved', async () => {
+      // Mock RPC error
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: null,
+        error: {
+          message: 'Not authenticated',
+          details: '',
+          hint: '',
+          code: '401',
+        },
+        count: null,
+        status: 401,
+        statusText: 'Unauthorized',
+      } as any);
+
+      await expect(service.add(validRecipeId, validUserId)).rejects.toThrow(AppError);
+      await expect(service.add(validRecipeId, validUserId)).rejects.toThrow(
+        'Failed to get current household ID',
+      );
     });
 
     it('should be idempotent (no error if recipe already in shortlist)', async () => {
@@ -122,6 +157,15 @@ describe('ShortlistService', () => {
         code: '23505', // PostgreSQL unique constraint violation
         message: 'duplicate key value violates unique constraint',
       };
+
+      // Mock RPC call to get household_id
+      vi.mocked(mockSupabase.rpc).mockResolvedValueOnce({
+        data: validHouseholdId,
+        error: null,
+        count: null,
+        status: 200,
+        statusText: 'OK',
+      } as any);
 
       const insertBuilder = createMockQueryBuilder<MockShortlist>({
         data: null,
@@ -139,6 +183,15 @@ describe('ShortlistService', () => {
         code: 'OTHER_ERROR',
         message: 'Database connection failed',
       };
+
+      // Mock RPC call to get household_id
+      vi.mocked(mockSupabase.rpc).mockResolvedValueOnce({
+        data: validHouseholdId,
+        error: null,
+        count: null,
+        status: 200,
+        statusText: 'OK',
+      } as any);
 
       const insertBuilder = createMockQueryBuilder<MockShortlist>({
         data: null,
@@ -237,11 +290,6 @@ describe('ShortlistService', () => {
             created_at: '2026-01-20T10:00:00Z',
             updated_at: '2026-01-20T10:00:00Z',
           },
-          profiles: {
-            id: 'user-456',
-            full_name: 'John Doe',
-            email: 'john@example.com',
-          },
         },
       ];
 
@@ -255,12 +303,12 @@ describe('ShortlistService', () => {
       const result = await service.getAll(validHouseholdId);
 
       expect(result).toHaveLength(1);
-      expect(result[0].recipe.title).toBe('Pasta Carbonara');
-      expect(result[0].addedBy.name).toBe('John Doe');
-      expect(result[0].addedBy.id).toBe('user-456');
-      expect(result[0].addedAt).toBeInstanceOf(Date);
+      expect(result[0]?.recipe.title).toBe('Pasta Carbonara');
+      expect(result[0]?.addedBy.name).toBe('User');
+      expect(result[0]?.addedBy.id).toBe('user-456');
+      expect(result[0]?.addedAt).toBeInstanceOf(Date);
       expect(mockSupabase.from).toHaveBeenCalledWith('recipe_shortlists');
-      expect(mockBuilder.select).toHaveBeenCalledWith('*, recipes(*), profiles(id, full_name)');
+      expect(mockBuilder.select).toHaveBeenCalledWith('*, recipes(*)');
       expect(mockBuilder.eq).toHaveBeenCalledWith('household_id', validHouseholdId);
     });
 

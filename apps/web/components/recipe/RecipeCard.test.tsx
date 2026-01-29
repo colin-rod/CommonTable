@@ -1,4 +1,4 @@
-import type { Recipe, RecipeId, HouseholdId, UserId } from '@commontable/types';
+import type { Recipe, RecipeId, HouseholdId, UserId, RecipeVersionId } from '@commontable/types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
@@ -19,7 +19,7 @@ const mockRecipe: Recipe = {
   household_id: 'household-456' as HouseholdId,
   title: 'Pasta Carbonara',
   description: 'Classic Italian pasta dish',
-  current_version_id: 'version-1',
+  current_version_id: 'version-1' as RecipeVersionId,
   rolling_score: 4.5,
   tags: ['pasta', 'italian', 'quick'],
   is_favorite: false,

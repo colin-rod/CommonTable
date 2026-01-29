@@ -3,6 +3,7 @@ import {
   type HouseholdId,
   type UserId,
   type ShortlistItem,
+  type Recipe,
   type Database,
   AppError,
 } from '@commontable/types';
@@ -35,10 +36,13 @@ export class ShortlistService extends BaseService {
    */
   async add(recipeId: RecipeId, userId: UserId): Promise<void> {
     try {
+      const householdId = await this.getCurrentHouseholdId();
+
       const { error } = await this.supabase
         .from('recipe_shortlists')
         .insert({
           recipe_id: recipeId,
+          household_id: householdId,
           added_by_user_id: userId,
         })
         .single();
@@ -50,6 +54,11 @@ export class ShortlistService extends BaseService {
 
       if (error) throw error;
     } catch (error: unknown) {
+      // Re-throw AppError from getCurrentHouseholdId()
+      if (error instanceof AppError) {
+        throw error;
+      }
+
       // Already handled duplicate key errors above
       if ((error as { code?: string })?.code === '23505') {
         return;
@@ -61,6 +70,23 @@ export class ShortlistService extends BaseService {
         userId,
       });
     }
+  }
+
+  /**
+   * Helper: Get current household ID from context
+   * Uses Supabase RLS function to retrieve household_id for current user
+   *
+   * @returns Current user's household ID
+   * @throws {AppError} If user is not authenticated or not part of a household
+   */
+  private async getCurrentHouseholdId(): Promise<HouseholdId> {
+    const { data, error } = await this.supabase.rpc('get_user_household_id');
+
+    if (error || !data) {
+      throw new AppError('Failed to get current household ID', 'AUTH_ERROR', 401);
+    }
+
+    return data as HouseholdId;
   }
 
   /**
@@ -99,7 +125,7 @@ export class ShortlistService extends BaseService {
     try {
       const { data, error } = await this.supabase
         .from('recipe_shortlists')
-        .select('*, recipes(*), profiles(id, full_name)')
+        .select('*, recipes(*)')
         .eq('household_id', householdId);
 
       if (error) throw error;
@@ -108,10 +134,10 @@ export class ShortlistService extends BaseService {
       // Transform database response to ShortlistItem format
       return data.map((row) => ({
         id: row.id,
-        recipe: row.recipes,
+        recipe: row.recipes as unknown as Recipe,
         addedBy: {
-          id: row.added_by_user_id,
-          name: row.profiles?.full_name || 'Unknown User',
+          id: row.added_by_user_id as UserId,
+          name: 'User', // TODO: Add user name lookup
         },
         addedAt: new Date(row.added_at),
       }));

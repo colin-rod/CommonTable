@@ -1,4 +1,10 @@
-import type { ShortlistItem, RecipeId, UserId, HouseholdId } from '@commontable/types';
+import type {
+  ShortlistItem,
+  RecipeId,
+  RecipeVersionId,
+  UserId,
+  HouseholdId,
+} from '@commontable/types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
@@ -26,7 +32,7 @@ const createMockShortlistItem = (id: string, title: string): ShortlistItem => ({
     household_id: 'household-456' as HouseholdId,
     title,
     description: `Description for ${title}`,
-    current_version_id: 'version-1',
+    current_version_id: 'version-1' as RecipeVersionId,
     rolling_score: 4.5,
     tags: ['tag1', 'tag2'],
     is_favorite: false,
