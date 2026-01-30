@@ -1,11 +1,7 @@
-import { Container, Typography, Stack, Box } from '@mui/material';
+import { Container, Typography, Stack, Box, Paper, Divider } from '@mui/material';
 
 import { getCookingEventsByHousehold } from '@/app/actions/cookingEvent';
-import {
-  getUpcomingCalendarEntries,
-  getPendingAiTagSuggestionsCount,
-  getPendingMealRequestsCount,
-} from '@/app/actions/dashboard';
+import { getUpcomingCalendarEntries } from '@/app/actions/dashboard';
 import { HouseholdActivityFeed } from '@/components/cooking/HouseholdActivityFeed';
 import { DashboardClient } from '@/components/dashboard/DashboardClient';
 import { QuickActions } from '@/components/dashboard/QuickActions';
@@ -18,42 +14,50 @@ import { UpcomingMeals } from '@/components/dashboard/UpcomingMeals';
  * Shows user profile, household information, quick actions, upcoming meals, and recent cooking activity
  */
 export default async function DashboardPage() {
-  // Fetch household cooking events, upcoming calendar entries, and pending counts
+  // Fetch household cooking events and upcoming calendar entries
+  // Note: Pending counts removed - Tags and Requests are now in sidebar navigation
   const cookingEventsResult = await getCookingEventsByHousehold(10);
   const upcomingMealsResult = await getUpcomingCalendarEntries();
-  const pendingTagsCountResult = await getPendingAiTagSuggestionsCount();
-  const pendingRequestsCountResult = await getPendingMealRequestsCount();
 
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Stack spacing={4}>
-        {/* Client component for user info and sign out */}
-        <DashboardClient />
+        {/* User info card */}
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <DashboardClient />
+        </Paper>
 
-        {/* Quick Actions section */}
-        <QuickActions
-          pendingTagsCount={pendingTagsCountResult.success ? pendingTagsCountResult.data : 0}
-          pendingRequestsCount={
-            pendingRequestsCountResult.success ? pendingRequestsCountResult.data : 0
-          }
-        />
+        <Divider />
 
-        {/* Upcoming Meals section */}
-        <UpcomingMeals entries={upcomingMealsResult.success ? upcomingMealsResult.data : []} />
+        {/* Quick actions card */}
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <QuickActions />
+        </Paper>
 
-        {/* Recently Cooked section */}
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Recently Cooked
-          </Typography>
-          {cookingEventsResult.success ? (
-            <HouseholdActivityFeed events={cookingEventsResult.data} />
-          ) : (
-            <Typography variant="body2" color="error.main">
-              Failed to load cooking history
+        <Divider />
+
+        {/* Upcoming Meals card */}
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <UpcomingMeals entries={upcomingMealsResult.success ? upcomingMealsResult.data : []} />
+        </Paper>
+
+        <Divider />
+
+        {/* Recently Cooked card */}
+        <Paper elevation={1} sx={{ p: 3 }}>
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Recently Cooked
             </Typography>
-          )}
-        </Box>
+            {cookingEventsResult.success ? (
+              <HouseholdActivityFeed events={cookingEventsResult.data} />
+            ) : (
+              <Typography variant="body2" color="error.main">
+                Failed to load cooking history
+              </Typography>
+            )}
+          </Box>
+        </Paper>
       </Stack>
     </Container>
   );

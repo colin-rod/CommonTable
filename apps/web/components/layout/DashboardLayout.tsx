@@ -2,6 +2,7 @@
 
 import CalendarIcon from '@mui/icons-material/CalendarToday';
 import ExploreIcon from '@mui/icons-material/Explore';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import RequestIcon from '@mui/icons-material/RequestPage';
@@ -9,6 +10,7 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import SettingsIcon from '@mui/icons-material/Settings';
 import {
   AppBar,
+  Badge,
   Box,
   Drawer,
   IconButton,
@@ -59,6 +61,11 @@ const navItems: NavItem[] = [
     icon: <CalendarIcon />,
   },
   {
+    label: 'Tags',
+    href: '/tags/review',
+    icon: <LocalOfferIcon />,
+  },
+  {
     label: 'Requests',
     href: '/requests',
     icon: <RequestIcon />,
@@ -89,7 +96,15 @@ const DRAWER_WIDTH = 240;
  * - Buttons: IconButton for secondary actions
  * - Colors: Theme palette only
  */
-export function DashboardLayout({ children }: { children: ReactNode }) {
+export function DashboardLayout({
+  children,
+  pendingTagsCount = 0,
+  pendingRequestsCount = 0,
+}: {
+  children: ReactNode;
+  pendingTagsCount?: number;
+  pendingRequestsCount?: number;
+}) {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -177,6 +192,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
 
+          // Determine badge count for this item
+          const badgeCount =
+            item.label === 'Tags'
+              ? pendingTagsCount
+              : item.label === 'Requests'
+                ? pendingRequestsCount
+                : 0;
+
           return (
             <Link
               key={item.href}
@@ -190,7 +213,9 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                 aria-current={isActive ? 'page' : undefined}
               >
                 <Box sx={{ mr: 2, display: 'flex', color: 'inherit' }}>{item.icon}</Box>
-                <ListItemText primary={item.label} />
+                <Badge badgeContent={badgeCount} color="error">
+                  <ListItemText primary={item.label} />
+                </Badge>
               </ListItemButton>
             </Link>
           );

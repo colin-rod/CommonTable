@@ -73,6 +73,7 @@ describe('DashboardLayout', () => {
       expect(screen.getAllByText('Discovery').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Recipes').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Calendar').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('Tags').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Requests').length).toBeGreaterThanOrEqual(1);
       expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
     });
@@ -97,6 +98,51 @@ describe('DashboardLayout', () => {
       );
 
       expect(screen.getByText('Test Content')).toBeInTheDocument();
+    });
+
+    it('should render badge on Tags when pending count > 0', async () => {
+      render(
+        <DashboardLayout pendingTagsCount={3}>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      await waitFor(() => {
+        // Badge appears in both mobile and desktop drawers
+        const badges = screen.getAllByText('3');
+        expect(badges.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    it('should render badge on Requests when pending count > 0', async () => {
+      render(
+        <DashboardLayout pendingRequestsCount={5}>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      await waitFor(() => {
+        // Badge appears in both mobile and desktop drawers
+        const badges = screen.getAllByText('5');
+        expect(badges.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    it('should not render visible badges when pending counts are 0', () => {
+      render(
+        <DashboardLayout pendingTagsCount={0} pendingRequestsCount={0}>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      // Badges with 0 content are rendered but invisible
+      // MUI adds "MuiBadge-invisible" class when count is 0
+      // eslint-disable-next-line no-undef
+      const badges = document.querySelectorAll('.MuiBadge-badge');
+      badges.forEach((badge) => {
+        // All badges should have the invisible class when count is 0
+        expect(badge.classList.contains('MuiBadge-invisible')).toBe(true);
+      });
     });
   });
 

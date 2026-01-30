@@ -7,9 +7,18 @@ import type {
   UserId,
 } from '@commontable/types';
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { HouseholdActivityFeed } from './HouseholdActivityFeed';
+
+// Mock useRouter
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
 
 const mockCookingEventId = '00000000-0000-0000-0000-000000000001' as CookingEventId;
 const mockRecipeId = '00000000-0000-0000-0000-000000000002' as RecipeId;
@@ -47,6 +56,10 @@ const mockEvents: CookingEventWithRecipeAndProfile[] = [
 ];
 
 describe('HouseholdActivityFeed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should render list of cooking events with recipe titles', () => {
     render(<HouseholdActivityFeed events={mockEvents} />);
 
@@ -71,10 +84,21 @@ describe('HouseholdActivityFeed', () => {
     expect(dateTexts.length).toBeGreaterThan(0);
   });
 
-  it('should show empty state when events array is empty', () => {
+  it('should show improved empty state with action button when events array is empty', () => {
     render(<HouseholdActivityFeed events={[]} />);
 
     expect(screen.getByText('No cooking history yet')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /browse recipes/i })).toBeInTheDocument();
+  });
+
+  it('should navigate to recipes when empty state button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<HouseholdActivityFeed events={[]} />);
+
+    const button = screen.getByRole('button', { name: /browse recipes/i });
+    await user.click(button);
+
+    expect(mockPush).toHaveBeenCalledWith('/recipes');
   });
 
   it('should show loading state when loading prop is true', () => {

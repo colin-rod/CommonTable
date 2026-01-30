@@ -9,7 +9,9 @@ import {
   Rating,
   CircularProgress,
   Box,
+  Button,
 } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 import { formatRelativeDate } from '@/lib/dateUtils';
 
@@ -19,6 +21,8 @@ export interface HouseholdActivityFeedProps {
 }
 
 export function HouseholdActivityFeed({ events, loading = false }: HouseholdActivityFeedProps) {
+  const router = useRouter();
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={3}>
@@ -29,10 +33,18 @@ export function HouseholdActivityFeed({ events, loading = false }: HouseholdActi
 
   if (events.length === 0) {
     return (
-      <Box textAlign="center" py={3}>
-        <Typography variant="body2" color="text.secondary">
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
           No cooking history yet
         </Typography>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={() => router.push('/recipes')}
+          sx={{ mt: 2 }}
+        >
+          Browse recipes
+        </Button>
       </Box>
     );
   }

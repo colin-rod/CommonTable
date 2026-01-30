@@ -1,9 +1,18 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { UpcomingMeals } from './UpcomingMeals';
 
 import type { CalendarEntryWithRecipe } from '@/app/actions/dashboard';
+
+// Mock useRouter
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
 
 describe('UpcomingMeals', () => {
   const today = new Date('2026-01-26T12:00:00Z'); // Monday
@@ -13,6 +22,7 @@ describe('UpcomingMeals', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(today);
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -25,13 +35,27 @@ describe('UpcomingMeals', () => {
     expect(screen.getByText('Upcoming Meals')).toBeInTheDocument();
   });
 
-  it('should show "No meals planned" message when entries array is empty', () => {
+  it('should show improved empty state with action button when entries array is empty', () => {
     render(<UpcomingMeals entries={[]} />);
 
-    expect(screen.getByText('No meals planned for the next 7 days')).toBeInTheDocument();
+    expect(screen.getByText('No meals planned yet')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /plan your first meal/i })).toBeInTheDocument();
   });
 
-  it('should render list of upcoming meals', () => {
+  it('should navigate to calendar when empty state button is clicked', async () => {
+    vi.useRealTimers(); // Use real timers for user events
+    const user = userEvent.setup();
+    render(<UpcomingMeals entries={[]} />);
+
+    const button = screen.getByRole('button', { name: /plan your first meal/i });
+    await user.click(button);
+
+    expect(mockPush).toHaveBeenCalledWith('/calendar');
+    vi.useFakeTimers(); // Restore fake timers
+    vi.setSystemTime(today);
+  });
+
+  it('should render list of upcoming meals with count summary', () => {
     const entries: CalendarEntryWithRecipe[] = [
       {
         id: 'entry-1' as any,
@@ -65,6 +89,29 @@ describe('UpcomingMeals', () => {
 
     expect(screen.getByText('Pancakes')).toBeInTheDocument();
     expect(screen.getByText('Pasta')).toBeInTheDocument();
+    expect(screen.getByText('2 meals planned')).toBeInTheDocument();
+  });
+
+  it('should display singular "meal" when only 1 entry', () => {
+    const entries: CalendarEntryWithRecipe[] = [
+      {
+        id: 'entry-1' as any,
+        household_id: 'household-1' as any,
+        recipe_id: 'recipe-1' as any,
+        planned_date: tomorrow,
+        meal_slot: 'breakfast',
+        status: 'planned',
+        notes: null,
+        created_by: 'user-1' as any,
+        created_at: today,
+        updated_at: today,
+        recipe_title: 'Pancakes',
+      },
+    ];
+
+    render(<UpcomingMeals entries={entries} />);
+
+    expect(screen.getByText('1 meal planned')).toBeInTheDocument();
   });
 
   it('should show "Today" for today\'s entries', () => {
