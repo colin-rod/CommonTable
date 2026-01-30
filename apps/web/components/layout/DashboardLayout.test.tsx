@@ -174,6 +174,103 @@ describe('DashboardLayout', () => {
       });
     });
 
+    it('should display user display name in menu', async () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      const userButton = screen.getByLabelText('User menu');
+      fireEvent.click(userButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Test User')).toBeInTheDocument();
+      });
+    });
+
+    it('should display user email in menu with secondary color', async () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      const userButton = screen.getByLabelText('User menu');
+      fireEvent.click(userButton);
+
+      await waitFor(() => {
+        const emailElement = screen.getByText('test@example.com');
+        expect(emailElement).toBeInTheDocument();
+        // Check for text.secondary color
+        expect(emailElement).toHaveStyle({ color: 'rgba(0, 0, 0, 0.6)' });
+      });
+    });
+
+    it('should display household name in menu', async () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      const userButton = screen.getByLabelText('User menu');
+      fireEvent.click(userButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Test Household')).toBeInTheDocument();
+      });
+    });
+
+    it('should display household role in menu', async () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      const userButton = screen.getByLabelText('User menu');
+      fireEvent.click(userButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Role: admin')).toBeInTheDocument();
+      });
+    });
+
+    it('should display "Household" label in menu', async () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      const userButton = screen.getByLabelText('User menu');
+      fireEvent.click(userButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Household')).toBeInTheDocument();
+      });
+    });
+
+    it('should have dividers separating sections in menu', async () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      const userButton = screen.getByLabelText('User menu');
+      fireEvent.click(userButton);
+
+      await waitFor(() => {
+        // Check for dividers (MUI Divider component)
+        // Should have 2 dividers: after user info, after household info
+        // eslint-disable-next-line no-undef
+        const dividers = document.querySelectorAll('.MuiDivider-root');
+        expect(dividers.length).toBe(2);
+      });
+    });
+
     it('should call signOut when Sign out is clicked', async () => {
       const mockSignOut = vi.fn();
       vi.mocked(useAuth).mockReturnValue({
@@ -196,6 +293,51 @@ describe('DashboardLayout', () => {
       });
 
       expect(mockSignOut).toHaveBeenCalled();
+    });
+
+    it('should handle missing household gracefully', async () => {
+      vi.mocked(useAuth).mockReturnValue({
+        ...mockAuthReturn,
+        household: null,
+      });
+
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      const userButton = screen.getByLabelText('User menu');
+      fireEvent.click(userButton);
+
+      await waitFor(() => {
+        // User info should still display
+        expect(screen.getByText('Test User')).toBeInTheDocument();
+        expect(screen.getByText('test@example.com')).toBeInTheDocument();
+        // Household section should not appear
+        expect(screen.queryByText('Household')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should handle missing household role gracefully', async () => {
+      vi.mocked(useAuth).mockReturnValue({
+        ...mockAuthReturn,
+        householdRole: null,
+      });
+
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      const userButton = screen.getByLabelText('User menu');
+      fireEvent.click(userButton);
+
+      await waitFor(() => {
+        // Should display "No role" when role is missing
+        expect(screen.getByText('Role: No role')).toBeInTheDocument();
+      });
     });
   });
 

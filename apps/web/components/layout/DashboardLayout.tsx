@@ -12,6 +12,7 @@ import {
   AppBar,
   Badge,
   Box,
+  Divider,
   Drawer,
   IconButton,
   List,
@@ -105,7 +106,7 @@ export function DashboardLayout({
   pendingTagsCount?: number;
   pendingRequestsCount?: number;
 }) {
-  const { user, signOut } = useAuth();
+  const { user, household, householdRole, signOut } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -268,6 +269,32 @@ export function DashboardLayout({
                 open={Boolean(userMenuAnchor)}
                 onClose={handleUserMenuClose}
               >
+                {/* User info section */}
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography variant="body1">{user.profile.display_name || user.email}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {user.email}
+                  </Typography>
+                </Box>
+
+                <Divider />
+
+                {/* Household info section */}
+                {household && (
+                  <Box sx={{ px: 2, py: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Household
+                    </Typography>
+                    <Typography variant="body1">{household.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Role: {householdRole || 'No role'}
+                    </Typography>
+                  </Box>
+                )}
+
+                {household && <Divider />}
+
+                {/* Actions */}
                 <MenuItem onClick={handleProfile}>Profile</MenuItem>
                 <MenuItem onClick={handleSignOut}>Sign out</MenuItem>
               </Menu>

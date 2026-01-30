@@ -3,7 +3,6 @@ import { Container, Typography, Stack, Box, Paper, Divider } from '@mui/material
 import { getCookingEventsByHousehold } from '@/app/actions/cookingEvent';
 import { getUpcomingCalendarEntries } from '@/app/actions/dashboard';
 import { HouseholdActivityFeed } from '@/components/cooking/HouseholdActivityFeed';
-import { DashboardClient } from '@/components/dashboard/DashboardClient';
 import { QuickActions } from '@/components/dashboard/QuickActions';
 import { UpcomingMeals } from '@/components/dashboard/UpcomingMeals';
 
@@ -22,13 +21,6 @@ export default async function DashboardPage() {
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Stack spacing={4}>
-        {/* User info card */}
-        <Paper elevation={1} sx={{ p: 3 }}>
-          <DashboardClient />
-        </Paper>
-
-        <Divider />
-
         {/* Quick actions card */}
         <Paper elevation={1} sx={{ p: 3 }}>
           <QuickActions />
