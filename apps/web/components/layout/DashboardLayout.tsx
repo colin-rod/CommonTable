@@ -185,9 +185,11 @@ export function DashboardLayout({
   const drawer = (
     <Box>
       <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          CommonTable
-        </Typography>
+        <Link href="/dashboard" passHref style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Typography variant="h6" noWrap component="div" sx={{ cursor: 'pointer' }}>
+            CommonTable
+          </Typography>
+        </Link>
       </Toolbar>
       <List>
         {navItems.map((item) => {
