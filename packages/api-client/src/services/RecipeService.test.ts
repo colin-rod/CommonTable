@@ -141,6 +141,9 @@ describe('RecipeService', () => {
         notes: 'Use guanciale if available',
         tags: [],
         user_id: validUserId,
+        // New metadata fields (required)
+        status: 'suggested' as const,
+        key_ingredients: [],
       };
 
       const mockRecipe: MockRecipe = {
@@ -242,6 +245,9 @@ describe('RecipeService', () => {
         ingredients_json: [],
         steps_json: [],
         user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        // New metadata fields (required)
+        status: 'suggested' as const,
+        key_ingredients: [],
       };
 
       vi.mocked(mockSupabase.rpc).mockResolvedValue({
@@ -260,6 +266,9 @@ describe('RecipeService', () => {
         ingredients_json: [],
         steps_json: [],
         user_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        // New metadata fields (required)
+        status: 'suggested' as const,
+        key_ingredients: [],
       };
 
       const mockRecipeId = 'recipe-new-123';
