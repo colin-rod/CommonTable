@@ -1,6 +1,15 @@
 'use client';
 
-import { Stack, TextField } from '@mui/material';
+import type { CuisineType, MealType, RecipeStatus } from '@commontable/types';
+import {
+  Stack,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
+} from '@mui/material';
 import { type Control, Controller, type FieldErrors } from 'react-hook-form';
 
 import { TagAutocomplete } from './TagAutocomplete';
@@ -26,6 +35,12 @@ export interface RecipeFormValues {
     position: number;
     text: string;
   }>;
+  // New metadata fields
+  cuisine?: CuisineType | null;
+  meal_type?: MealType | null;
+  key_ingredients?: string[];
+  priority?: number | null;
+  status?: RecipeStatus;
 }
 
 export interface RecipeMetadataFieldsProps {
@@ -46,6 +61,73 @@ const FIELD_CONFIG = {
     rows: 4,
   },
 } as const;
+
+const CUISINE_OPTIONS: CuisineType[] = [
+  'african',
+  'american',
+  'asian',
+  'brazilian',
+  'breakfast',
+  'chinese',
+  'dessert',
+  'french',
+  'german',
+  'greek',
+  'hungarian',
+  'indian',
+  'italian',
+  'japanese',
+  'korean',
+  'mediterranean',
+  'mexican',
+  'middle_eastern',
+  'pastry',
+  'persian',
+  'peruvian',
+  'salad',
+  'sauce',
+  'seafood',
+  'spanish',
+  'staple',
+  'thai',
+  'vegetable',
+  'vietnamese',
+];
+
+const MEAL_TYPE_OPTIONS: MealType[] = [
+  'main_dish',
+  'side_dish',
+  'breakfast',
+  'dessert',
+  'snack',
+  'beverage',
+];
+
+const STATUS_OPTIONS: RecipeStatus[] = ['suggested', 'to_buy', 'to_cook', 'cooked'];
+
+const PRIORITY_OPTIONS: number[] = [1, 2, 3, 4, 5];
+
+// Helper functions for formatting display labels
+function formatCuisine(cuisine: CuisineType): string {
+  return cuisine
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function formatMealType(mealType: MealType): string {
+  return mealType
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function formatStatus(status: RecipeStatus): string {
+  return status
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 export function RecipeMetadataFields({
   control,
@@ -178,6 +260,114 @@ export function RecipeMetadataFields({
             error={!!errors.tags}
             helperText={errors.tags?.message}
           />
+        )}
+      />
+
+      {/* Cuisine Select */}
+      <Controller
+        name="cuisine"
+        control={control}
+        render={({ field }) => (
+          <FormControl fullWidth disabled={disabled} error={!!errors.cuisine}>
+            <InputLabel id="cuisine-label">Cuisine</InputLabel>
+            <Select
+              {...field}
+              labelId="cuisine-label"
+              label="Cuisine"
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(e.target.value || null)}
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {CUISINE_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {formatCuisine(option)}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.cuisine && <FormHelperText>{errors.cuisine.message}</FormHelperText>}
+          </FormControl>
+        )}
+      />
+
+      {/* Meal Type Select */}
+      <Controller
+        name="meal_type"
+        control={control}
+        render={({ field }) => (
+          <FormControl fullWidth disabled={disabled} error={!!errors.meal_type}>
+            <InputLabel id="meal-type-label">Meal Type</InputLabel>
+            <Select
+              {...field}
+              labelId="meal-type-label"
+              label="Meal Type"
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(e.target.value || null)}
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {MEAL_TYPE_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {formatMealType(option)}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.meal_type && <FormHelperText>{errors.meal_type.message}</FormHelperText>}
+          </FormControl>
+        )}
+      />
+
+      {/* Status Select */}
+      <Controller
+        name="status"
+        control={control}
+        render={({ field }) => (
+          <FormControl fullWidth disabled={disabled} error={!!errors.status}>
+            <InputLabel id="status-label">Status</InputLabel>
+            <Select
+              {...field}
+              labelId="status-label"
+              label="Status"
+              value={field.value ?? 'suggested'}
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {formatStatus(option)}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.status && <FormHelperText>{errors.status.message}</FormHelperText>}
+          </FormControl>
+        )}
+      />
+
+      {/* Priority Select */}
+      <Controller
+        name="priority"
+        control={control}
+        render={({ field }) => (
+          <FormControl fullWidth disabled={disabled} error={!!errors.priority}>
+            <InputLabel id="priority-label">Priority</InputLabel>
+            <Select
+              {...field}
+              labelId="priority-label"
+              label="Priority"
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {PRIORITY_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.priority && <FormHelperText>{errors.priority.message}</FormHelperText>}
+          </FormControl>
         )}
       />
     </Stack>

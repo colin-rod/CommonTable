@@ -181,6 +181,12 @@ describe('RecipeService', () => {
         p_cook_time_minutes: input.cook_time_minutes,
         p_notes: input.notes,
         p_user_id: input.user_id,
+        // New metadata fields (defaults when not provided)
+        p_cuisine: null,
+        p_meal_type: null,
+        p_key_ingredients: [],
+        p_priority: null,
+        p_status: 'suggested',
       });
 
       expect(result.id).toBe(validRecipeId);
@@ -1119,6 +1125,136 @@ describe('RecipeService', () => {
       vi.mocked(mockSupabase.from).mockReturnValue(recipeBuilder as any);
 
       await expect(service.toggleFavorite(nonexistentId)).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  // =============================================================================
+  // updateStatus
+  // =============================================================================
+
+  describe('updateStatus', () => {
+    const validRecipeId = 'c3d4e5f6-a7b8-9012-cdef-123456789012' as RecipeId;
+    const validHouseholdId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+    const validUserId = 'b2c3d4e5-f6a7-8901-bcde-f12345678901';
+    const validVersionId = 'd4e5f6a7-b8c9-0123-def1-234567890123';
+
+    it('should update recipe status from suggested to to_buy', async () => {
+      const existingRecipe: MockRecipe = {
+        id: validRecipeId,
+        household_id: validHouseholdId,
+        title: 'Test Recipe',
+        description: null,
+        current_version_id: validVersionId,
+        rolling_score: null,
+        tags: [],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: validUserId,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      const updatedRecipe: MockRecipe = {
+        ...existingRecipe,
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const existingBuilder = createMockQueryBuilder({ data: existingRecipe, error: null });
+      const updateBuilder = createMockQueryBuilder({ data: null, error: null });
+      const updatedBuilder = createMockQueryBuilder({ data: updatedRecipe, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(existingBuilder as any)
+        .mockReturnValueOnce(updateBuilder as any)
+        .mockReturnValueOnce(updatedBuilder as any);
+
+      const result = await service.updateStatus(validRecipeId, { status: 'to_buy' });
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('recipes');
+      expect(result).toEqual(updatedRecipe);
+    });
+
+    it('should update recipe status from to_cook to cooked', async () => {
+      const existingRecipe: MockRecipe = {
+        id: validRecipeId,
+        household_id: validHouseholdId,
+        title: 'Test Recipe',
+        description: null,
+        current_version_id: validVersionId,
+        rolling_score: null,
+        tags: [],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: validUserId,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      const updatedRecipe: MockRecipe = {
+        ...existingRecipe,
+        updated_at: '2024-01-15T00:00:00Z',
+      };
+
+      const existingBuilder = createMockQueryBuilder({ data: existingRecipe, error: null });
+      const updateBuilder = createMockQueryBuilder({ data: null, error: null });
+      const updatedBuilder = createMockQueryBuilder({ data: updatedRecipe, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(existingBuilder as any)
+        .mockReturnValueOnce(updateBuilder as any)
+        .mockReturnValueOnce(updatedBuilder as any);
+
+      const result = await service.updateStatus(validRecipeId, { status: 'cooked' });
+
+      expect(result).toEqual(updatedRecipe);
+    });
+
+    it('should throw NotFoundError when recipe does not exist', async () => {
+      const nonexistentId = 'nonexistent' as RecipeId;
+
+      const recipeBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(recipeBuilder as any);
+
+      await expect(service.updateStatus(nonexistentId, { status: 'to_buy' })).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it('should throw ValidationError for invalid status', async () => {
+      await expect(
+        service.updateStatus(validRecipeId, { status: 'invalid_status' as any }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should handle database update errors', async () => {
+      const existingRecipe: MockRecipe = {
+        id: validRecipeId,
+        household_id: validHouseholdId,
+        title: 'Test Recipe',
+        description: null,
+        current_version_id: validVersionId,
+        rolling_score: null,
+        tags: [],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: validUserId,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      const existingBuilder = createMockQueryBuilder({ data: existingRecipe, error: null });
+      const updateBuilder = createMockQueryBuilder({
+        data: null,
+        error: { message: 'Database error', code: '500' },
+      });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(existingBuilder as any)
+        .mockReturnValueOnce(updateBuilder as any);
+
+      await expect(service.updateStatus(validRecipeId, { status: 'to_buy' })).rejects.toThrow(
+        AppError,
+      );
     });
   });
 

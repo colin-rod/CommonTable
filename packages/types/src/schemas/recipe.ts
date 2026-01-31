@@ -1,6 +1,76 @@
 import { z } from 'zod';
 
 // =============================================================================
+// Recipe Metadata Enums
+// =============================================================================
+
+/**
+ * Cuisine type enum (30 options)
+ * Maps to database cuisine_type enum
+ */
+export const CuisineTypeSchema = z.enum([
+  'african',
+  'american',
+  'asian',
+  'brazilian',
+  'breakfast',
+  'chinese',
+  'dessert',
+  'french',
+  'german',
+  'greek',
+  'hungarian',
+  'indian',
+  'italian',
+  'japanese',
+  'korean',
+  'mediterranean',
+  'mexican',
+  'middle_eastern',
+  'pastry',
+  'persian',
+  'peruvian',
+  'salad',
+  'sauce',
+  'seafood',
+  'spanish',
+  'staple',
+  'thai',
+  'vegetable',
+  'vietnamese',
+]);
+
+export type CuisineType = z.infer<typeof CuisineTypeSchema>;
+
+/**
+ * Meal type enum (6 options)
+ * Maps to database meal_type enum
+ */
+export const MealTypeSchema = z.enum([
+  'main_dish',
+  'side_dish',
+  'breakfast',
+  'dessert',
+  'snack',
+  'beverage',
+]);
+
+export type MealType = z.infer<typeof MealTypeSchema>;
+
+/**
+ * Recipe status enum (4 lifecycle states)
+ * Maps to database recipe_status enum
+ */
+export const RecipeStatusSchema = z.enum([
+  'suggested', // New recipes or ideas (default)
+  'to_buy', // Recipe is being considered for meal planning
+  'to_cook', // Recipe is ready to schedule on calendar
+  'cooked', // Recipe has been prepared (auto-set on cooking event)
+]);
+
+export type RecipeStatus = z.infer<typeof RecipeStatusSchema>;
+
+// =============================================================================
 // Recipe Ingredient & Step Schemas
 // =============================================================================
 
@@ -75,6 +145,17 @@ export const CreateRecipeInputSchema = z.object({
     .optional(),
   notes: z.string().max(5000, 'Notes must be 5000 characters or less').trim().optional(),
   tags: z.array(z.string().min(1).max(50)).max(20, 'Maximum 20 tags allowed').default([]),
+
+  // New metadata fields
+  cuisine: CuisineTypeSchema.optional(),
+  meal_type: MealTypeSchema.optional(),
+  key_ingredients: z
+    .array(z.string().min(1).max(50).trim())
+    .max(50, 'Maximum 50 key ingredients allowed')
+    .default([]),
+  priority: z.number().int().min(1).max(5).optional(),
+  status: RecipeStatusSchema.default('suggested'),
+
   user_id: z.string().uuid('Invalid user ID'),
 });
 
@@ -86,7 +167,7 @@ export type CreateRecipeInput = z.infer<typeof CreateRecipeInputSchema>;
 
 /**
  * Update recipe metadata schema (does NOT create new version)
- * Used for updating title, description, tags, is_favorite only
+ * Used for updating title, description, tags, is_favorite, cuisine, meal_type, key_ingredients, priority, status
  */
 export const UpdateRecipeMetadataSchema = z.object({
   title: z
@@ -106,6 +187,16 @@ export const UpdateRecipeMetadataSchema = z.object({
     .max(20, 'Maximum 20 tags allowed')
     .optional(),
   is_favorite: z.boolean().optional(),
+
+  // New metadata fields
+  cuisine: CuisineTypeSchema.nullable().optional(),
+  meal_type: MealTypeSchema.nullable().optional(),
+  key_ingredients: z
+    .array(z.string().min(1).max(50).trim())
+    .max(50, 'Maximum 50 key ingredients allowed')
+    .optional(),
+  priority: z.number().int().min(1).max(5).nullable().optional(),
+  status: RecipeStatusSchema.optional(),
 });
 
 export type UpdateRecipeMetadataInput = z.infer<typeof UpdateRecipeMetadataSchema>;
@@ -162,6 +253,16 @@ export const UpdateRecipeInputSchema = z.object({
     .optional(),
   is_favorite: z.boolean().optional(),
 
+  // New metadata fields (do NOT create new version)
+  cuisine: CuisineTypeSchema.nullable().optional(),
+  meal_type: MealTypeSchema.nullable().optional(),
+  key_ingredients: z
+    .array(z.string().min(1).max(50).trim())
+    .max(50, 'Maximum 50 key ingredients allowed')
+    .optional(),
+  priority: z.number().int().min(1).max(5).nullable().optional(),
+  status: RecipeStatusSchema.optional(),
+
   // Version fields (creates new version if any of these change)
   ingredients_json: z.array(IngredientInputSchema).optional(),
   steps_json: z.array(StepInputSchema).optional(),
@@ -191,6 +292,16 @@ export const UpdateRecipeInputSchema = z.object({
 
 export type UpdateRecipeInput = z.infer<typeof UpdateRecipeInputSchema>;
 
+/**
+ * Update recipe status schema
+ * Used for updating recipe lifecycle status
+ */
+export const UpdateRecipeStatusSchema = z.object({
+  status: RecipeStatusSchema,
+});
+
+export type UpdateRecipeStatusInput = z.infer<typeof UpdateRecipeStatusSchema>;
+
 // =============================================================================
 // Recipe Query Schemas
 // =============================================================================
@@ -210,6 +321,14 @@ export const RecipeFilterSchema = z.object({
   last_cooked_before: z.date().optional(),
   min_rating: z.number().min(0).max(5).optional(),
   is_favorite: z.boolean().optional(),
+
+  // New metadata filters
+  cuisine: CuisineTypeSchema.optional(),
+  meal_type: MealTypeSchema.optional(),
+  key_ingredients: z.array(z.string()).optional(),
+  priority: z.number().int().min(1).max(5).optional(),
+  status: RecipeStatusSchema.optional(),
+
   limit: z.number().int().positive().max(100).default(50),
   offset: z.number().int().nonnegative().default(0),
 });

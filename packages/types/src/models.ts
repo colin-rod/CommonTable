@@ -17,6 +17,42 @@ export type CalendarEntryCommentId = string & { __brand: 'CalendarEntryCommentId
 export type MealRequestId = string & { __brand: 'MealRequestId' };
 export type CookingEventId = string & { __brand: 'CookingEventId' };
 
+// Recipe metadata enum types
+export type CuisineType =
+  | 'african'
+  | 'american'
+  | 'asian'
+  | 'brazilian'
+  | 'breakfast'
+  | 'chinese'
+  | 'dessert'
+  | 'french'
+  | 'german'
+  | 'greek'
+  | 'hungarian'
+  | 'indian'
+  | 'italian'
+  | 'japanese'
+  | 'korean'
+  | 'mediterranean'
+  | 'mexican'
+  | 'middle_eastern'
+  | 'pastry'
+  | 'persian'
+  | 'peruvian'
+  | 'salad'
+  | 'sauce'
+  | 'seafood'
+  | 'spanish'
+  | 'staple'
+  | 'thai'
+  | 'vegetable'
+  | 'vietnamese';
+
+export type MealType = 'main_dish' | 'side_dish' | 'breakfast' | 'dessert' | 'snack' | 'beverage';
+
+export type RecipeStatus = 'suggested' | 'to_buy' | 'to_cook' | 'cooked';
+
 // Recipe domain models
 export interface Recipe {
   id: RecipeId;
@@ -31,6 +67,12 @@ export interface Recipe {
   created_by: UserId;
   created_at: Date;
   updated_at: Date;
+  // New metadata fields
+  cuisine: CuisineType | null;
+  meal_type: MealType | null;
+  key_ingredients: string[];
+  priority: number | null;
+  status: RecipeStatus;
 }
 
 // Recipe with its current version data (for detail view)

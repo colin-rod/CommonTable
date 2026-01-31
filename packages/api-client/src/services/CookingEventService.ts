@@ -28,9 +28,10 @@ import { BaseService } from './BaseService';
  * - Updating ratings/notes after cooking
  * - Deleting cooking events
  *
- * Note: Creating a cooking event triggers database functions that:
- * - Update recipes.rolling_score (average rating)
- * - Update recipes.last_cooked_at (most recent cooking)
+ * Note: Creating a cooking event triggers automatic updates:
+ * - recipes.rolling_score (average rating) - via database trigger
+ * - recipes.last_cooked_at (most recent cooking) - via database trigger
+ * - recipes.status (set to 'cooked') - via service layer
  */
 export class CookingEventService extends BaseService {
   constructor(supabase: SupabaseClient<Database>) {
@@ -46,8 +47,9 @@ export class CookingEventService extends BaseService {
    * 3. Fetch recipe to get household_id (denormalized for RLS efficiency)
    * 4. Insert cooking event
    * 5. Database triggers automatically update rolling_score and last_cooked_at
-   * 6. If calendar_entry_id provided, update entry status to 'completed'
-   * 7. Return created cooking event
+   * 6. Update recipe status to 'cooked' (auto-transition on cooking)
+   * 7. If calendar_entry_id provided, update entry status to 'completed'
+   * 8. Return created cooking event
    *
    * @param input - Cooking event creation input
    * @returns Created cooking event
@@ -107,7 +109,18 @@ export class CookingEventService extends BaseService {
         throw new AppError('Failed to create cooking event - no data returned', 'CREATE_ERROR');
       }
 
-      // 6. If calendar_entry_id provided, update status to 'completed'
+      // 6. Update recipe status to 'cooked' (auto-transition on cooking event)
+      const { error: recipeStatusError } = await this.supabase
+        .from('recipes')
+        .update({ status: 'cooked' })
+        .eq('id', validated.recipe_id);
+
+      if (recipeStatusError) {
+        console.error('Failed to update recipe status to cooked:', recipeStatusError);
+        // Non-fatal: cooking event was created successfully
+      }
+
+      // 7. If calendar_entry_id provided, update status to 'completed'
       if (validated.calendar_entry_id) {
         const { error: updateError } = await this.supabase
           .from('calendar_entries')
@@ -120,7 +133,7 @@ export class CookingEventService extends BaseService {
         }
       }
 
-      // 7. Return created cooking event (convert date string to Date)
+      // 8. Return created cooking event (convert date string to Date)
       return {
         ...cookingEvent,
         cooked_at: new Date(cookingEvent.cooked_at),

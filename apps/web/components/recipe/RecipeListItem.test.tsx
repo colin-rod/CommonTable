@@ -28,6 +28,11 @@ describe('RecipeListItem Component', () => {
     created_at: new Date('2024-01-01'),
     updated_at: new Date('2024-01-01'),
     rolling_score: null,
+    cuisine: 'italian',
+    meal_type: 'main_dish',
+    key_ingredients: ['pasta', 'eggs', 'cheese'],
+    priority: 1,
+    status: 'suggested',
   };
 
   beforeEach(() => {

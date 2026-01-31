@@ -11,11 +11,13 @@ import {
   type CreateRecipeInput,
   type UpdateRecipeInput,
   type ForkRecipeInput,
+  type UpdateRecipeStatusInput,
   type Database,
   CreateRecipeInputSchema,
   UpdateRecipeInputSchema,
   RecipeSearchSchema,
   ForkRecipeInputSchema,
+  UpdateRecipeStatusSchema,
   ValidationError,
   NotFoundError,
   AppError,
@@ -79,6 +81,12 @@ export class RecipeService extends BaseService {
           p_cook_time_minutes: validated.cook_time_minutes ?? 0,
           p_notes: validated.notes ?? '',
           p_user_id: validated.user_id,
+          // New metadata fields
+          p_cuisine: validated.cuisine ?? null,
+          p_meal_type: validated.meal_type ?? null,
+          p_key_ingredients: validated.key_ingredients ?? null,
+          p_priority: validated.priority ?? null,
+          p_status: validated.status ?? 'suggested',
         },
       );
 
@@ -411,6 +419,53 @@ export class RecipeService extends BaseService {
 
       console.error('RecipeService.toggleFavorite failed:', error);
       throw new AppError('Failed to toggle favorite', 'UPDATE_ERROR', 500, { id });
+    }
+  }
+
+  /**
+   * Update recipe status
+   *
+   * Allows updating recipe lifecycle status:
+   * - suggested (default/new)
+   * - to_buy (considering for planning)
+   * - to_cook (ready to schedule)
+   * - cooked (has been prepared - typically auto-set by cooking event)
+   *
+   * @param id - Recipe ID
+   * @param input - Status update input
+   * @returns Updated recipe with new status
+   * @throws {ValidationError} If input validation fails
+   * @throws {NotFoundError} If recipe does not exist
+   * @throws {AppError} If database operation fails
+   */
+  async updateStatus(id: RecipeId, input: UpdateRecipeStatusInput): Promise<Recipe> {
+    try {
+      const validated = UpdateRecipeStatusSchema.parse(input);
+
+      // Check if recipe exists first
+      const existing = await this.getById(id);
+      if (!existing) {
+        throw new NotFoundError('Recipe', id);
+      }
+
+      // Update the status
+      const { error: updateError } = await this.supabase
+        .from('recipes')
+        .update({ status: validated.status })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      // Return updated recipe
+      return await this.getById(id);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new ValidationError('Invalid status input', { errors: error.errors });
+      }
+      if (error instanceof AppError) throw error;
+
+      console.error('RecipeService.updateStatus failed:', error);
+      throw new AppError('Failed to update recipe status', 'UPDATE_ERROR', 500, { id });
     }
   }
 

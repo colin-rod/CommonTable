@@ -3,9 +3,12 @@
 import type { Recipe, RecipeId } from '@commontable/types';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import { ListItem, ListItemButton, ListItemText, IconButton, Box } from '@mui/material';
+import { ListItem, ListItemButton, ListItemText, IconButton, Stack } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import type { MouseEvent } from 'react';
+
+import { RecipeMetadataChips } from './RecipeMetadataChips';
+import { RecipeStatusChip } from './RecipeStatusChip';
 
 interface RecipeListItemProps {
   recipe: Recipe;
@@ -18,11 +21,14 @@ interface RecipeListItemProps {
  * Displays a single recipe in a list with:
  * - Title (primary text)
  * - Last cooked date (secondary text)
+ * - Status chip (recipe lifecycle status)
+ * - Metadata chips (cuisine, meal type)
  * - Favorite toggle button
  *
  * Follows DESIGN_SYSTEM.md:
  * - Uses ListItemButton for full-row clickability
  * - Icon-only button for secondary action (favorite)
+ * - Material UI Chips for status and metadata display
  * - No emojis, calm neutral tone
  */
 export function RecipeListItem({ recipe, onToggleFavorite }: RecipeListItemProps) {
@@ -73,13 +79,13 @@ export function RecipeListItem({ recipe, onToggleFavorite }: RecipeListItemProps
       }
     >
       <ListItemButton onClick={handleClick}>
-        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-          <ListItemText
-            primary={recipe.title}
-            secondary={secondaryParts.join(' · ')}
-            sx={{ mr: 6 }} // Space for the favorite button
-          />
-        </Box>
+        <Stack spacing={1} sx={{ width: '100%', mr: 6 }}>
+          <ListItemText primary={recipe.title} secondary={secondaryParts.join(' · ')} />
+          <Stack direction="row" spacing={1}>
+            <RecipeStatusChip status={recipe.status} />
+            <RecipeMetadataChips cuisine={recipe.cuisine} mealType={recipe.meal_type} />
+          </Stack>
+        </Stack>
       </ListItemButton>
     </ListItem>
   );

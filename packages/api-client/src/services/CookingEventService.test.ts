@@ -173,6 +173,10 @@ describe('CookingEventService', () => {
       const insertBuilder = createMockQueryBuilder({ data: mockCookingEvent, error: null });
       vi.mocked(mockSupabase.from).mockReturnValueOnce(insertBuilder as any);
 
+      // Mock recipe status update (auto-set to 'cooked')
+      const statusUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(statusUpdateBuilder as any);
+
       const result = await service.create(input);
 
       expect(result.id).toBe(mockCookingEventId);
@@ -221,6 +225,10 @@ describe('CookingEventService', () => {
 
       const insertBuilder = createMockQueryBuilder({ data: mockCookingEvent, error: null });
       vi.mocked(mockSupabase.from).mockReturnValueOnce(insertBuilder as any);
+
+      // Mock recipe status update (auto-set to 'cooked')
+      const statusUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(statusUpdateBuilder as any);
 
       const result = await service.create(input);
 
@@ -312,15 +320,76 @@ describe('CookingEventService', () => {
       const insertBuilder = createMockQueryBuilder({ data: mockCookingEvent, error: null });
       vi.mocked(mockSupabase.from).mockReturnValueOnce(insertBuilder as any);
 
+      // Mock recipe status update (auto-set to 'cooked')
+      const statusUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(statusUpdateBuilder as any);
+
       // Mock calendar entry update
-      const updateBuilder = createMockQueryBuilder({ data: null, error: null });
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(updateBuilder as any);
+      const calendarUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(calendarUpdateBuilder as any);
 
       const result = await service.create(input);
 
       expect(result.id).toBe(mockCookingEventId);
-      expect(updateBuilder.update).toHaveBeenCalledWith({ status: 'completed' });
-      expect(updateBuilder.eq).toHaveBeenCalledWith('id', '00000000-0000-0000-0000-000000000008');
+      expect(calendarUpdateBuilder.update).toHaveBeenCalledWith({ status: 'completed' });
+      expect(calendarUpdateBuilder.eq).toHaveBeenCalledWith(
+        'id',
+        '00000000-0000-0000-0000-000000000008',
+      );
+    });
+
+    it('should automatically set recipe status to cooked', async () => {
+      const input = {
+        recipe_id: mockRecipeId as string,
+        recipe_version_id: mockRecipeVersionId as string,
+        rating: 4,
+      };
+
+      const mockRecipe: MockRecipe = {
+        id: mockRecipeId,
+        household_id: mockHouseholdId,
+        title: 'Test Recipe',
+        description: null,
+        current_version_id: mockRecipeVersionId,
+        rolling_score: null,
+        tags: [],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: mockUserId,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      const mockCookingEvent: MockCookingEvent = {
+        id: mockCookingEventId,
+        recipe_id: mockRecipeId,
+        recipe_version_id: mockRecipeVersionId,
+        household_id: mockHouseholdId,
+        cooked_at: new Date().toISOString(),
+        servings_made: null,
+        rating: 4,
+        notes: null,
+        cooked_by: mockUserId,
+      };
+
+      // Mock recipe lookup
+      const recipeBuilder = createMockQueryBuilder({ data: mockRecipe, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(recipeBuilder as any);
+
+      // Mock cooking event insert
+      const insertBuilder = createMockQueryBuilder({ data: mockCookingEvent, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(insertBuilder as any);
+
+      // Mock recipe status update to 'cooked'
+      const statusUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(statusUpdateBuilder as any);
+
+      await service.create(input);
+
+      // Verify recipe status was updated to 'cooked'
+      expect(vi.mocked(mockSupabase.from)).toHaveBeenCalledWith('recipes');
+      expect(statusUpdateBuilder.update).toHaveBeenCalledWith({ status: 'cooked' });
+      expect(statusUpdateBuilder.eq).toHaveBeenCalledWith('id', mockRecipeId);
     });
   });
 

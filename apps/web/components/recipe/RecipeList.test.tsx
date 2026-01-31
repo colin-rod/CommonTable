@@ -29,6 +29,12 @@ describe('RecipeList Component', () => {
       created_at: new Date('2024-01-01'),
       updated_at: new Date('2024-01-01'),
       rolling_score: null,
+      // New metadata fields
+      cuisine: 'italian',
+      meal_type: 'main_dish',
+      key_ingredients: ['pasta', 'eggs', 'cheese'],
+      priority: 1,
+      status: 'suggested',
     },
     {
       id: 'recipe-2' as any,
@@ -43,6 +49,12 @@ describe('RecipeList Component', () => {
       created_at: new Date('2024-01-05'),
       updated_at: new Date('2024-01-05'),
       rolling_score: null,
+      // New metadata fields
+      cuisine: 'indian',
+      meal_type: 'main_dish',
+      key_ingredients: ['chicken', 'curry', 'coconut milk'],
+      priority: 2,
+      status: 'to_cook',
     },
   ];
 

@@ -1,4 +1,4 @@
-import type { SortOption } from '@commontable/types';
+import type { SortOption, CuisineType, MealType, RecipeStatus } from '@commontable/types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -9,6 +9,10 @@ describe('RecipeFilterBar Component', () => {
   const mockOnTagsChange = vi.fn();
   const mockOnSortChange = vi.fn();
   const mockOnFavoritesToggle = vi.fn();
+  const mockOnCuisineChange = vi.fn();
+  const mockOnMealTypeChange = vi.fn();
+  const mockOnStatusChange = vi.fn();
+  const mockOnPriorityChange = vi.fn();
 
   const defaultProps = {
     selectedTags: [],
@@ -18,6 +22,14 @@ describe('RecipeFilterBar Component', () => {
     showFavoritesOnly: false,
     onFavoritesToggle: mockOnFavoritesToggle,
     availableTags: ['pasta', 'italian', 'quick', 'vegetarian'],
+    cuisine: null as CuisineType | null,
+    onCuisineChange: mockOnCuisineChange,
+    mealType: null as MealType | null,
+    onMealTypeChange: mockOnMealTypeChange,
+    status: null as RecipeStatus | null,
+    onStatusChange: mockOnStatusChange,
+    priority: null as number | null,
+    onPriorityChange: mockOnPriorityChange,
   };
 
   beforeEach(() => {
@@ -303,12 +315,173 @@ describe('RecipeFilterBar Component', () => {
       expect(stack).toBeInTheDocument();
     });
 
-    it('should contain all three filter components', () => {
+    it('should contain all filter components', () => {
       render(<RecipeFilterBar {...defaultProps} />);
 
       expect(screen.getByLabelText(/filter by tags/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/^sort$/i)).toBeInTheDocument();
       expect(screen.getByRole('checkbox', { name: /favorites only/i })).toBeInTheDocument();
+      expect(screen.getByLabelText(/^cuisine$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^meal type$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^status$/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/^priority$/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Cuisine filter', () => {
+    it('should render cuisine dropdown', () => {
+      render(<RecipeFilterBar {...defaultProps} />);
+      expect(screen.getByLabelText(/^cuisine$/i)).toBeInTheDocument();
+    });
+
+    it('should display selected cuisine', () => {
+      render(<RecipeFilterBar {...defaultProps} cuisine="italian" />);
+      // Verify Italian is displayed in the select (MUI renders selected value as text)
+      expect(screen.getByText('Italian')).toBeInTheDocument();
+    });
+
+    it('should call onCuisineChange when cuisine is selected', async () => {
+      const user = userEvent.setup();
+      render(<RecipeFilterBar {...defaultProps} cuisine={null} />);
+
+      const cuisineSelect = screen.getByLabelText(/^cuisine$/i);
+      await user.click(cuisineSelect);
+
+      const italianOption = screen.getByRole('option', { name: /^italian$/i });
+      await user.click(italianOption);
+
+      expect(mockOnCuisineChange).toHaveBeenCalledWith('italian');
+    });
+
+    it('should call onCuisineChange with null when "All cuisines" is selected', async () => {
+      const user = userEvent.setup();
+      render(<RecipeFilterBar {...defaultProps} cuisine="italian" />);
+
+      const cuisineSelect = screen.getByLabelText(/^cuisine$/i);
+      await user.click(cuisineSelect);
+
+      const allOption = screen.getByRole('option', { name: /^all cuisines$/i });
+      await user.click(allOption);
+
+      expect(mockOnCuisineChange).toHaveBeenCalledWith(null);
+    });
+  });
+
+  describe('Meal type filter', () => {
+    it('should render meal type dropdown', () => {
+      render(<RecipeFilterBar {...defaultProps} />);
+      expect(screen.getByLabelText(/^meal type$/i)).toBeInTheDocument();
+    });
+
+    it('should display selected meal type', () => {
+      render(<RecipeFilterBar {...defaultProps} mealType="main_dish" />);
+      // Verify Main Dish is displayed in the select
+      expect(screen.getByText('Main Dish')).toBeInTheDocument();
+    });
+
+    it('should call onMealTypeChange when meal type is selected', async () => {
+      const user = userEvent.setup();
+      render(<RecipeFilterBar {...defaultProps} mealType={null} />);
+
+      const mealTypeSelect = screen.getByLabelText(/^meal type$/i);
+      await user.click(mealTypeSelect);
+
+      const mainDishOption = screen.getByRole('option', { name: /^main dish$/i });
+      await user.click(mainDishOption);
+
+      expect(mockOnMealTypeChange).toHaveBeenCalledWith('main_dish');
+    });
+
+    it('should call onMealTypeChange with null when "All meal types" is selected', async () => {
+      const user = userEvent.setup();
+      render(<RecipeFilterBar {...defaultProps} mealType="main_dish" />);
+
+      const mealTypeSelect = screen.getByLabelText(/^meal type$/i);
+      await user.click(mealTypeSelect);
+
+      const allOption = screen.getByRole('option', { name: /^all meal types$/i });
+      await user.click(allOption);
+
+      expect(mockOnMealTypeChange).toHaveBeenCalledWith(null);
+    });
+  });
+
+  describe('Status filter', () => {
+    it('should render status dropdown', () => {
+      render(<RecipeFilterBar {...defaultProps} />);
+      expect(screen.getByLabelText(/^status$/i)).toBeInTheDocument();
+    });
+
+    it('should display selected status', () => {
+      render(<RecipeFilterBar {...defaultProps} status="to_cook" />);
+      // Verify To Cook is displayed in the select
+      expect(screen.getByText('To Cook')).toBeInTheDocument();
+    });
+
+    it('should call onStatusChange when status is selected', async () => {
+      const user = userEvent.setup();
+      render(<RecipeFilterBar {...defaultProps} status={null} />);
+
+      const statusSelect = screen.getByLabelText(/^status$/i);
+      await user.click(statusSelect);
+
+      const toCookOption = screen.getByRole('option', { name: /^to cook$/i });
+      await user.click(toCookOption);
+
+      expect(mockOnStatusChange).toHaveBeenCalledWith('to_cook');
+    });
+
+    it('should call onStatusChange with null when "All statuses" is selected', async () => {
+      const user = userEvent.setup();
+      render(<RecipeFilterBar {...defaultProps} status="to_cook" />);
+
+      const statusSelect = screen.getByLabelText(/^status$/i);
+      await user.click(statusSelect);
+
+      const allOption = screen.getByRole('option', { name: /^all statuses$/i });
+      await user.click(allOption);
+
+      expect(mockOnStatusChange).toHaveBeenCalledWith(null);
+    });
+  });
+
+  describe('Priority filter', () => {
+    it('should render priority dropdown', () => {
+      render(<RecipeFilterBar {...defaultProps} />);
+      expect(screen.getByLabelText(/^priority$/i)).toBeInTheDocument();
+    });
+
+    it('should display selected priority', () => {
+      render(<RecipeFilterBar {...defaultProps} priority={3} />);
+      // Verify 3 is displayed in the select (it's visible as text "3")
+      const priorityInputs = screen.getAllByText('3');
+      expect(priorityInputs.length).toBeGreaterThan(0);
+    });
+
+    it('should call onPriorityChange when priority is selected', async () => {
+      const user = userEvent.setup();
+      render(<RecipeFilterBar {...defaultProps} priority={null} />);
+
+      const prioritySelect = screen.getByLabelText(/^priority$/i);
+      await user.click(prioritySelect);
+
+      const priority3Option = screen.getByRole('option', { name: /^3$/i });
+      await user.click(priority3Option);
+
+      expect(mockOnPriorityChange).toHaveBeenCalledWith(3);
+    });
+
+    it('should call onPriorityChange with null when "All priorities" is selected', async () => {
+      const user = userEvent.setup();
+      render(<RecipeFilterBar {...defaultProps} priority={3} />);
+
+      const prioritySelect = screen.getByLabelText(/^priority$/i);
+      await user.click(prioritySelect);
+
+      const allOption = screen.getByRole('option', { name: /^all priorities$/i });
+      await user.click(allOption);
+
+      expect(mockOnPriorityChange).toHaveBeenCalledWith(null);
     });
   });
 });
