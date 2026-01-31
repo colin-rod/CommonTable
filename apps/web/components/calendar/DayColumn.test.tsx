@@ -85,7 +85,7 @@ describe('DayColumn', () => {
 
     // Click add meal for breakfast
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
-    await user.click(addButtons[0]); // Breakfast is first
+    await user.click(addButtons[0]!); // Breakfast is first
 
     expect(onAddMeal).toHaveBeenCalledWith(mockDate, 'breakfast');
   });
@@ -114,23 +114,8 @@ describe('DayColumn', () => {
     expect(onDelete).toHaveBeenCalledWith('entry-1');
   });
 
-  it('should call onMarkComplete when mark complete clicked on entry', async () => {
-    const user = userEvent.setup();
-    const onMarkComplete = vi.fn();
-
-    render(
-      <DayColumn
-        {...defaultProps}
-        entries={[mockBreakfastEntry]}
-        onMarkComplete={onMarkComplete}
-      />,
-    );
-
-    const completeButton = screen.getByLabelText(/mark as completed/i);
-    await user.click(completeButton);
-
-    expect(onMarkComplete).toHaveBeenCalledWith('entry-1');
-  });
+  // Note: Inline rating flow is tested comprehensively in CalendarEntryCard.test.tsx
+  // DayColumn passes the onMarkComplete callback through to MealSlotCell -> CalendarEntryCard
 
   it('should call onViewRecipe when view recipe clicked on entry', async () => {
     const user = userEvent.setup();

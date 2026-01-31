@@ -2,7 +2,8 @@
 
 import type { UpdateCookingEventInput } from '@commontable/api-client';
 import type { CookingEvent, CookingEventId } from '@commontable/types';
-import { Star as StarIcon, StarBorder as StarBorderIcon } from '@mui/icons-material';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import {
   ListItem,
   Stack,

@@ -148,8 +148,8 @@ describe('dateUtils', () => {
       const result = getDaysInWeek(startDate);
 
       expect(result).toHaveLength(7);
-      expect(result[0].getDay()).toBe(0); // Sunday
-      expect(result[6].getDay()).toBe(6); // Saturday
+      expect(result[0]!.getDay()).toBe(0); // Sunday
+      expect(result[6]!.getDay()).toBe(6); // Saturday
     });
 
     it('should return dates in correct order', () => {
@@ -157,7 +157,7 @@ describe('dateUtils', () => {
       const result = getDaysInWeek(startDate);
 
       for (let i = 0; i < 7; i++) {
-        expect(result[i].getDate()).toBe(18 + i);
+        expect(result[i]!.getDate()).toBe(18 + i);
       }
     });
 
@@ -165,8 +165,8 @@ describe('dateUtils', () => {
       const startDate = new Date('2026-01-25'); // Sunday
       const result = getDaysInWeek(startDate);
 
-      expect(result[0].getMonth()).toBe(0); // January
-      expect(result[6].getMonth()).toBe(0); // January (31 days)
+      expect(result[0]!.getMonth()).toBe(0); // January
+      expect(result[6]!.getMonth()).toBe(0); // January (31 days)
     });
   });
 

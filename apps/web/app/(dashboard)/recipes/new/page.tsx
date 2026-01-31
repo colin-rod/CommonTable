@@ -50,13 +50,19 @@ export default function CreateRecipePage() {
         household_id: household.id,
         title: data.title,
         description: data.description || '',
-        ingredients_json: data.ingredients,
-        steps_json: data.steps,
+        ingredients_json: data.ingredients || [],
+        steps_json: data.steps || [],
         servings: data.servings,
         prep_time_minutes: data.prep_time_minutes,
         cook_time_minutes: data.cook_time_minutes,
         notes: data.notes || '',
-        tags: data.tags,
+        tags: data.tags || [],
+        // New metadata fields (Phase 3) - defaults for creation
+        status: 'suggested' as const,
+        key_ingredients: [],
+        cuisine: undefined,
+        meal_type: undefined,
+        priority: undefined,
       };
 
       const result = await createRecipe(input);

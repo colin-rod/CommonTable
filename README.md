@@ -26,6 +26,11 @@ A shared household recipe book that helps families plan meals, improve recipes o
 ### Installation
 
 ```bash
+# Clone repository
+git clone https://github.com/colin-rod/CommonTable.git
+cd CommonTable
+git checkout development  # Default branch
+
 # Install dependencies
 pnpm install
 
@@ -56,6 +61,7 @@ pnpm web:build        # Build web app only
 pnpm test             # Run tests in all packages
 pnpm test:watch       # Run tests in watch mode
 pnpm test:coverage    # Run tests with coverage
+pnpm test:integration # Run integration tests (requires local Supabase)
 
 # Code Quality
 pnpm type-check       # Type check all packages
@@ -74,6 +80,15 @@ pnpm db:pull          # Pull remote schema to local migrations
 pnpm db:types         # Generate TypeScript types from remote schema
 ```
 
+### Integration Tests
+
+Integration tests are opt-in and run against the local Supabase stack.
+
+```bash
+supabase start
+RUN_INTEGRATION_TESTS=true pnpm test:integration
+```
+
 ### Supabase Setup
 
 > **Important**: This project uses **remote Supabase only** (no Docker/local database).
@@ -82,29 +97,31 @@ pnpm db:types         # Generate TypeScript types from remote schema
 
 #### 1. Environment Variables
 
-Get your Supabase credentials from [Project Settings → API](https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd/settings/api):
+Get your Supabase credentials from [Project Settings → API](https://supabase.com/dashboard/project/your-project-id/settings/api):
 
 ```bash
 # Copy example env file
 cp apps/web/.env.example apps/web/.env.local
 
 # Edit apps/web/.env.local with your credentials:
-NEXT_PUBLIC_SUPABASE_URL=https://lrelbxzvndbmfpxhgosd.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-from-dashboard
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-from-dashboard
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+SUPABASE_SECRET_KEY=sb_secret_...
+OPENAI_API_KEY=sk-proj-...
 ```
 
 **Security Notes**:
 
 - `NEXT_PUBLIC_*` variables are exposed to the browser
-- `SUPABASE_SERVICE_ROLE_KEY` is SERVER-ONLY and bypasses RLS
-- Never commit `.env.local` to version control
+- `SUPABASE_SECRET_KEY` is SERVER-ONLY and bypasses RLS
+- **Never commit `.env.local` to version control** (already in `.gitignore`)
+- This project uses Supabase's **new Publishable/Secret key system**, not legacy anon/service_role keys
 
 #### 2. Remote Supabase Project
 
-The project is linked to: `https://lrelbxzvndbmfpxhgosd.supabase.co`
+The project is linked to: `https://your-project-id.supabase.co`
 
-Access **Supabase Dashboard** at [https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd](https://supabase.com/dashboard/project/lrelbxzvndbmfpxhgosd) to:
+Access **Supabase Dashboard** at [https://supabase.com/dashboard/project/your-project-id](https://supabase.com/dashboard/project/your-project-id) to:
 
 - View tables and data (Table Editor)
 - Test RLS policies (SQL Editor)
@@ -332,20 +349,75 @@ This project uses Husky and lint-staged to enforce code quality before commits:
 
 If pre-commit hooks fail, fix the issues before committing.
 
+### Branching Strategy
+
+CommonTable follows a **development-main branching strategy**:
+
+#### Branches
+
+- **`development`** (default branch)
+  - All feature branches branch from `development`
+  - All PRs merge into `development`
+  - CI runs on every push and PR
+  - Protected: requires PR review + passing CI
+
+- **`main`** (production branch)
+  - Only updated via manual PRs from `development`
+  - Represents production-ready code
+  - Protected: requires PR review + passing CI
+  - No direct commits allowed
+
+#### Workflow
+
+**Feature Development**:
+
+```bash
+git checkout development
+git pull origin development
+git checkout -b feat/your-feature
+# ... make changes, commit ...
+git push -u origin feat/your-feature
+# Open PR to development
+```
+
+**Release to Production**:
+
+```bash
+# Once development is stable:
+# Open PR: development → main
+# Review changes, ensure CI passes
+# Merge PR (triggers production deployment)
+```
+
+#### Branch Protection
+
+Both `development` and `main` are protected:
+
+- ✅ Require PR reviews (1 approval minimum)
+- ✅ Require CI checks to pass (lint, type-check, test, build)
+- ✅ Require conversation resolution
+- ❌ No force pushes allowed
+- ❌ No direct pushes allowed
+
 ### Pull Request Workflow
 
-1. Create a feature branch: `git checkout -b feat/your-feature`
-2. Write tests first (TDD)
-3. Implement the feature
-4. Ensure all tests pass: `pnpm test:coverage`
-5. Ensure linting passes: `pnpm lint`
-6. Ensure type-checking passes: `pnpm type-check`
-7. Push and create a PR
-8. CI will run automatically and must pass before merging
+1. Ensure you're on the latest development branch:
+   ```bash
+   git checkout development
+   git pull origin development
+   ```
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Write tests first (TDD)
+4. Implement the feature
+5. Ensure all tests pass: `pnpm test:coverage`
+6. Ensure linting passes: `pnpm lint`
+7. Ensure type-checking passes: `pnpm type-check`
+8. Push and create a PR
+9. CI will run automatically and must pass before merging
 
 ### CI/CD Pipeline
 
-The CI pipeline runs on every pull request and push to main:
+The CI pipeline runs on every pull request and push to `development` and `main`:
 
 - **Lint**: ESLint across all packages
 - **Type Check**: TypeScript strict mode

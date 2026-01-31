@@ -11,6 +11,7 @@ import {
   type ForkRecipeInput,
   type RecipeId,
   type HouseholdId,
+  type UserId,
 } from '@commontable/api-client';
 import { AppError } from '@commontable/types';
 import { revalidatePath } from 'next/cache';
@@ -393,7 +394,11 @@ export async function restoreRecipeVersion(
       return { success: false, error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' } };
     }
 
-    const recipe = await service.revertToVersion(recipeId, versionNumber, profile.id);
+    const recipe = await service.revertToVersion(
+      recipeId,
+      versionNumber,
+      profile.id as unknown as UserId,
+    );
 
     // Revalidate recipe detail and version history pages
     revalidatePath(`/recipes/${recipeId}`);
@@ -439,7 +444,7 @@ export async function forkRecipe(input: ForkRecipeInput): Promise<ActionResult<R
       return { success: false, error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' } };
     }
 
-    const forkedRecipe = await service.fork(input, profile.id);
+    const forkedRecipe = await service.fork(input, profile.id as unknown as UserId);
 
     // Revalidate recipes list to include the new forked recipe
     revalidatePath('/recipes');

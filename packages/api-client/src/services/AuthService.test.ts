@@ -30,8 +30,10 @@ interface MockSession {
 
 interface MockProfile {
   id: string;
+  auth_user_id: string;
   display_name: string;
   avatar_url: string | null;
+  member_type: 'authenticated' | 'managed';
   created_at: string;
   updated_at: string;
 }
@@ -59,6 +61,18 @@ interface MockAuthError {
  * Helper to create a mock query builder chain
  */
 function createMockQueryBuilder<T>(resolvedValue: { data: T; error: null }): MockQueryBuilder {
+  const builder: MockQueryBuilder = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue(resolvedValue),
+  };
+  return builder;
+}
+
+function createMockQueryBuilderWithError<T>(resolvedValue: {
+  data: T;
+  error: { code: string; message?: string } | null;
+}): MockQueryBuilder {
   const builder: MockQueryBuilder = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
@@ -130,9 +144,11 @@ describe('AuthService', () => {
       };
 
       const mockProfile: MockProfile = {
-        id: 'user-123',
+        id: 'profile-123',
+        auth_user_id: 'user-123',
         display_name: 'John Doe',
         avatar_url: null,
+        member_type: 'authenticated',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -252,9 +268,11 @@ describe('AuthService', () => {
       };
 
       const mockProfile: MockProfile = {
-        id: 'user-123',
+        id: 'profile-123',
+        auth_user_id: 'user-123',
         display_name: 'John Doe',
         avatar_url: null,
+        member_type: 'authenticated',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -449,9 +467,11 @@ describe('AuthService', () => {
       };
 
       const mockProfile: MockProfile = {
-        id: 'user-123',
+        id: 'profile-123',
+        auth_user_id: 'user-123',
         display_name: 'John Doe',
         avatar_url: null,
+        member_type: 'authenticated',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -499,6 +519,68 @@ describe('AuthService', () => {
       const result = await authService.getCurrentUser();
 
       expect(result).toBeNull();
+    });
+
+    it('should create household if membership is missing', async () => {
+      const mockUser: MockUser = {
+        id: 'user-123',
+        email: 'john@example.com',
+      };
+
+      const mockSession: MockSession = {
+        access_token: 'token-123',
+        refresh_token: 'refresh-123',
+        expires_at: Date.now() + 3600000,
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: mockUser,
+      };
+
+      const mockProfile: MockProfile = {
+        id: 'profile-123',
+        auth_user_id: 'user-123',
+        display_name: 'John Doe',
+        avatar_url: null,
+        member_type: 'authenticated',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const mockHousehold: MockHousehold = {
+        id: 'household-123',
+        name: "John Doe's Household",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      vi.mocked(mockSupabase.auth.getSession).mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      } as never);
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(createMockQueryBuilder({ data: mockProfile, error: null }) as never)
+        .mockReturnValueOnce(
+          createMockQueryBuilderWithError({
+            data: null,
+            error: { code: 'PGRST116', message: 'The result contains 0 rows' },
+          }) as never,
+        )
+        .mockReturnValueOnce(createMockQueryBuilder({ data: mockHousehold, error: null }) as never);
+
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: 'household-123',
+        error: null,
+      } as never);
+
+      const result = await authService.getCurrentUser();
+
+      expect(mockSupabase.rpc).toHaveBeenCalledWith('create_household_on_signup', {
+        p_user_id: 'user-123',
+        p_display_name: 'John Doe',
+      });
+      expect(result?.user.household?.id).toBe('household-123');
+      expect(result?.user.household_role).toBe('admin');
     });
   });
 

@@ -119,15 +119,17 @@ export class CalendarService extends BaseService {
     try {
       const validated = CreateCalendarEntrySchema.parse(input);
 
+      // Note: household_id and created_by are set by RLS/database triggers
       const { data, error } = await this.supabase
         .from('calendar_entries')
         .insert({
-          recipe_id: validated.recipe_id,
+          recipe_id: validated.recipe_id ?? null,
           planned_date: validated.planned_date.toISOString().split('T')[0], // DATE format
           meal_slot: validated.meal_slot,
-          notes: validated.notes || null,
+          notes: validated.notes ?? null,
           status: 'planned', // Default status
-        })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any) // Type assertion: DB triggers handle household_id and created_by
         .select()
         .single();
 
@@ -169,13 +171,14 @@ export class CalendarService extends BaseService {
         updateData.recipe_id = validated.recipe_id;
       }
       if (validated.planned_date !== undefined) {
-        updateData.planned_date = validated.planned_date.toISOString().split('T')[0];
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        updateData.planned_date = validated.planned_date.toISOString().split('T')[0]!;
       }
       if (validated.meal_slot !== undefined) {
         updateData.meal_slot = validated.meal_slot;
       }
       if (validated.notes !== undefined) {
-        updateData.notes = validated.notes;
+        updateData.notes = validated.notes ?? null;
       }
 
       const { data, error } = await this.supabase

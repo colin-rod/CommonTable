@@ -1,9 +1,18 @@
 import type { Recipe, RecipeId } from '@commontable/types';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 
 import { AddCalendarEntryDialog } from './AddCalendarEntryDialog';
+
+vi.mock('@/hooks/useRecipeSuggestions', () => ({
+  useRecipeSuggestions: vi.fn(() => ({
+    suggestions: [],
+    loading: false,
+    error: null,
+    refetch: vi.fn(),
+  })),
+}));
 
 describe('AddCalendarEntryDialog', () => {
   const mockRecipes: Recipe[] = [
@@ -11,21 +20,41 @@ describe('AddCalendarEntryDialog', () => {
       id: 'recipe-1' as RecipeId,
       household_id: 'household-1' as any,
       title: 'Pasta Carbonara',
+      description: null,
       current_version_id: 'version-1' as any,
+      rolling_score: null,
+      tags: [],
+      is_favorite: false,
+      last_cooked_at: null,
       created_by: 'user-1' as any,
       created_at: new Date(),
       updated_at: new Date(),
-      is_favorite: false,
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
     },
     {
       id: 'recipe-2' as RecipeId,
       household_id: 'household-1' as any,
       title: 'Chicken Curry',
+      description: null,
       current_version_id: 'version-2' as any,
+      rolling_score: null,
+      tags: [],
+      is_favorite: false,
+      last_cooked_at: null,
       created_by: 'user-1' as any,
       created_at: new Date(),
       updated_at: new Date(),
-      is_favorite: false,
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
     },
   ];
 
@@ -211,21 +240,35 @@ describe('AddCalendarEntryDialog', () => {
 
   it('should disable buttons while submitting', async () => {
     const user = userEvent.setup();
-    const onSubmit = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    let resolveSubmit: () => void;
+    const onSubmit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSubmit = resolve;
+        }),
+    );
 
     render(<AddCalendarEntryDialog {...defaultProps} onSubmit={onSubmit} />);
 
     // Fill in date
     const dateInput = screen.getByLabelText(/date/i);
-    await user.type(dateInput, '2026-01-20');
+    fireEvent.change(dateInput, { target: { value: '2026-01-20' } });
 
     // Submit
     const addButton = screen.getByRole('button', { name: /add/i });
+    await waitFor(() => {
+      expect(addButton).toBeEnabled();
+    });
     await user.click(addButton);
 
     // Check buttons are disabled
-    expect(screen.getByRole('button', { name: /adding/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    await waitFor(() => {
+      expect(addButton).toBeDisabled();
+      expect(cancelButton).toBeDisabled();
+    });
+
+    resolveSubmit!();
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalled();
@@ -240,7 +283,7 @@ describe('AddCalendarEntryDialog', () => {
 
     // Fill in date
     const dateInput = screen.getByLabelText(/date/i);
-    await user.type(dateInput, '2026-01-20');
+    fireEvent.change(dateInput, { target: { value: '2026-01-20' } });
 
     // Add notes with whitespace
     const notesInput = screen.getByLabelText(/notes \(optional\)/i);
@@ -248,6 +291,9 @@ describe('AddCalendarEntryDialog', () => {
 
     // Submit
     const addButton = screen.getByRole('button', { name: /add/i });
+    await waitFor(() => {
+      expect(addButton).toBeEnabled();
+    });
     await user.click(addButton);
 
     await waitFor(() => {
@@ -267,10 +313,13 @@ describe('AddCalendarEntryDialog', () => {
 
     // Fill in date
     const dateInput = screen.getByLabelText(/date/i);
-    await user.type(dateInput, '2026-01-20');
+    fireEvent.change(dateInput, { target: { value: '2026-01-20' } });
 
     // Submit without notes
     const addButton = screen.getByRole('button', { name: /add/i });
+    await waitFor(() => {
+      expect(addButton).toBeEnabled();
+    });
     await user.click(addButton);
 
     await waitFor(() => {

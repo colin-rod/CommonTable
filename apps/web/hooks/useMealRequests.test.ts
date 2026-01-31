@@ -34,8 +34,8 @@ describe('useMealRequests Hook', () => {
   const mockHousehold: Household = {
     id: mockHouseholdId,
     name: 'Test Household',
-    created_at: new Date('2024-01-01T00:00:00Z'),
-    updated_at: new Date('2024-01-01T00:00:00Z'),
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
   };
 
   const mockRequests: MealRequest[] = [
@@ -231,7 +231,7 @@ describe('useMealRequests Hook', () => {
       // Check optimistic update
       await waitFor(() => {
         const updated = result.current.requests.find((r) => r.id === 'request-1');
-        expect(updated?.status).toBe('planned');
+        expect(updated!.status).toBe('planned');
       });
     });
   });
@@ -256,20 +256,20 @@ describe('useMealRequests Hook', () => {
       // Check optimistic update
       await waitFor(() => {
         const updated = result.current.requests.find((r) => r.id === 'request-1');
-        expect(updated?.priority).toBe(10);
+        expect(updated!.priority).toBe(10);
       });
     });
   });
 
   describe('addToCalendar', () => {
     it('should add request to calendar and update status', async () => {
-      const updatedRequest = { ...mockRequests[0], status: 'planned' as MealRequestStatus };
+      const updatedRequest = { ...mockRequests[0]!, status: 'planned' as MealRequestStatus };
       const calendarEntry: CalendarEntry = {
         id: 'cal-1' as any,
         household_id: mockHouseholdId,
-        recipe_id: mockRequests[0].recipe_id,
-        planned_date: mockRequests[0].requested_date,
-        meal_slot: mockRequests[0].requested_meal_slot,
+        recipe_id: mockRequests[0]!.recipe_id,
+        planned_date: mockRequests[0]!.requested_date,
+        meal_slot: mockRequests[0]!.requested_meal_slot,
         status: 'planned',
         notes: null,
         created_by: 'user-1' as any,
@@ -302,7 +302,7 @@ describe('useMealRequests Hook', () => {
       // Check optimistic update
       await waitFor(() => {
         const updated = result.current.requests.find((r) => r.id === 'request-1');
-        expect(updated?.status).toBe('planned');
+        expect(updated!.status).toBe('planned');
       });
     });
   });

@@ -94,7 +94,7 @@ describe('CalendarService', () => {
       const result = await service.getEntriesForWeek(startDate, endDate);
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('entry-1');
+      expect(result[0]!.id).toBe('entry-1');
       expect(mockSupabase.from).toHaveBeenCalledWith('calendar_entries');
     });
 

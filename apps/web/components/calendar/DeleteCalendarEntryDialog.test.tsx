@@ -125,7 +125,7 @@ describe('DeleteCalendarEntryDialog', () => {
 
   it('should disable buttons while deleting', async () => {
     const user = userEvent.setup();
-    const onConfirm = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)));
+    const onConfirm = vi.fn(() => new Promise<void>((resolve) => setTimeout(resolve, 100)));
 
     render(<DeleteCalendarEntryDialog {...defaultProps} onConfirm={onConfirm} />);
 

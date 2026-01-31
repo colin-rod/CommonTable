@@ -186,7 +186,7 @@ describe('useCalendar', () => {
       await result.current.updateEntry('entry-1' as CalendarEntryId, input);
 
       await waitFor(() => {
-        expect(result.current.entries[0].notes).toBe('Updated dinner');
+        expect(result.current.entries[0]!.notes).toBe('Updated dinner');
       });
 
       expect(mockCalendarService.update).toHaveBeenCalledWith('entry-1', input);
@@ -263,7 +263,7 @@ describe('useCalendar', () => {
       await result.current.markCompleted('entry-1' as CalendarEntryId);
 
       await waitFor(() => {
-        expect(result.current.entries[0].status).toBe('completed');
+        expect(result.current.entries[0]!.status).toBe('completed');
       });
 
       expect(mockCalendarService.updateStatus).toHaveBeenCalledWith('entry-1', 'completed');

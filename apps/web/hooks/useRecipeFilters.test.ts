@@ -19,6 +19,11 @@ function createTestRecipe(overrides: Partial<Recipe>): Recipe {
     created_by: 'user-1' as UserId,
     created_at: new Date('2025-01-01'),
     updated_at: new Date('2025-01-01'),
+    cuisine: null,
+    meal_type: null,
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
     ...overrides,
   };
 }
@@ -420,6 +425,371 @@ describe('useRecipeFilters', () => {
       );
 
       expect(result.current).toHaveLength(0);
+    });
+  });
+
+  describe('cuisine filter', () => {
+    it('should return all recipes when no cuisine filter applied', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, cuisine: 'italian' }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, cuisine: 'mexican' }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined),
+      );
+
+      expect(result.current).toHaveLength(2);
+    });
+
+    it('should filter recipes by cuisine', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({
+          id: 'recipe-1' as RecipeId,
+          title: 'Pasta Carbonara',
+          cuisine: 'italian',
+        }),
+        createTestRecipe({
+          id: 'recipe-2' as RecipeId,
+          title: 'Tacos',
+          cuisine: 'mexican',
+        }),
+        createTestRecipe({
+          id: 'recipe-3' as RecipeId,
+          title: 'Pizza',
+          cuisine: 'italian',
+        }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', 'italian'),
+      );
+
+      expect(result.current).toHaveLength(2);
+      expect(result.current.map((r) => r.title)).toEqual(
+        expect.arrayContaining(['Pasta Carbonara', 'Pizza']),
+      );
+    });
+
+    it('should return empty array when no recipes match cuisine', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, cuisine: 'italian' }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, cuisine: 'mexican' }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', 'japanese'),
+      );
+
+      expect(result.current).toHaveLength(0);
+    });
+
+    it('should exclude recipes with null cuisine when filtering', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, cuisine: 'italian' }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, cuisine: null }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', 'italian'),
+      );
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.id).toBe('recipe-1');
+    });
+  });
+
+  describe('meal type filter', () => {
+    it('should return all recipes when no meal type filter applied', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, meal_type: 'main_dish' }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, meal_type: 'dessert' }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined, undefined),
+      );
+
+      expect(result.current).toHaveLength(2);
+    });
+
+    it('should filter recipes by meal type', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({
+          id: 'recipe-1' as RecipeId,
+          title: 'Lasagna',
+          meal_type: 'main_dish',
+        }),
+        createTestRecipe({
+          id: 'recipe-2' as RecipeId,
+          title: 'Tiramisu',
+          meal_type: 'dessert',
+        }),
+        createTestRecipe({
+          id: 'recipe-3' as RecipeId,
+          title: 'Caesar Salad',
+          meal_type: 'side_dish',
+        }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined, 'dessert'),
+      );
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.title).toBe('Tiramisu');
+    });
+
+    it('should exclude recipes with null meal_type when filtering', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, meal_type: 'main_dish' }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, meal_type: null }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined, 'main_dish'),
+      );
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.id).toBe('recipe-1');
+    });
+  });
+
+  describe('status filter', () => {
+    it('should return all recipes when no status filter applied', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, status: 'suggested' }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, status: 'to_cook' }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined, undefined, undefined),
+      );
+
+      expect(result.current).toHaveLength(2);
+    });
+
+    it('should filter recipes by status', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({
+          id: 'recipe-1' as RecipeId,
+          title: 'Suggested Recipe',
+          status: 'suggested',
+        }),
+        createTestRecipe({
+          id: 'recipe-2' as RecipeId,
+          title: 'To Cook Recipe',
+          status: 'to_cook',
+        }),
+        createTestRecipe({
+          id: 'recipe-3' as RecipeId,
+          title: 'Another To Cook',
+          status: 'to_cook',
+        }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined, undefined, 'to_cook'),
+      );
+
+      expect(result.current).toHaveLength(2);
+      expect(result.current.map((r) => r.title)).toEqual(
+        expect.arrayContaining(['To Cook Recipe', 'Another To Cook']),
+      );
+    });
+
+    it('should handle cooked status filter', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, status: 'suggested' }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, status: 'cooked' }),
+        createTestRecipe({ id: 'recipe-3' as RecipeId, status: 'to_buy' }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined, undefined, 'cooked'),
+      );
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.id).toBe('recipe-2');
+    });
+  });
+
+  describe('priority filter', () => {
+    it('should return all recipes when no priority filter applied', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, priority: 1 }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, priority: 3 }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(
+          recipes,
+          [],
+          false,
+          'last-cooked',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+        ),
+      );
+
+      expect(result.current).toHaveLength(2);
+    });
+
+    it('should filter recipes by priority', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({
+          id: 'recipe-1' as RecipeId,
+          title: 'Priority 1',
+          priority: 1,
+        }),
+        createTestRecipe({
+          id: 'recipe-2' as RecipeId,
+          title: 'Priority 3',
+          priority: 3,
+        }),
+        createTestRecipe({
+          id: 'recipe-3' as RecipeId,
+          title: 'Another Priority 3',
+          priority: 3,
+        }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined, undefined, undefined, 3),
+      );
+
+      expect(result.current).toHaveLength(2);
+      expect(result.current.map((r) => r.title)).toEqual(
+        expect.arrayContaining(['Priority 3', 'Another Priority 3']),
+      );
+    });
+
+    it('should exclude recipes with null priority when filtering', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({ id: 'recipe-1' as RecipeId, priority: 1 }),
+        createTestRecipe({ id: 'recipe-2' as RecipeId, priority: null }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', undefined, undefined, undefined, 1),
+      );
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.id).toBe('recipe-1');
+    });
+  });
+
+  describe('combined metadata filters', () => {
+    it('should combine cuisine and meal type filters', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({
+          id: 'recipe-1' as RecipeId,
+          title: 'Italian Main',
+          cuisine: 'italian',
+          meal_type: 'main_dish',
+        }),
+        createTestRecipe({
+          id: 'recipe-2' as RecipeId,
+          title: 'Italian Dessert',
+          cuisine: 'italian',
+          meal_type: 'dessert',
+        }),
+        createTestRecipe({
+          id: 'recipe-3' as RecipeId,
+          title: 'Mexican Main',
+          cuisine: 'mexican',
+          meal_type: 'main_dish',
+        }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', 'italian', 'main_dish'),
+      );
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.title).toBe('Italian Main');
+    });
+
+    it('should combine all metadata filters (cuisine, meal_type, status, priority)', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({
+          id: 'recipe-1' as RecipeId,
+          title: 'Perfect Match',
+          cuisine: 'italian',
+          meal_type: 'main_dish',
+          status: 'to_cook',
+          priority: 1,
+        }),
+        createTestRecipe({
+          id: 'recipe-2' as RecipeId,
+          title: 'Wrong Status',
+          cuisine: 'italian',
+          meal_type: 'main_dish',
+          status: 'suggested',
+          priority: 1,
+        }),
+        createTestRecipe({
+          id: 'recipe-3' as RecipeId,
+          title: 'Wrong Priority',
+          cuisine: 'italian',
+          meal_type: 'main_dish',
+          status: 'to_cook',
+          priority: 3,
+        }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(recipes, [], false, 'last-cooked', 'italian', 'main_dish', 'to_cook', 1),
+      );
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.title).toBe('Perfect Match');
+    });
+
+    it('should combine metadata filters with tag and favorites filters', () => {
+      const recipes: Recipe[] = [
+        createTestRecipe({
+          id: 'recipe-1' as RecipeId,
+          title: 'Perfect Match',
+          cuisine: 'italian',
+          status: 'to_cook',
+          tags: ['pasta', 'quick'],
+          is_favorite: true,
+        }),
+        createTestRecipe({
+          id: 'recipe-2' as RecipeId,
+          title: 'Missing Tag',
+          cuisine: 'italian',
+          status: 'to_cook',
+          tags: ['pasta'],
+          is_favorite: true,
+        }),
+        createTestRecipe({
+          id: 'recipe-3' as RecipeId,
+          title: 'Not Favorite',
+          cuisine: 'italian',
+          status: 'to_cook',
+          tags: ['pasta', 'quick'],
+          is_favorite: false,
+        }),
+      ];
+
+      const { result } = renderHook(() =>
+        useRecipeFilters(
+          recipes,
+          ['pasta', 'quick'],
+          true,
+          'last-cooked',
+          'italian',
+          undefined,
+          'to_cook',
+        ),
+      );
+
+      expect(result.current).toHaveLength(1);
+      expect(result.current[0]?.title).toBe('Perfect Match');
     });
   });
 });

@@ -1,6 +1,8 @@
 import {
   type HouseholdId,
   type InvitationId,
+  type ProfileId,
+  type Household,
   type HouseholdMemberWithProfile,
   type HouseholdInvitation,
   type InviteAuthenticatedMemberInput,
@@ -299,13 +301,15 @@ export class HouseholdService extends BaseService {
       if (memberError) throw memberError;
 
       // Update invitation status
-      await this.supabase
-        .from('household_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', invitation.id);
+      if (invitation.id) {
+        await this.supabase
+          .from('household_invitations')
+          .update({
+            status: 'accepted',
+            accepted_at: new Date().toISOString(),
+          })
+          .eq('id', invitation.id);
+      }
 
       return member as unknown as HouseholdMemberWithProfile;
     } catch (error) {
@@ -436,6 +440,236 @@ export class HouseholdService extends BaseService {
       throw new AppError('Failed to cancel invitation', 'CANCEL_INVITATION_ERROR', 500, {
         invitationId,
       });
+    }
+  }
+
+  /**
+   * Update household name
+   *
+   * Admin-only operation (enforced by RLS)
+   *
+   * @param householdId - The household ID
+   * @param name - New household name (1-100 characters, trimmed)
+   * @returns Updated household
+   * @throws {ValidationError} If name is invalid
+   * @throws {NotFoundError} If household not found
+   * @throws {AppError} If operation fails
+   */
+  async updateHouseholdName(householdId: HouseholdId, name: string): Promise<Household> {
+    try {
+      // Validate and trim name
+      const trimmedName = name.trim();
+
+      if (trimmedName.length === 0) {
+        throw new ValidationError('Household name cannot be empty');
+      }
+
+      if (trimmedName.length > 100) {
+        throw new ValidationError('Household name must be 100 characters or less');
+      }
+
+      // Update household name (RLS enforces admin-only)
+      const { data, error } = await this.supabase
+        .from('households')
+        .update({ name: trimmedName })
+        .eq('id', householdId)
+        .select();
+
+      if (error) throw error;
+
+      // Check if household was found and updated
+      if (!data || data.length === 0) {
+        throw new NotFoundError('Household', householdId);
+      }
+
+      return data[0] as unknown as Household;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+
+      console.error('HouseholdService.updateHouseholdName failed:', error);
+      throw new AppError('Failed to update household name', 'UPDATE_HOUSEHOLD_NAME_ERROR', 500, {
+        householdId,
+      });
+    }
+  }
+
+  /**
+   * Update member role (promote member to admin or demote admin to member)
+   *
+   * Admin-only operation (enforced by RLS)
+   *
+   * @param householdId - The household ID
+   * @param userId - Profile ID of the member to update
+   * @param newRole - New role ('admin' | 'member')
+   * @returns Updated household member with profile
+   * @throws {NotFoundError} If member not found
+   * @throws {ConflictError} If demoting last admin or promoting managed member to admin
+   * @throws {AppError} If operation fails
+   */
+  async updateMemberRole(
+    householdId: HouseholdId,
+    userId: ProfileId,
+    newRole: 'admin' | 'member',
+  ): Promise<HouseholdMemberWithProfile> {
+    try {
+      // Get profile to check member_type
+      const { data: profile, error: profileError } = await this.supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (profileError) throw profileError;
+      if (!profile) throw new NotFoundError('Member', userId);
+
+      // Prevent promoting managed members to admin
+      if (newRole === 'admin' && profile.member_type === 'managed') {
+        throw new ConflictError('Cannot promote managed members to admin');
+      }
+
+      // If demoting from admin, prevent demoting last admin
+      if (newRole === 'member') {
+        const { data: admins } = await this.supabase
+          .from('household_members')
+          .select('user_id')
+          .eq('household_id', householdId)
+          .eq('role', 'admin');
+
+        if (admins && admins.length === 1 && admins[0]?.user_id === userId) {
+          throw new ConflictError('Cannot demote the last admin');
+        }
+      }
+
+      // Update member role (RLS enforces admin-only)
+      const { data, error } = await this.supabase
+        .from('household_members')
+        .update({ role: newRole })
+        .eq('household_id', householdId)
+        .eq('user_id', userId)
+        .select('*, profile:profiles(*)');
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new NotFoundError('Household member', userId);
+      }
+
+      return data[0] as unknown as HouseholdMemberWithProfile;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+
+      console.error('HouseholdService.updateMemberRole failed:', error);
+      throw new AppError('Failed to update member role', 'UPDATE_MEMBER_ROLE_ERROR', 500, {
+        householdId,
+        userId,
+      });
+    }
+  }
+
+  /**
+   * Resend invitation email
+   *
+   * Only pending invitations can be resent
+   *
+   * @param invitationId - The invitation ID
+   * @returns Updated invitation with new timestamp
+   * @throws {NotFoundError} If invitation not found
+   * @throws {ConflictError} If invitation is not pending
+   * @throws {AppError} If operation fails
+   */
+  async resendInvitation(invitationId: InvitationId): Promise<HouseholdInvitation> {
+    try {
+      // Get invitation
+      const { data: invitation, error: getError } = await this.supabase
+        .from('household_invitations')
+        .select('*')
+        .eq('id', invitationId)
+        .maybeSingle();
+
+      if (getError) throw getError;
+      if (!invitation) throw new NotFoundError('Invitation', invitationId);
+
+      // Validate invitation is pending
+      if (invitation.status !== 'pending') {
+        throw new ConflictError('Invitation must be pending to resend');
+      }
+
+      // Resend email via Supabase Auth
+      const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite/accept?token=${invitation.token}`;
+
+      await this.supabase.auth.signInWithOtp({
+        email: invitation.invitee_email,
+        options: {
+          emailRedirectTo: inviteUrl,
+          data: {
+            invitation_token: invitation.token,
+            household_id: invitation.household_id,
+          },
+        },
+      });
+
+      // Update invitation timestamp
+      const { data, error } = await this.supabase
+        .from('household_invitations')
+        .update({ invited_at: new Date().toISOString() })
+        .eq('id', invitationId)
+        .select();
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new NotFoundError('Invitation', invitationId);
+      }
+
+      return data[0] as unknown as HouseholdInvitation;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+
+      console.error('HouseholdService.resendInvitation failed:', error);
+      throw new AppError('Failed to resend invitation', 'RESEND_INVITATION_ERROR', 500, {
+        invitationId,
+      });
+    }
+  }
+
+  /**
+   * Update invitation status
+   *
+   * Only allows manual updates to declined/expired statuses
+   *
+   * @param invitationId - The invitation ID
+   * @param status - New status ('declined' | 'expired')
+   * @returns Updated invitation
+   * @throws {NotFoundError} If invitation not found
+   * @throws {AppError} If operation fails
+   */
+  async updateInvitationStatus(
+    invitationId: InvitationId,
+    status: 'declined' | 'expired',
+  ): Promise<HouseholdInvitation> {
+    try {
+      const { data, error } = await this.supabase
+        .from('household_invitations')
+        .update({ status })
+        .eq('id', invitationId)
+        .select();
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new NotFoundError('Invitation', invitationId);
+      }
+
+      return data[0] as unknown as HouseholdInvitation;
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+
+      console.error('HouseholdService.updateInvitationStatus failed:', error);
+      throw new AppError(
+        'Failed to update invitation status',
+        'UPDATE_INVITATION_STATUS_ERROR',
+        500,
+        {
+          invitationId,
+        },
+      );
     }
   }
 }

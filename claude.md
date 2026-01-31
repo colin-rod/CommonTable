@@ -2275,6 +2275,11 @@ fix(sync-engine): handle concurrent edit conflicts correctly
 test(sync-engine): add test for concurrent edit conflict resolution
 ```
 
+**Branch Workflow**:
+
+- Feature branches → PR to `development`
+- `development` → PR to `main` (production releases only)
+
 ---
 
 ## Code Review Checklist
@@ -2338,9 +2343,11 @@ cd apps/web
 cp .env.example .env.local
 ```
 
-#### 2. Configure Supabase Credentials
+#### 2. Configure API Credentials
 
-Get your credentials from [Supabase Dashboard](https://app.supabase.com/project/_/settings/api):
+**Supabase Credentials** (get from [Supabase Dashboard](https://app.supabase.com/project/_/settings/api)):
+
+Go to the "Publishable and secret API keys" tab (NOT the legacy anon/service_role keys):
 
 ```env
 # apps/web/.env.local
@@ -2348,44 +2355,48 @@ Get your credentials from [Supabase Dashboard](https://app.supabase.com/project/
 # Public URL (safe to expose)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 
-# Anonymous Key (safe to expose, RLS enforced)
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...your-anon-key
+# Publishable Key (safe to expose, RLS enforced)
+# Found under "Publishable and secret API keys" tab
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
-# Service Role Key (SERVER ONLY - never expose to client)
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...your-service-role-key
+# Secret Key (SERVER ONLY - never expose to client, bypasses RLS)
+# Found under "Publishable and secret API keys" tab
+SUPABASE_SECRET_KEY=sb_secret_...
+```
+
+**OpenAI Credentials** (get from [OpenAI Dashboard](https://platform.openai.com/api-keys)):
+
+```env
+# OpenAI API Key (for AI-powered features like tag suggestions)
+OPENAI_API_KEY=sk-proj-...
 ```
 
 ⚠️ **Security Warning**:
 
 - `NEXT_PUBLIC_*` variables are exposed to the browser
-- `SUPABASE_SERVICE_ROLE_KEY` is SERVER-ONLY and bypasses Row Level Security
-- Never commit `.env.local` to version control
+- `SUPABASE_SECRET_KEY` is SERVER-ONLY and bypasses Row Level Security
+- **NEVER commit `.env.local` to version control** (already in `.gitignore`)
+- **NEVER hardcode credentials in `.claude/settings.local.json`** (use environment variables instead)
 
 #### 3. Client vs Server Usage
 
-**Browser/Client Components** (`apps/web/lib/supabase/client.ts`):
+**Browser/Client Components** (`packages/api-client/src/supabase.ts`):
 
 ```typescript
-import { createClient } from '@/lib/supabase/client';
+import { createSupabaseClient } from '@commontable/api-client';
 
-const supabase = createClient(); // Uses anon key, RLS enforced
+const supabase = createSupabaseClient(); // Uses publishable key, RLS enforced
 ```
 
-**Server Components/Actions** (`apps/web/lib/supabase/server.ts`):
+**Server-side Admin Operations** (use sparingly, bypasses RLS):
 
 ```typescript
-import { createClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient } from '@commontable/api-client';
 
-const supabase = await createClient(); // Uses anon key with cookies, RLS enforced
+const supabaseAdmin = createSupabaseAdminClient(); // Uses secret key, bypasses RLS
 ```
 
-**Admin Operations** (use sparingly):
-
-```typescript
-import { createAdminClient } from '@/lib/supabase/server';
-
-const supabaseAdmin = createAdminClient(); // Uses service role, bypasses RLS
-```
+**Note**: This project uses Supabase's **new Publishable/Secret key system**, not the legacy anon/service_role keys.
 
 #### 4. Environment-Specific Configuration
 
@@ -2449,7 +2460,9 @@ curl -X POST https://<project-ref>.supabase.co/functions/v1/<function-name> \
 ### 1. Start New Feature
 
 ```bash
-# Create feature branch
+# Create feature branch from development
+git checkout development
+git pull origin development
 git checkout -b feat/recipe-versioning
 
 # Write failing test first

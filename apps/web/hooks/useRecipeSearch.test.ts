@@ -1,7 +1,7 @@
 import { RecipeService } from '@commontable/api-client';
 import type { RecipeSearchResult, HouseholdId, Household } from '@commontable/types';
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { useAuth } from './useAuth';
 import { useRecipeSearch } from './useRecipeSearch';
@@ -35,22 +35,46 @@ describe('useRecipeSearch Hook', () => {
 
   const mockSearchResults: RecipeSearchResult[] = [
     {
-      id: 'recipe-1',
+      id: 'recipe-1' as any,
       household_id: mockHouseholdId,
       title: 'Pasta Carbonara',
       description: 'Classic Italian pasta',
+      current_version_id: null,
+      rolling_score: null,
       tags: ['italian', 'pasta'],
+      is_favorite: false,
+      last_cooked_at: null,
+      created_by: 'user-1' as any,
+      created_at: new Date('2024-01-01'),
+      updated_at: new Date('2024-01-01'),
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
       rank: 0.95,
-      headline: '<b>Pasta</b> Carbonara',
     },
     {
-      id: 'recipe-2',
+      id: 'recipe-2' as any,
       household_id: mockHouseholdId,
       title: 'Spaghetti Bolognese',
       description: 'Traditional meat sauce',
+      current_version_id: null,
+      rolling_score: null,
       tags: ['italian', 'pasta'],
+      is_favorite: false,
+      last_cooked_at: null,
+      created_by: 'user-1' as any,
+      created_at: new Date('2024-01-01'),
+      updated_at: new Date('2024-01-01'),
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
       rank: 0.87,
-      headline: '<b>Pasta</b> with meat sauce',
     },
   ];
 
@@ -231,6 +255,16 @@ describe('useRecipeSearch Hook', () => {
   });
 
   describe('Error handling', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
+    });
+
     it('should handle search errors', async () => {
       const searchError = new Error('Search failed');
       mockRecipeService.search.mockRejectedValue(searchError);
@@ -288,13 +322,25 @@ describe('useRecipeSearch Hook', () => {
 
       const secondSearchResults: RecipeSearchResult[] = [
         {
-          id: 'recipe-3',
+          id: 'recipe-3' as any,
           household_id: mockHouseholdId,
           title: 'Caesar Salad',
           description: 'Fresh salad',
+          current_version_id: null,
+          rolling_score: null,
           tags: ['salad'],
+          is_favorite: false,
+          last_cooked_at: null,
+          created_by: 'user-1' as any,
+          created_at: new Date('2024-01-01'),
+          updated_at: new Date('2024-01-01'),
+          // Phase 3 metadata fields
+          cuisine: null,
+          meal_type: null,
+          key_ingredients: [],
+          priority: null,
+          status: 'suggested',
           rank: 0.98,
-          headline: '<b>Salad</b>',
         },
       ];
 

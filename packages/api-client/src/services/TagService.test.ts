@@ -347,8 +347,8 @@ describe('TagService', () => {
       const result = await service.getVersionTags('version-456' as any);
 
       expect(result).toHaveLength(2);
-      expect(result[0].name).toBe('italian'); // sorted alphabetically
-      expect(result[1].name).toBe('pasta');
+      expect(result[0]!.name).toBe('italian'); // sorted alphabetically
+      expect(result[1]!.name).toBe('pasta');
     });
 
     it('should return empty array if no tags', async () => {

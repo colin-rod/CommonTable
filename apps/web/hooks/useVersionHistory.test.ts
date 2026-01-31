@@ -101,9 +101,9 @@ describe('useVersionHistory Hook', () => {
       });
 
       expect(result.current.versions).toHaveLength(3);
-      expect(result.current.versions[0].version_number).toBe(3);
-      expect(result.current.versions[0].is_current).toBe(true);
-      expect(result.current.versions[0].created_by_name).toBe('Sarah');
+      expect(result.current.versions[0]!.version_number).toBe(3);
+      expect(result.current.versions[0]!.is_current).toBe(true);
+      expect(result.current.versions[0]!.created_by_name).toBe('Sarah');
       expect(result.current.error).toBeNull();
     });
 
@@ -140,7 +140,7 @@ describe('useVersionHistory Hook', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.versions[0].created_by_name).toBeNull();
+      expect(result.current.versions[0]!.created_by_name).toBeNull();
     });
   });
 

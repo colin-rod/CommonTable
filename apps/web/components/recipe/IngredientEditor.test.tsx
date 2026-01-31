@@ -91,7 +91,7 @@ describe('IngredientEditor', () => {
 
     // Find the up button for the second ingredient (sugar)
     const upButtons = screen.getAllByRole('button', { name: /move up/i });
-    await user.click(upButtons[1]);
+    await user.click(upButtons[1]!);
 
     // Wait for reorder
     await waitFor(() => {
@@ -115,7 +115,7 @@ describe('IngredientEditor', () => {
 
     // Find the down button for the first ingredient (flour)
     const downButtons = screen.getAllByRole('button', { name: /move down/i });
-    await user.click(downButtons[0]);
+    await user.click(downButtons[0]!);
 
     // Wait for reorder
     await waitFor(() => {

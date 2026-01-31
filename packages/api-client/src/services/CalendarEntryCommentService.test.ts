@@ -273,11 +273,11 @@ describe('CalendarEntryCommentService', () => {
         comment_text: 'This looks delicious!',
       };
 
-      // Mock auth.getUser returning no user
+      // Mock auth.getUser returning no user (no error, just null user)
       vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
         data: { user: null },
         error: null,
-      });
+      } as any);
 
       await expect(service.create(input)).rejects.toThrow(AppError);
       await expect(service.create(input)).rejects.toThrow('User not authenticated');

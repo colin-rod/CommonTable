@@ -37,7 +37,7 @@ describe('VersionDetailView Component', () => {
     cook_time_minutes: 30,
     ingredients_json: [
       { name: 'pasta', quantity: 400, unit: 'g' },
-      { name: 'eggs', quantity: 4, unit: null },
+      { name: 'eggs', quantity: 4 },
     ],
     steps_json: [
       { position: 1, text: 'Boil pasta' },
@@ -184,10 +184,10 @@ describe('VersionDetailView Component', () => {
       expect(ingredientList.children).toHaveLength(0);
     });
 
-    it('should handle null ingredients_json', () => {
+    it('should handle empty ingredients_json', () => {
       const versionWithNullIngredients = {
         ...mockVersion,
-        ingredients_json: null,
+        ingredients_json: [],
       };
       render(<VersionDetailView version={versionWithNullIngredients} editorName="John Doe" />);
 
@@ -228,10 +228,10 @@ describe('VersionDetailView Component', () => {
       expect(stepList.children).toHaveLength(0);
     });
 
-    it('should handle null steps_json', () => {
+    it('should handle empty steps_json', () => {
       const versionWithNullSteps = {
         ...mockVersion,
-        steps_json: null,
+        steps_json: [],
       };
       render(<VersionDetailView version={versionWithNullSteps} editorName="John Doe" />);
 

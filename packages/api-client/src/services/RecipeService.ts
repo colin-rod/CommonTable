@@ -11,11 +11,13 @@ import {
   type CreateRecipeInput,
   type UpdateRecipeInput,
   type ForkRecipeInput,
+  type UpdateRecipeStatusInput,
   type Database,
   CreateRecipeInputSchema,
   UpdateRecipeInputSchema,
   RecipeSearchSchema,
   ForkRecipeInputSchema,
+  UpdateRecipeStatusSchema,
   ValidationError,
   NotFoundError,
   AppError,
@@ -79,6 +81,12 @@ export class RecipeService extends BaseService {
           p_cook_time_minutes: validated.cook_time_minutes ?? 0,
           p_notes: validated.notes ?? '',
           p_user_id: validated.user_id,
+          // New metadata fields
+          p_cuisine: validated.cuisine ?? undefined,
+          p_meal_type: validated.meal_type ?? undefined,
+          p_key_ingredients: validated.key_ingredients ?? undefined,
+          p_priority: validated.priority ?? undefined,
+          p_status: validated.status ?? 'suggested',
         },
       );
 
@@ -101,9 +109,6 @@ export class RecipeService extends BaseService {
             }),
           ),
         );
-
-        // Also write to legacy recipes.tags column (dual-write for migration safety)
-        await this.supabase.from('recipes').update({ tags: validated.tags }).eq('id', recipeId);
       }
 
       // Return the recipe (tags will be loaded on subsequent reads)
@@ -418,6 +423,53 @@ export class RecipeService extends BaseService {
   }
 
   /**
+   * Update recipe status
+   *
+   * Allows updating recipe lifecycle status:
+   * - suggested (default/new)
+   * - to_buy (considering for planning)
+   * - to_cook (ready to schedule)
+   * - cooked (has been prepared - typically auto-set by cooking event)
+   *
+   * @param id - Recipe ID
+   * @param input - Status update input
+   * @returns Updated recipe with new status
+   * @throws {ValidationError} If input validation fails
+   * @throws {NotFoundError} If recipe does not exist
+   * @throws {AppError} If database operation fails
+   */
+  async updateStatus(id: RecipeId, input: UpdateRecipeStatusInput): Promise<Recipe> {
+    try {
+      const validated = UpdateRecipeStatusSchema.parse(input);
+
+      // Check if recipe exists first
+      const existing = await this.getById(id);
+      if (!existing) {
+        throw new NotFoundError('Recipe', id);
+      }
+
+      // Update the status
+      const { error: updateError } = await this.supabase
+        .from('recipes')
+        .update({ status: validated.status })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
+      // Return updated recipe
+      return await this.getById(id);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new ValidationError('Invalid status input', { errors: error.errors });
+      }
+      if (error instanceof AppError) throw error;
+
+      console.error('RecipeService.updateStatus failed:', error);
+      throw new AppError('Failed to update recipe status', 'UPDATE_ERROR', 500, { id });
+    }
+  }
+
+  /**
    * Get a recipe with its current version data
    *
    * @param id - Recipe ID
@@ -484,12 +536,15 @@ export class RecipeService extends BaseService {
       const existing = await this.getById(recipeId);
 
       // 3. Create new version with old content via existing RPC
+
       const { error: rpcError } = await this.supabase.rpc('update_recipe_create_version', {
         p_recipe_id: recipeId,
         p_title: existing.title,
         p_description: existing.description ?? '',
-        p_ingredients_json: targetVersion.ingredients_json,
-        p_steps_json: targetVersion.steps_json,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        p_ingredients_json: targetVersion.ingredients_json as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        p_steps_json: targetVersion.steps_json as any,
         p_servings: targetVersion.servings ?? 0,
         p_prep_time_minutes: targetVersion.prep_time_minutes ?? 0,
         p_cook_time_minutes: targetVersion.cook_time_minutes ?? 0,

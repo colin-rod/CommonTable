@@ -1,12 +1,10 @@
 'use client';
 
 import type { MealSlot, CalendarEntry } from '@commontable/types';
-import {
-  Coffee as BreakfastIcon,
-  WbSunny as LunchIcon,
-  NightsStay as DinnerIcon,
-  Cookie as SnackIcon,
-} from '@mui/icons-material';
+import BreakfastIcon from '@mui/icons-material/Coffee';
+import SnackIcon from '@mui/icons-material/Cookie';
+import DinnerIcon from '@mui/icons-material/NightsStay';
+import LunchIcon from '@mui/icons-material/WbSunny';
 import { Paper, Typography, Box } from '@mui/material';
 
 import { AddMealButton } from './AddMealButton';

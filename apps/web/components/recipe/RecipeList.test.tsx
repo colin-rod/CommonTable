@@ -21,9 +21,6 @@ describe('RecipeList Component', () => {
       household_id: 'household-1' as any,
       title: 'Pasta Carbonara',
       description: null,
-      servings: 4,
-      prep_time_minutes: null,
-      cook_time_minutes: null,
       tags: ['italian', 'pasta'],
       last_cooked_at: new Date('2024-01-15'),
       is_favorite: false,
@@ -32,16 +29,18 @@ describe('RecipeList Component', () => {
       created_at: new Date('2024-01-01'),
       updated_at: new Date('2024-01-01'),
       rolling_score: null,
-      rating_count: 0,
+      // New metadata fields
+      cuisine: 'italian',
+      meal_type: 'main_dish',
+      key_ingredients: ['pasta', 'eggs', 'cheese'],
+      priority: 1,
+      status: 'suggested',
     },
     {
       id: 'recipe-2' as any,
       household_id: 'household-1' as any,
       title: 'Chicken Curry',
       description: null,
-      servings: 6,
-      prep_time_minutes: null,
-      cook_time_minutes: null,
       tags: ['indian', 'curry'],
       last_cooked_at: new Date('2024-01-10'),
       is_favorite: true,
@@ -50,7 +49,12 @@ describe('RecipeList Component', () => {
       created_at: new Date('2024-01-05'),
       updated_at: new Date('2024-01-05'),
       rolling_score: null,
-      rating_count: 0,
+      // New metadata fields
+      cuisine: 'indian',
+      meal_type: 'main_dish',
+      key_ingredients: ['chicken', 'curry', 'coconut milk'],
+      priority: 2,
+      status: 'to_cook',
     },
   ];
 
@@ -119,7 +123,7 @@ describe('RecipeList Component', () => {
     });
 
     it('should render single recipe', () => {
-      const singleRecipe = [mockRecipes[0]];
+      const singleRecipe = [mockRecipes[0]!];
       render(<RecipeList recipes={singleRecipe} onToggleFavorite={mockOnToggleFavorite} />);
 
       expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
@@ -134,7 +138,7 @@ describe('RecipeList Component', () => {
 
       // Find favorite button for first recipe
       const favoriteButtons = screen.getAllByLabelText(/favorites/i);
-      await user.click(favoriteButtons[0]);
+      await user.click(favoriteButtons[0]!);
 
       expect(mockOnToggleFavorite).toHaveBeenCalledWith('recipe-1');
     });
@@ -185,11 +189,11 @@ describe('RecipeList Component', () => {
       const favoriteButtons = screen.getAllByLabelText(/favorites/i);
 
       // Click first recipe's favorite button
-      await user.click(favoriteButtons[0]);
+      await user.click(favoriteButtons[0]!);
       expect(mockOnToggleFavorite).toHaveBeenCalledWith('recipe-1');
 
       // Click second recipe's favorite button
-      await user.click(favoriteButtons[1]);
+      await user.click(favoriteButtons[1]!);
       expect(mockOnToggleFavorite).toHaveBeenCalledWith('recipe-2');
     });
   });

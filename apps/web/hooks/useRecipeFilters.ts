@@ -1,4 +1,4 @@
-import type { Recipe, SortOption } from '@commontable/types';
+import type { Recipe, SortOption, CuisineType, MealType, RecipeStatus } from '@commontable/types';
 import { useMemo } from 'react';
 
 /**
@@ -8,6 +8,10 @@ import { useMemo } from 'react';
  * @param selectedTags - Tags to filter by (AND logic: recipes must have ALL selected tags)
  * @param showFavoritesOnly - If true, only show favorite recipes
  * @param sortBy - Sort option to apply
+ * @param cuisine - Filter by cuisine type
+ * @param mealType - Filter by meal type
+ * @param status - Filter by recipe status
+ * @param priority - Filter by priority level
  * @returns Filtered and sorted array of recipes
  */
 export function useRecipeFilters(
@@ -15,6 +19,10 @@ export function useRecipeFilters(
   selectedTags: string[],
   showFavoritesOnly: boolean,
   sortBy: SortOption,
+  cuisine?: CuisineType | null,
+  mealType?: MealType | null,
+  status?: RecipeStatus | null,
+  priority?: number | null,
 ): Recipe[] {
   return useMemo(() => {
     let filtered = [...recipes];
@@ -29,6 +37,26 @@ export function useRecipeFilters(
     // Apply favorites filter
     if (showFavoritesOnly) {
       filtered = filtered.filter((recipe) => recipe.is_favorite);
+    }
+
+    // Apply cuisine filter
+    if (cuisine) {
+      filtered = filtered.filter((recipe) => recipe.cuisine === cuisine);
+    }
+
+    // Apply meal type filter
+    if (mealType) {
+      filtered = filtered.filter((recipe) => recipe.meal_type === mealType);
+    }
+
+    // Apply status filter
+    if (status) {
+      filtered = filtered.filter((recipe) => recipe.status === status);
+    }
+
+    // Apply priority filter
+    if (priority) {
+      filtered = filtered.filter((recipe) => recipe.priority === priority);
     }
 
     // Apply sort
@@ -55,5 +83,5 @@ export function useRecipeFilters(
     });
 
     return filtered;
-  }, [recipes, selectedTags, showFavoritesOnly, sortBy]);
+  }, [recipes, selectedTags, showFavoritesOnly, sortBy, cuisine, mealType, status, priority]);
 }

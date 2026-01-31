@@ -8,6 +8,17 @@ export function createClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    if (typeof window === 'undefined') {
+      return new Proxy(
+        {},
+        {
+          get() {
+            throw new Error('Missing public Supabase environment variables');
+          },
+        },
+      ) as ReturnType<typeof createBrowserClient<Database>>;
+    }
+
     throw new Error('Missing public Supabase environment variables');
   }
 

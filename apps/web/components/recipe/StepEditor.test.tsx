@@ -108,7 +108,7 @@ describe('StepEditor', () => {
 
     // Move second step up
     const upButtons = screen.getAllByRole('button', { name: /move up/i });
-    await user.click(upButtons[1]);
+    await user.click(upButtons[1]!);
 
     // Wait for reorder
     await waitFor(() => {
@@ -132,7 +132,7 @@ describe('StepEditor', () => {
 
     // Move second step up
     const upButtons = screen.getAllByRole('button', { name: /move up/i });
-    await user.click(upButtons[1]);
+    await user.click(upButtons[1]!);
 
     // Wait for reorder and check labels
     await waitFor(() => {

@@ -1,6 +1,12 @@
 'use client';
 
-import { IngredientInputSchema, StepInputSchema } from '@commontable/types';
+import {
+  IngredientInputSchema,
+  StepInputSchema,
+  CuisineTypeSchema,
+  MealTypeSchema,
+  RecipeStatusSchema,
+} from '@commontable/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Stack, Typography, Button, Alert, Divider } from '@mui/material';
 import { useForm } from 'react-hook-form';
@@ -49,6 +55,15 @@ const RecipeFormSchema = z.object({
   tags: z.array(z.string().min(1).max(50)).max(20, 'Maximum 20 tags allowed').default([]),
   ingredients: z.array(IngredientInputSchema).default([]),
   steps: z.array(StepInputSchema).default([]),
+  // New metadata fields
+  cuisine: CuisineTypeSchema.nullable().optional(),
+  meal_type: MealTypeSchema.nullable().optional(),
+  key_ingredients: z
+    .array(z.string().min(1).max(50).trim())
+    .max(50, 'Maximum 50 key ingredients allowed')
+    .default([]),
+  priority: z.number().int().min(1).max(5).nullable().optional(),
+  status: RecipeStatusSchema.default('suggested'),
 });
 
 export interface RecipeFormProps {

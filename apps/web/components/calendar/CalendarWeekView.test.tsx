@@ -1,5 +1,5 @@
 import type { CalendarEntry, CalendarEntryId, Recipe, RecipeId } from '@commontable/types';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -23,11 +23,21 @@ describe('CalendarWeekView', () => {
       id: 'recipe-1' as RecipeId,
       household_id: 'household-1' as any,
       title: 'Pasta Carbonara',
+      description: null,
       current_version_id: 'version-1' as any,
+      rolling_score: null,
+      tags: [],
+      is_favorite: false,
+      last_cooked_at: null,
       created_by: 'user-1' as any,
       created_at: new Date(),
       updated_at: new Date(),
-      is_favorite: false,
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
     },
   ];
 
@@ -180,7 +190,7 @@ describe('CalendarWeekView', () => {
     render(<CalendarWeekView />);
 
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
-    await user.click(addButtons[0]);
+    await user.click(addButtons[0]!);
 
     expect(screen.getByText('Add Meal')).toBeInTheDocument();
   });
@@ -192,7 +202,7 @@ describe('CalendarWeekView', () => {
 
     // Open dialog
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
-    await user.click(addButtons[0]);
+    await user.click(addButtons[0]!);
 
     // Close dialog
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
@@ -216,14 +226,20 @@ describe('CalendarWeekView', () => {
 
     // Open dialog
     const addButtons = screen.getAllByRole('button', { name: /add meal/i });
-    await user.click(addButtons[0]);
+    await user.click(addButtons[0]!);
+    await waitFor(() => {
+      expect(screen.getByText('Add Meal')).toBeInTheDocument();
+    });
 
     // Fill form
-    const dateInput = screen.getByLabelText(/date/i);
-    await user.type(dateInput, '2026-01-20');
+    const dateInput = await screen.findByLabelText(/date/i);
+    fireEvent.change(dateInput, { target: { value: '2026-01-20' } });
 
     // Submit
     const addButton = screen.getByRole('button', { name: /^add$/i });
+    await waitFor(() => {
+      expect(addButton).toBeEnabled();
+    });
     await user.click(addButton);
 
     await waitFor(() => {

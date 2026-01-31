@@ -102,17 +102,8 @@ describe('MealSlotCell', () => {
     expect(onDelete).toHaveBeenCalledWith('entry-1');
   });
 
-  it('should call onMarkComplete with entry id when mark complete clicked', async () => {
-    const user = userEvent.setup();
-    const onMarkComplete = vi.fn();
-
-    render(<MealSlotCell {...defaultProps} entry={mockEntry} onMarkComplete={onMarkComplete} />);
-
-    const completeButton = screen.getByLabelText(/mark as completed/i);
-    await user.click(completeButton);
-
-    expect(onMarkComplete).toHaveBeenCalledWith('entry-1');
-  });
+  // Note: Inline rating flow is tested comprehensively in CalendarEntryCard.test.tsx
+  // MealSlotCell passes the onMarkComplete callback through to CalendarEntryCard
 
   it('should call onViewRecipe when entry has recipe_id and view clicked', async () => {
     const user = userEvent.setup();

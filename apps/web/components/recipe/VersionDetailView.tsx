@@ -1,7 +1,8 @@
 'use client';
 
 import type { RecipeVersion } from '@commontable/types';
-import { Restaurant as ServingsIcon, Schedule as TimeIcon } from '@mui/icons-material';
+import ServingsIcon from '@mui/icons-material/Restaurant';
+import TimeIcon from '@mui/icons-material/Schedule';
 import { Stack, Typography, Divider, Box } from '@mui/material';
 
 import { IngredientList } from './IngredientList';

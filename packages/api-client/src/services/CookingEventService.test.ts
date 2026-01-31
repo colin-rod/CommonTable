@@ -57,6 +57,8 @@ interface MockQueryBuilder {
   single: ReturnType<typeof vi.fn>;
   maybeSingle: ReturnType<typeof vi.fn>;
   range: ReturnType<typeof vi.fn>;
+  in: ReturnType<typeof vi.fn>;
+  then?: (resolve: (value: any) => void, reject?: (reason: any) => void) => Promise<any>;
 }
 
 /**
@@ -78,6 +80,11 @@ function createMockQueryBuilder<T>(resolvedValue?: {
     single: vi.fn().mockResolvedValue(defaultValue),
     maybeSingle: vi.fn().mockResolvedValue(defaultValue),
     range: vi.fn().mockResolvedValue(defaultValue),
+    in: vi.fn().mockReturnThis(),
+    then: (resolve) => {
+      resolve(defaultValue);
+      return Promise.resolve(defaultValue);
+    },
   };
 
   return builder;
@@ -166,6 +173,10 @@ describe('CookingEventService', () => {
       const insertBuilder = createMockQueryBuilder({ data: mockCookingEvent, error: null });
       vi.mocked(mockSupabase.from).mockReturnValueOnce(insertBuilder as any);
 
+      // Mock recipe status update (auto-set to 'cooked')
+      const statusUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(statusUpdateBuilder as any);
+
       const result = await service.create(input);
 
       expect(result.id).toBe(mockCookingEventId);
@@ -214,6 +225,10 @@ describe('CookingEventService', () => {
 
       const insertBuilder = createMockQueryBuilder({ data: mockCookingEvent, error: null });
       vi.mocked(mockSupabase.from).mockReturnValueOnce(insertBuilder as any);
+
+      // Mock recipe status update (auto-set to 'cooked')
+      const statusUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(statusUpdateBuilder as any);
 
       const result = await service.create(input);
 
@@ -305,15 +320,76 @@ describe('CookingEventService', () => {
       const insertBuilder = createMockQueryBuilder({ data: mockCookingEvent, error: null });
       vi.mocked(mockSupabase.from).mockReturnValueOnce(insertBuilder as any);
 
+      // Mock recipe status update (auto-set to 'cooked')
+      const statusUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(statusUpdateBuilder as any);
+
       // Mock calendar entry update
-      const updateBuilder = createMockQueryBuilder({ data: null, error: null });
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(updateBuilder as any);
+      const calendarUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(calendarUpdateBuilder as any);
 
       const result = await service.create(input);
 
       expect(result.id).toBe(mockCookingEventId);
-      expect(updateBuilder.update).toHaveBeenCalledWith({ status: 'completed' });
-      expect(updateBuilder.eq).toHaveBeenCalledWith('id', '00000000-0000-0000-0000-000000000008');
+      expect(calendarUpdateBuilder.update).toHaveBeenCalledWith({ status: 'completed' });
+      expect(calendarUpdateBuilder.eq).toHaveBeenCalledWith(
+        'id',
+        '00000000-0000-0000-0000-000000000008',
+      );
+    });
+
+    it('should automatically set recipe status to cooked', async () => {
+      const input = {
+        recipe_id: mockRecipeId as string,
+        recipe_version_id: mockRecipeVersionId as string,
+        rating: 4,
+      };
+
+      const mockRecipe: MockRecipe = {
+        id: mockRecipeId,
+        household_id: mockHouseholdId,
+        title: 'Test Recipe',
+        description: null,
+        current_version_id: mockRecipeVersionId,
+        rolling_score: null,
+        tags: [],
+        is_favorite: false,
+        last_cooked_at: null,
+        created_by: mockUserId,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      const mockCookingEvent: MockCookingEvent = {
+        id: mockCookingEventId,
+        recipe_id: mockRecipeId,
+        recipe_version_id: mockRecipeVersionId,
+        household_id: mockHouseholdId,
+        cooked_at: new Date().toISOString(),
+        servings_made: null,
+        rating: 4,
+        notes: null,
+        cooked_by: mockUserId,
+      };
+
+      // Mock recipe lookup
+      const recipeBuilder = createMockQueryBuilder({ data: mockRecipe, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(recipeBuilder as any);
+
+      // Mock cooking event insert
+      const insertBuilder = createMockQueryBuilder({ data: mockCookingEvent, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(insertBuilder as any);
+
+      // Mock recipe status update to 'cooked'
+      const statusUpdateBuilder = createMockQueryBuilder({ data: null, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValueOnce(statusUpdateBuilder as any);
+
+      await service.create(input);
+
+      // Verify recipe status was updated to 'cooked'
+      expect(vi.mocked(mockSupabase.from)).toHaveBeenCalledWith('recipes');
+      expect(statusUpdateBuilder.update).toHaveBeenCalledWith({ status: 'cooked' });
+      expect(statusUpdateBuilder.eq).toHaveBeenCalledWith('id', mockRecipeId);
     });
   });
 
@@ -385,8 +461,8 @@ describe('CookingEventService', () => {
       const result = await service.getByRecipeId(mockRecipeId);
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('00000000-0000-0000-0000-000000000006' as CookingEventId);
-      expect(result[1].id).toBe('00000000-0000-0000-0000-000000000007' as CookingEventId);
+      expect(result[0]!.id).toBe('00000000-0000-0000-0000-000000000006' as CookingEventId);
+      expect(result[1]!.id).toBe('00000000-0000-0000-0000-000000000007' as CookingEventId);
       expect(builder.eq).toHaveBeenCalledWith('recipe_id', mockRecipeId);
       expect(builder.order).toHaveBeenCalledWith('cooked_at', { ascending: false });
     });
@@ -404,7 +480,7 @@ describe('CookingEventService', () => {
 
   describe('getByHouseholdId', () => {
     it('should return all cooking events for a household sorted by date DESC', async () => {
-      const mockEvents: MockCookingEvent[] = [
+      const mockEvents = [
         {
           id: '00000000-0000-0000-0000-000000000006',
           recipe_id: mockRecipeId,
@@ -415,40 +491,58 @@ describe('CookingEventService', () => {
           rating: 5,
           notes: null,
           cooked_by: mockUserId,
+          recipes: { title: 'Pasta Carbonara' },
         },
       ];
 
-      const builder = createMockQueryBuilder({ data: mockEvents, error: null });
-      // order() returns this to allow chaining .range()
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(Promise.resolve({ data: mockEvents, error: null }));
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+      const mockProfiles = [{ id: mockUserId, display_name: 'John Doe' }];
+
+      const eventsBuilder = createMockQueryBuilder({ data: mockEvents, error: null });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(Promise.resolve({ data: mockEvents, error: null }));
+
+      const profilesBuilder = createMockQueryBuilder({ data: mockProfiles, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       const result = await service.getByHouseholdId(mockHouseholdId);
 
       expect(result).toHaveLength(1);
-      expect(builder.eq).toHaveBeenCalledWith('household_id', mockHouseholdId);
-      expect(builder.order).toHaveBeenCalledWith('cooked_at', { ascending: false });
+      expect(eventsBuilder.eq).toHaveBeenCalledWith('household_id', mockHouseholdId);
+      expect(eventsBuilder.order).toHaveBeenCalledWith('cooked_at', { ascending: false });
     });
 
     it('should support pagination with limit and offset', async () => {
       const mockEvents: MockCookingEvent[] = [];
 
-      const builder = createMockQueryBuilder({ data: mockEvents, error: null });
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(Promise.resolve({ data: mockEvents, error: null }));
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+      const eventsBuilder = createMockQueryBuilder({ data: mockEvents, error: null });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(Promise.resolve({ data: mockEvents, error: null }));
+
+      const profilesBuilder = createMockQueryBuilder({ data: [], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       await service.getByHouseholdId(mockHouseholdId, 10, 5);
 
-      expect(builder.range).toHaveBeenCalledWith(5, 14); // offset 5, limit 10 → range(5, 14)
+      expect(eventsBuilder.range).toHaveBeenCalledWith(5, 14); // offset 5, limit 10 → range(5, 14)
     });
 
     it('should return empty array if no events exist', async () => {
-      const builder = createMockQueryBuilder({ data: [], error: null });
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(Promise.resolve({ data: [], error: null }));
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+      const eventsBuilder = createMockQueryBuilder({ data: [], error: null });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(Promise.resolve({ data: [], error: null }));
+
+      // No profiles to fetch when there are no events
+      const profilesBuilder = createMockQueryBuilder({ data: [], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       const result = await service.getByHouseholdId(mockHouseholdId);
 
@@ -472,10 +566,19 @@ describe('CookingEventService', () => {
         },
       ];
 
-      const builder = createMockQueryBuilder({ data: mockEventsWithJoin, error: null });
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(Promise.resolve({ data: mockEventsWithJoin, error: null }));
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+      const mockProfiles = [{ id: mockUserId, display_name: 'John Doe' }];
+
+      const eventsBuilder = createMockQueryBuilder({ data: mockEventsWithJoin, error: null });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(
+        Promise.resolve({ data: mockEventsWithJoin, error: null }),
+      );
+
+      const profilesBuilder = createMockQueryBuilder({ data: mockProfiles, error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       const result = await service.getByHouseholdId(mockHouseholdId);
 
@@ -504,17 +607,26 @@ describe('CookingEventService', () => {
         },
       ];
 
-      const builder = createMockQueryBuilder({ data: mockEventsWithMissingProfile, error: null });
-      builder.order.mockReturnThis();
-      builder.range.mockReturnValue(
+      const eventsBuilder = createMockQueryBuilder({
+        data: mockEventsWithMissingProfile,
+        error: null,
+      });
+      eventsBuilder.order.mockReturnThis();
+      eventsBuilder.range.mockReturnValue(
         Promise.resolve({ data: mockEventsWithMissingProfile, error: null }),
       );
-      vi.mocked(mockSupabase.from).mockReturnValueOnce(builder as any);
+
+      // Mock profiles query returning empty (profile not found)
+      const profilesBuilder = createMockQueryBuilder({ data: [], error: null });
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(eventsBuilder as any)
+        .mockReturnValueOnce(profilesBuilder as any);
 
       const result = await service.getByHouseholdId(mockHouseholdId);
 
       expect(result).toHaveLength(1);
-      expect(result[0].cooked_by_name).toBe('Unknown member');
+      expect(result[0]!.cooked_by_name).toBe('Unknown member');
     });
   });
 

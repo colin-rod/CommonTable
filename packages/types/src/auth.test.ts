@@ -11,8 +11,11 @@ import {
   type ResetPasswordInput,
   type AuthState,
   type User,
+  type Profile,
   type Session,
+  type MemberType,
 } from './auth';
+import type { AuthUserId } from './models';
 
 describe('Auth Type Validation Schemas', () => {
   describe('SignUpSchema', () => {
@@ -394,9 +397,11 @@ describe('Auth Type Validation Schemas', () => {
         id: 'user123' as User['id'],
         email: 'john@example.com',
         profile: {
-          id: 'user123' as User['id'],
+          id: 'profile123' as Profile['id'],
+          auth_user_id: 'user123' as AuthUserId,
           display_name: 'John Doe',
           avatar_url: null,
+          member_type: 'authenticated' as MemberType,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
         },
@@ -452,9 +457,11 @@ describe('Auth Type Validation Schemas', () => {
         id: 'user123' as User['id'],
         email: 'john@example.com',
         profile: {
-          id: 'user123' as User['id'],
+          id: 'profile123' as Profile['id'],
+          auth_user_id: 'user123' as AuthUserId,
           display_name: 'John Doe',
           avatar_url: null,
+          member_type: 'authenticated' as MemberType,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
         },

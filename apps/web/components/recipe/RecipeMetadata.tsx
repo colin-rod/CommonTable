@@ -1,10 +1,8 @@
 'use client';
 
-import {
-  AccessTime as TimeIcon,
-  Restaurant as ServingsIcon,
-  Star as StarIcon,
-} from '@mui/icons-material';
+import TimeIcon from '@mui/icons-material/AccessTime';
+import ServingsIcon from '@mui/icons-material/Restaurant';
+import StarIcon from '@mui/icons-material/Star';
 import { Stack, Typography, Chip, Box } from '@mui/material';
 
 interface RecipeMetadataProps {

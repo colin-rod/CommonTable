@@ -111,9 +111,22 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
     });
 
     it('should calculate rolling_score as average of cooking event ratings', async () => {
+      // Get the current version ID from the recipe
+      const { data: recipe } = await supabase
+        .from('recipes')
+        .select('current_version_id')
+        .eq('id', testRecipeId)
+        .single();
+
+      const versionId = recipe?.current_version_id;
+      if (!versionId) {
+        throw new Error('Recipe version ID not found');
+      }
+
       // Add first cooking event with rating 4
       await supabase.from('cooking_events').insert({
         recipe_id: testRecipeId,
+        recipe_version_id: versionId,
         household_id: testHouseholdId,
         cooked_by: testUserId,
         rating: 4,
@@ -121,17 +134,18 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       });
 
       // Check rolling_score updated to 4.00
-      let { data: recipe } = await supabase
+      const { data: recipeAfterFirst } = await supabase
         .from('recipes')
         .select('rolling_score')
         .eq('id', testRecipeId)
         .single();
 
-      expect(recipe?.rolling_score).toBe(4.0);
+      expect(recipeAfterFirst?.rolling_score).toBe(4.0);
 
       // Add second cooking event with rating 5
       await supabase.from('cooking_events').insert({
         recipe_id: testRecipeId,
+        recipe_version_id: versionId,
         household_id: testHouseholdId,
         cooked_by: testUserId,
         rating: 5,
@@ -139,20 +153,33 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       });
 
       // Check rolling_score updated to 4.50 (average of 4 and 5)
-      ({ data: recipe } = await supabase
+      const { data: recipeAfterSecond } = await supabase
         .from('recipes')
         .select('rolling_score')
         .eq('id', testRecipeId)
-        .single());
+        .single();
 
-      expect(recipe?.rolling_score).toBe(4.5);
+      expect(recipeAfterSecond?.rolling_score).toBe(4.5);
     });
 
     it('should update rolling_score automatically via trigger', async () => {
+      // Get the current version ID from the recipe
+      const { data: recipe } = await supabase
+        .from('recipes')
+        .select('current_version_id')
+        .eq('id', testRecipeId)
+        .single();
+
+      const versionId = recipe?.current_version_id;
+      if (!versionId) {
+        throw new Error('Recipe version ID not found');
+      }
+
       // Insert multiple cooking events
       await supabase.from('cooking_events').insert([
         {
           recipe_id: testRecipeId,
+          recipe_version_id: versionId,
           household_id: testHouseholdId,
           cooked_by: testUserId,
           rating: 3,
@@ -160,6 +187,7 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
         },
         {
           recipe_id: testRecipeId,
+          recipe_version_id: versionId,
           household_id: testHouseholdId,
           cooked_by: testUserId,
           rating: 4,
@@ -167,6 +195,7 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
         },
         {
           recipe_id: testRecipeId,
+          recipe_version_id: versionId,
           household_id: testHouseholdId,
           cooked_by: testUserId,
           rating: 5,
@@ -175,19 +204,32 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       ]);
 
       // Check rolling_score is average: (3 + 4 + 5) / 3 = 4.00
-      const { data: recipe } = await supabase
+      const { data: recipeWithScore } = await supabase
         .from('recipes')
         .select('rolling_score')
         .eq('id', testRecipeId)
         .single();
 
-      expect(recipe?.rolling_score).toBe(4.0);
+      expect(recipeWithScore?.rolling_score).toBe(4.0);
     });
 
     it('should handle cooking events without ratings (NULL)', async () => {
+      // Get the current version ID from the recipe
+      const { data: recipe } = await supabase
+        .from('recipes')
+        .select('current_version_id')
+        .eq('id', testRecipeId)
+        .single();
+
+      const versionId = recipe?.current_version_id;
+      if (!versionId) {
+        throw new Error('Recipe version ID not found');
+      }
+
       // Add cooking event with rating
       await supabase.from('cooking_events').insert({
         recipe_id: testRecipeId,
+        recipe_version_id: versionId,
         household_id: testHouseholdId,
         cooked_by: testUserId,
         rating: 5,
@@ -197,6 +239,7 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       // Add cooking event without rating
       await supabase.from('cooking_events').insert({
         recipe_id: testRecipeId,
+        recipe_version_id: versionId,
         household_id: testHouseholdId,
         cooked_by: testUserId,
         rating: null,
@@ -204,13 +247,13 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       });
 
       // rolling_score should only count rated events (5.00)
-      const { data: recipe } = await supabase
+      const { data: recipeAfterNullRating } = await supabase
         .from('recipes')
         .select('rolling_score')
         .eq('id', testRecipeId)
         .single();
 
-      expect(recipe?.rolling_score).toBe(5.0);
+      expect(recipeAfterNullRating?.rolling_score).toBe(5.0);
     });
   });
 
@@ -286,13 +329,13 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       expect(images).toHaveLength(2);
 
       // Update first to not primary
-      await supabase.from('recipe_images').update({ is_primary: false }).eq('id', images![0].id);
+      await supabase.from('recipe_images').update({ is_primary: false }).eq('id', images![0]!.id);
 
       // Update second to primary
       const { error } = await supabase
         .from('recipe_images')
         .update({ is_primary: true })
-        .eq('id', images![1].id);
+        .eq('id', images![1]!.id);
 
       expect(error).toBeNull();
     });
@@ -364,6 +407,9 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
         ],
         p_steps_json: [{ position: 1, text: 'Cook pasta' }],
         p_servings: 4,
+        p_prep_time_minutes: 0,
+        p_cook_time_minutes: 0,
+        p_notes: '',
         p_user_id: testUserId,
       });
 
@@ -377,6 +423,9 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
         ],
         p_steps_json: [{ position: 1, text: 'Mix and bake' }],
         p_servings: 8,
+        p_prep_time_minutes: 0,
+        p_cook_time_minutes: 0,
+        p_notes: '',
         p_user_id: testUserId,
       });
     });
@@ -390,7 +439,7 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       expect(error).toBeNull();
       expect(results).not.toBeNull();
       expect(results!.length).toBeGreaterThan(0);
-      expect(results![0].title).toContain('Pasta');
+      expect(results![0]!.title).toContain('Pasta');
     });
 
     it('should find recipes by description', async () => {
@@ -434,7 +483,7 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
 
       // First result should have highest rank
       if (results!.length > 1) {
-        expect(results![0].rank).toBeGreaterThanOrEqual(results![1].rank);
+        expect(results![0]!.rank).toBeGreaterThanOrEqual(results![1]!.rank);
       }
     });
 
@@ -463,49 +512,49 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
     it('should store tags as array', async () => {
       const { data: recipe, error } = await supabase
         .from('recipes')
-        .update({ tags: ['vegetarian', 'quick', 'dinner'] })
+        .update({ tags: ['vegetarian', 'quick', 'dinner'] } as any)
         .eq('id', testRecipeId)
         .select()
         .single();
 
       expect(error).toBeNull();
-      expect(recipe?.tags).toEqual(['vegetarian', 'quick', 'dinner']);
+      expect((recipe as any)?.tags).toEqual(['vegetarian', 'quick', 'dinner']);
     });
 
     it('should normalize tags to lowercase', async () => {
       const { data: recipe, error } = await supabase
         .from('recipes')
-        .update({ tags: ['VEGETARIAN', 'Quick', 'DiNnEr'] })
+        .update({ tags: ['VEGETARIAN', 'Quick', 'DiNnEr'] } as any)
         .eq('id', testRecipeId)
         .select()
         .single();
 
       expect(error).toBeNull();
-      expect(recipe?.tags).toEqual(['dinner', 'quick', 'vegetarian']); // Sorted alphabetically
+      expect((recipe as any)?.tags).toEqual(['dinner', 'quick', 'vegetarian']); // Sorted alphabetically
     });
 
     it('should remove duplicate tags', async () => {
       const { data: recipe, error } = await supabase
         .from('recipes')
-        .update({ tags: ['vegetarian', 'vegetarian', 'quick'] })
+        .update({ tags: ['vegetarian', 'vegetarian', 'quick'] } as any)
         .eq('id', testRecipeId)
         .select()
         .single();
 
       expect(error).toBeNull();
-      expect(recipe?.tags).toEqual(['quick', 'vegetarian']);
+      expect((recipe as any)?.tags).toEqual(['quick', 'vegetarian']);
     });
 
     it('should remove empty tags', async () => {
       const { data: recipe, error } = await supabase
         .from('recipes')
-        .update({ tags: ['vegetarian', '', '   ', 'quick'] })
+        .update({ tags: ['vegetarian', '', '   ', 'quick'] } as any)
         .eq('id', testRecipeId)
         .select()
         .single();
 
       expect(error).toBeNull();
-      expect(recipe?.tags).toEqual(['quick', 'vegetarian']);
+      expect((recipe as any)?.tags).toEqual(['quick', 'vegetarian']);
     });
 
     it('should enforce max 20 characters per tag', async () => {
@@ -513,34 +562,39 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
         .from('recipes')
         .update({
           tags: ['vegetarian', 'this-is-a-very-long-tag-that-exceeds-twenty-characters'],
-        })
+        } as any)
         .eq('id', testRecipeId)
         .select()
         .single();
 
       expect(error).toBeNull();
       // Long tag should be excluded
-      expect(recipe?.tags).toEqual(['vegetarian']);
+      expect((recipe as any)?.tags).toEqual(['vegetarian']);
     });
 
     it('should query recipes by tag using ANY operator', async () => {
       // Create recipes with different tags
       await supabase
         .from('recipes')
-        .update({ tags: ['vegetarian', 'dinner'] })
+        .update({ tags: ['vegetarian', 'dinner'] } as any)
         .eq('id', testRecipeId);
 
       const { data: otherRecipe } = await supabase.rpc('create_recipe_with_version', {
         p_household_id: testHouseholdId,
         p_title: 'Another Recipe',
+        p_description: '',
         p_ingredients_json: [],
         p_steps_json: [],
+        p_servings: 0,
+        p_prep_time_minutes: 0,
+        p_cook_time_minutes: 0,
+        p_notes: '',
         p_user_id: testUserId,
       });
 
       await supabase
         .from('recipes')
-        .update({ tags: ['dessert', 'quick'] })
+        .update({ tags: ['dessert', 'quick'] } as any)
         .eq('id', otherRecipe!);
 
       // Query for vegetarian recipes
@@ -552,27 +606,32 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
 
       expect(error).toBeNull();
       expect(results!.length).toBe(1);
-      expect(results![0].id).toBe(testRecipeId);
+      expect(results![0]!.id).toBe(testRecipeId);
     });
 
     it('should get all household tags with counts via get_household_tags function', async () => {
       // Create multiple recipes with tags
       await supabase
         .from('recipes')
-        .update({ tags: ['vegetarian', 'dinner'] })
+        .update({ tags: ['vegetarian', 'dinner'] } as any)
         .eq('id', testRecipeId);
 
       const { data: recipe2 } = await supabase.rpc('create_recipe_with_version', {
         p_household_id: testHouseholdId,
         p_title: 'Recipe 2',
+        p_description: '',
         p_ingredients_json: [],
         p_steps_json: [],
+        p_servings: 0,
+        p_prep_time_minutes: 0,
+        p_cook_time_minutes: 0,
+        p_notes: '',
         p_user_id: testUserId,
       });
 
       await supabase
         .from('recipes')
-        .update({ tags: ['vegetarian', 'quick'] })
+        .update({ tags: ['vegetarian', 'quick'] } as any)
         .eq('id', recipe2!);
 
       // Get all tags
@@ -584,8 +643,8 @@ describeIfConfigured('Recipe Schema - Issue 2.1 Integration Tests', () => {
       expect(tags).not.toBeNull();
 
       // Should have 'vegetarian' with count 2, 'dinner' with count 1, 'quick' with count 1
-      const vegetarianTag = tags!.find((t) => t.tag === 'vegetarian');
-      expect(vegetarianTag?.recipe_count).toBe(2);
+      const vegetarianTag = tags!.find((t) => t.tag_name === 'vegetarian');
+      expect(vegetarianTag?.usage_count).toBe(2);
     });
   });
 });

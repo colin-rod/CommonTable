@@ -194,9 +194,13 @@ describe('InviteMemberDialog Component', () => {
       await user.type(emailInput, 'test@example.com');
 
       const sendButton = screen.getByRole('button', { name: /send invitation/i });
+      await waitFor(() => {
+        expect(sendButton).toBeEnabled();
+      });
       await user.click(sendButton);
 
       await waitFor(() => {
+        expect(mockInviteMember).toHaveBeenCalled();
         expect(mockOnClose).toHaveBeenCalledTimes(1);
       });
     });

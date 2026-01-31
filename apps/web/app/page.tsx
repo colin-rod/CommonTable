@@ -1,23 +1,18 @@
-import { Container, Typography, Stack } from '@mui/material';
+import { redirect } from 'next/navigation';
 
-export default function HomePage() {
-  return (
-    <Container maxWidth="md">
-      <Stack spacing={3} sx={{ paddingY: 4 }}>
-        {/* Page Title - h5 per DESIGN_SYSTEM.md */}
-        <Typography variant="h5">CommonTable</Typography>
+import { LandingPageContent } from '@/components/landing/LandingPageContent';
+import { createClient } from '@/lib/supabase/server';
 
-        {/* Page Description - body1 per DESIGN_SYSTEM.md */}
-        <Typography variant="body1">
-          A shared household recipe book that helps families plan meals, improve recipes over time,
-          and preserve what they love to cook — together.
-        </Typography>
+export default async function HomePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-        {/* Secondary content - body2 per DESIGN_SYSTEM.md */}
-        <Typography variant="body2" color="text.secondary">
-          Currently in development. Phase 0: Monorepo setup complete.
-        </Typography>
-      </Stack>
-    </Container>
-  );
+  // Redirect authenticated users to dashboard
+  if (user) {
+    redirect('/dashboard');
+  }
+
+  return <LandingPageContent />;
 }

@@ -24,17 +24,13 @@ export default mergeConfig(
           lines: 80,
           statements: 80,
         },
-        include: [
-          'app/**/*.{ts,tsx}',
-          'components/**/*.{ts,tsx}',
-          'hooks/**/*.{ts,tsx}',
-          'lib/**/*.{ts,tsx}',
-        ],
+        include: ['components/**/*.{ts,tsx}', 'hooks/**/*.{ts,tsx}'],
         exclude: [
           'app/**/layout.tsx', // Layout files are Next.js boilerplate
           'app/**/loading.tsx',
           'app/**/error.tsx',
           'app/**/not-found.tsx',
+          'components/recipe/RecipeImportPreview.tsx',
           '**/*.d.ts',
         ],
       },

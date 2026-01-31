@@ -144,13 +144,15 @@ export class MealRequestService extends BaseService {
       const { data, error } = await this.supabase
         .from('meal_requests')
         .insert({
-          recipe_id: validated.recipe_id,
-          requested_date: validated.requested_date.toISOString().split('T')[0],
+          recipe_id: validated.recipe_id ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          requested_date: validated.requested_date.toISOString().split('T')[0]!,
           requested_meal_slot: validated.requested_meal_slot,
-          notes: validated.notes,
+          notes: validated.notes ?? null,
           status: 'open', // Default status
           priority: 0, // Default priority
-        })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any) // DB triggers handle household_id, requested_by, created_at, updated_at
         .select()
         .single();
 

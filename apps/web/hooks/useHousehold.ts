@@ -4,11 +4,19 @@ import type {
   HouseholdInvitation,
   InviteAuthenticatedMemberInput,
   AddManagedMemberInput,
+  ProfileId,
+  InvitationId,
 } from '@commontable/types';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import { useAuth } from './useAuth';
 
+import {
+  updateHouseholdName as updateHouseholdNameAction,
+  updateMemberRole as updateMemberRoleAction,
+  resendInvitation as resendInvitationAction,
+  cancelInvitation as cancelInvitationAction,
+} from '@/app/actions/household';
 import { createClient } from '@/lib/supabase/client';
 
 /**
@@ -133,7 +141,104 @@ export function useHousehold() {
     void loadData();
   }, [loadData]);
 
+  /**
+   * Update household name
+   */
+  const updateHouseholdName = useCallback(
+    async (name: string) => {
+      if (!household?.id) {
+        throw new Error('No household selected');
+      }
+
+      try {
+        const result = await updateHouseholdNameAction(household.id, name);
+
+        if (!result.success) {
+          throw new Error(result.error.message);
+        }
+
+        // Update local household state optimistically (if needed via useAuth)
+        await loadData();
+      } catch (err) {
+        console.error('useHousehold.updateHouseholdName failed:', err);
+        throw err;
+      }
+    },
+    [household?.id, loadData],
+  );
+
+  /**
+   * Update member role (promote to admin or demote to member)
+   */
+  const updateMemberRole = useCallback(
+    async (userId: ProfileId, newRole: 'admin' | 'member') => {
+      if (!household?.id) {
+        throw new Error('No household selected');
+      }
+
+      try {
+        const result = await updateMemberRoleAction(household.id, userId, newRole);
+
+        if (!result.success) {
+          throw new Error(result.error.message);
+        }
+
+        // Update local members state optimistically
+        setMembers((prev) => prev.map((m) => (m.user_id === userId ? { ...m, role: newRole } : m)));
+
+        await loadData(); // Refresh to ensure consistency
+      } catch (err) {
+        console.error('useHousehold.updateMemberRole failed:', err);
+        throw err;
+      }
+    },
+    [household?.id, loadData],
+  );
+
+  /**
+   * Resend invitation email
+   */
+  const resendInvitation = useCallback(async (invitationId: InvitationId) => {
+    try {
+      const result = await resendInvitationAction(invitationId);
+
+      if (!result.success) {
+        throw new Error(result.error.message);
+      }
+
+      // Update local invitation timestamp optimistically
+      setInvitations((prev) =>
+        prev.map((inv) =>
+          inv.id === invitationId ? { ...inv, invited_at: new Date().toISOString() } : inv,
+        ),
+      );
+    } catch (err) {
+      console.error('useHousehold.resendInvitation failed:', err);
+      throw err;
+    }
+  }, []);
+
+  /**
+   * Cancel invitation
+   */
+  const cancelInvitation = useCallback(async (invitationId: InvitationId) => {
+    try {
+      const result = await cancelInvitationAction(invitationId);
+
+      if (!result.success) {
+        throw new Error(result.error.message);
+      }
+
+      // Remove invitation from local state
+      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+    } catch (err) {
+      console.error('useHousehold.cancelInvitation failed:', err);
+      throw err;
+    }
+  }, []);
+
   return {
+    household,
     members,
     invitations,
     loading,
@@ -142,6 +247,10 @@ export function useHousehold() {
     inviteMember,
     addManagedMember,
     removeMember,
+    updateHouseholdName,
+    updateMemberRole,
+    resendInvitation,
+    cancelInvitation,
     refresh,
   };
 }
