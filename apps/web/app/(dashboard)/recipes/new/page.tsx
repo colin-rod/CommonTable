@@ -57,6 +57,12 @@ export default function CreateRecipePage() {
         cook_time_minutes: data.cook_time_minutes,
         notes: data.notes || '',
         tags: data.tags || [],
+        // New metadata fields (Phase 3) - defaults for creation
+        status: 'suggested' as const,
+        key_ingredients: [],
+        cuisine: undefined,
+        meal_type: undefined,
+        priority: undefined,
       };
 
       const result = await createRecipe(input);

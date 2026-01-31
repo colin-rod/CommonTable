@@ -82,10 +82,10 @@ export class RecipeService extends BaseService {
           p_notes: validated.notes ?? '',
           p_user_id: validated.user_id,
           // New metadata fields
-          p_cuisine: validated.cuisine ?? null,
-          p_meal_type: validated.meal_type ?? null,
-          p_key_ingredients: validated.key_ingredients ?? null,
-          p_priority: validated.priority ?? null,
+          p_cuisine: validated.cuisine ?? undefined,
+          p_meal_type: validated.meal_type ?? undefined,
+          p_key_ingredients: validated.key_ingredients ?? undefined,
+          p_priority: validated.priority ?? undefined,
           p_status: validated.status ?? 'suggested',
         },
       );

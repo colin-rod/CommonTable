@@ -1,7 +1,7 @@
 'use client';
 
 import { RecipeService } from '@commontable/api-client';
-import type { SortOption } from '@commontable/types';
+import type { SortOption, CuisineType, MealType, RecipeStatus } from '@commontable/types';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Container, Stack, Typography, Button, Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
@@ -41,6 +41,12 @@ export default function RecipesPage() {
   const [sortBy, setSortBy] = useState<SortOption>('last-cooked');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+
+  // New metadata filter state
+  const [cuisine, setCuisine] = useState<CuisineType | null>(null);
+  const [mealType, setMealType] = useState<MealType | null>(null);
+  const [status, setStatus] = useState<RecipeStatus | null>(null);
+  const [priority, setPriority] = useState<number | null>(null);
 
   const { recipes, loading: recipesLoading, error, toggleFavorite } = useRecipes();
   const { results: searchResults, loading: searchLoading } = useRecipeSearch(searchQuery);
@@ -133,6 +139,14 @@ export default function RecipesPage() {
           showFavoritesOnly={showFavoritesOnly}
           onFavoritesToggle={setShowFavoritesOnly}
           availableTags={availableTags}
+          cuisine={cuisine}
+          onCuisineChange={setCuisine}
+          mealType={mealType}
+          onMealTypeChange={setMealType}
+          status={status}
+          onStatusChange={setStatus}
+          priority={priority}
+          onPriorityChange={setPriority}
         />
 
         {/* Recipe List */}

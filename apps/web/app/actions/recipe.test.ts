@@ -77,6 +77,12 @@ describe('recipe server actions', () => {
     created_by: 'user-1' as any,
     created_at: new Date(),
     updated_at: new Date(),
+    // New metadata fields
+    cuisine: 'italian',
+    meal_type: 'main_dish',
+    key_ingredients: ['pasta', 'eggs', 'bacon'],
+    priority: 3,
+    status: 'suggested',
   };
 
   const mockUser = { id: 'auth-user-1', email: 'test@example.com' };
@@ -108,6 +114,11 @@ describe('recipe server actions', () => {
         tags: ['pasta', 'italian'],
         ingredients_json: [],
         steps_json: [],
+        status: 'suggested' as const,
+        key_ingredients: [],
+        cuisine: undefined,
+        meal_type: undefined,
+        priority: undefined,
       };
 
       const result = await createRecipe(input);
@@ -132,6 +143,11 @@ describe('recipe server actions', () => {
         ingredients_json: [],
         steps_json: [],
         tags: [],
+        status: 'suggested' as const,
+        key_ingredients: [],
+        cuisine: undefined,
+        meal_type: undefined,
+        priority: undefined,
       };
 
       const result = await createRecipe(input);
@@ -160,6 +176,11 @@ describe('recipe server actions', () => {
         ingredients_json: [],
         steps_json: [],
         tags: [],
+        status: 'suggested' as const,
+        key_ingredients: [],
+        cuisine: undefined,
+        meal_type: undefined,
+        priority: undefined,
       };
 
       const result = await createRecipe(input);
@@ -191,6 +212,11 @@ describe('recipe server actions', () => {
         ingredients_json: [],
         steps_json: [],
         tags: [],
+        status: 'suggested' as const,
+        key_ingredients: [],
+        cuisine: undefined,
+        meal_type: undefined,
+        priority: undefined,
       };
 
       const result = await createRecipe(input);
@@ -221,6 +247,11 @@ describe('recipe server actions', () => {
         ingredients_json: [],
         steps_json: [],
         tags: [],
+        status: 'suggested' as const,
+        key_ingredients: [],
+        cuisine: undefined,
+        meal_type: undefined,
+        priority: undefined,
       };
 
       const result = await createRecipe(input);

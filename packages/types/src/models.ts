@@ -1,5 +1,11 @@
 // Domain models
 
+// Import recipe metadata enum types from schemas to avoid duplication
+import type { CuisineType, MealType, RecipeStatus } from './schemas/recipe';
+
+// Re-export to maintain backward compatibility
+export type { CuisineType, MealType, RecipeStatus };
+
 // Branded ID types
 export type RecipeId = string & { __brand: 'RecipeId' };
 export type RecipeImageId = string & { __brand: 'RecipeImageId' };
@@ -16,42 +22,6 @@ export type CalendarEntryId = string & { __brand: 'CalendarEntryId' };
 export type CalendarEntryCommentId = string & { __brand: 'CalendarEntryCommentId' };
 export type MealRequestId = string & { __brand: 'MealRequestId' };
 export type CookingEventId = string & { __brand: 'CookingEventId' };
-
-// Recipe metadata enum types
-export type CuisineType =
-  | 'african'
-  | 'american'
-  | 'asian'
-  | 'brazilian'
-  | 'breakfast'
-  | 'chinese'
-  | 'dessert'
-  | 'french'
-  | 'german'
-  | 'greek'
-  | 'hungarian'
-  | 'indian'
-  | 'italian'
-  | 'japanese'
-  | 'korean'
-  | 'mediterranean'
-  | 'mexican'
-  | 'middle_eastern'
-  | 'pastry'
-  | 'persian'
-  | 'peruvian'
-  | 'salad'
-  | 'sauce'
-  | 'seafood'
-  | 'spanish'
-  | 'staple'
-  | 'thai'
-  | 'vegetable'
-  | 'vietnamese';
-
-export type MealType = 'main_dish' | 'side_dish' | 'breakfast' | 'dessert' | 'snack' | 'beverage';
-
-export type RecipeStatus = 'suggested' | 'to_buy' | 'to_cook' | 'cooked';
 
 // Recipe domain models
 export interface Recipe {
