@@ -47,6 +47,12 @@ describe('useRecipeSearch Hook', () => {
       created_by: 'user-1' as any,
       created_at: new Date('2024-01-01'),
       updated_at: new Date('2024-01-01'),
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
       rank: 0.95,
     },
     {
@@ -62,6 +68,12 @@ describe('useRecipeSearch Hook', () => {
       created_by: 'user-1' as any,
       created_at: new Date('2024-01-01'),
       updated_at: new Date('2024-01-01'),
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
       rank: 0.87,
     },
   ];
@@ -322,6 +334,12 @@ describe('useRecipeSearch Hook', () => {
           created_by: 'user-1' as any,
           created_at: new Date('2024-01-01'),
           updated_at: new Date('2024-01-01'),
+          // Phase 3 metadata fields
+          cuisine: null,
+          meal_type: null,
+          key_ingredients: [],
+          priority: null,
+          status: 'suggested',
           rank: 0.98,
         },
       ];

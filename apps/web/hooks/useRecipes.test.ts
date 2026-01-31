@@ -47,6 +47,12 @@ describe('useRecipes Hook', () => {
       updated_at: new Date('2024-01-01T00:00:00Z'),
       last_cooked_at: null,
       current_version_id: 'version-1' as any,
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
     },
     {
       id: 'recipe-2' as RecipeId,
@@ -61,6 +67,12 @@ describe('useRecipes Hook', () => {
       updated_at: new Date('2024-01-02T00:00:00Z'),
       last_cooked_at: new Date('2024-01-10T00:00:00Z'),
       current_version_id: 'version-2' as any,
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
     },
   ];
 

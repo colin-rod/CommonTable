@@ -27,6 +27,12 @@ describe('RecipeSuggestionsPage', () => {
     created_by: 'user-1' as UserId,
     created_at: new Date('2024-01-01'),
     updated_at: new Date('2024-01-15'),
+    // Phase 3 metadata fields
+    cuisine: null,
+    meal_type: null,
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
   };
 
   const mockRecipe2: Recipe = {
@@ -42,6 +48,12 @@ describe('RecipeSuggestionsPage', () => {
     created_by: 'user-1' as UserId,
     created_at: new Date('2024-01-01'),
     updated_at: new Date('2024-01-10'),
+    // Phase 3 metadata fields
+    cuisine: null,
+    meal_type: null,
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
   };
 
   const mockSuggestions: RecipeSuggestion[] = [

@@ -33,6 +33,12 @@ describe('useRecipe Hook', () => {
     created_at: new Date('2024-01-01T00:00:00Z'),
     updated_at: new Date('2024-01-01T00:00:00Z'),
     current_version_id: 'version-123' as any,
+    // Phase 3 metadata fields
+    cuisine: null,
+    meal_type: null,
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
     current_version: {
       id: 'version-123' as any,
       recipe_id: mockRecipeId,
@@ -259,6 +265,12 @@ describe('useRecipe Hook', () => {
         updated_at: mockRecipe.updated_at,
         last_cooked_at: mockRecipe.last_cooked_at,
         current_version_id: mockRecipe.current_version_id,
+        // Phase 3 metadata fields
+        cuisine: mockRecipe.cuisine,
+        meal_type: mockRecipe.meal_type,
+        key_ingredients: mockRecipe.key_ingredients,
+        priority: mockRecipe.priority,
+        status: mockRecipe.status,
       };
       mockRecipeService.toggleFavorite.mockResolvedValue(updatedRecipeBase);
 

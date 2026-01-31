@@ -185,10 +185,10 @@ describe('RecipeService', () => {
         p_notes: input.notes,
         p_user_id: input.user_id,
         // New metadata fields (defaults when not provided)
-        p_cuisine: null,
-        p_meal_type: null,
+        p_cuisine: undefined,
+        p_meal_type: undefined,
         p_key_ingredients: [],
-        p_priority: null,
+        p_priority: undefined,
         p_status: 'suggested',
       });
 

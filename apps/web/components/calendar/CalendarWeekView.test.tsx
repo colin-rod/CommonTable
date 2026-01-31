@@ -32,6 +32,12 @@ describe('CalendarWeekView', () => {
       created_by: 'user-1' as any,
       created_at: new Date(),
       updated_at: new Date(),
+      // Phase 3 metadata fields
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      priority: null,
+      status: 'suggested',
     },
   ];
 

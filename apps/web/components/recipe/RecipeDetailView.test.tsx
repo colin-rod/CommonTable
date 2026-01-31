@@ -70,6 +70,12 @@ describe('RecipeDetailView Component', () => {
     created_by: 'user-1' as any,
     created_at: new Date('2024-01-01'),
     updated_at: new Date('2024-01-01'),
+    // Phase 3 metadata fields
+    cuisine: null,
+    meal_type: null,
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
     current_version: {
       id: 'version-1' as any,
       recipe_id: 'recipe-123' as any,

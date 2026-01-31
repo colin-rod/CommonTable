@@ -40,6 +40,12 @@ const createMockShortlistItem = (id: string, title: string): ShortlistItem => ({
     created_by: 'user-789' as UserId,
     created_at: new Date('2026-01-15T10:00:00Z'),
     updated_at: new Date('2026-01-15T10:00:00Z'),
+    // Phase 3 metadata fields
+    cuisine: null,
+    meal_type: null,
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
   },
   addedBy: {
     id: 'user-123' as UserId,

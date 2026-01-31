@@ -37,6 +37,12 @@ const mockShortlistItem1: ShortlistItem = {
     created_by: mockUserId,
     created_at: new Date('2026-01-20T10:00:00Z'),
     updated_at: new Date('2026-01-20T10:00:00Z'),
+    // Phase 3 metadata fields
+    cuisine: null,
+    meal_type: null,
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
   },
   addedBy: {
     id: mockUserId,
@@ -60,6 +66,12 @@ const mockShortlistItem2: ShortlistItem = {
     created_by: mockUserId,
     created_at: new Date('2026-01-21T10:00:00Z'),
     updated_at: new Date('2026-01-21T10:00:00Z'),
+    // Phase 3 metadata fields
+    cuisine: null,
+    meal_type: null,
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
   },
   addedBy: {
     id: mockUserId,
