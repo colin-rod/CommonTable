@@ -62,66 +62,62 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async create(input: CreateRecipeInput): Promise<Recipe> {
-    try {
-      const validated = CreateRecipeInputSchema.parse(input);
+    const validated = BaseService.validateInput(
+      CreateRecipeInputSchema,
+      input,
+      'Invalid recipe data',
+    );
 
-      // Call database function for atomic recipe + version creation
-      // Note: Database function handles null values, but generated types are strict
-      // Using type assertion to allow null values that the DB function accepts
-      const { data: recipeId, error: rpcError } = await this.supabase.rpc(
-        'create_recipe_with_version',
-        {
-          p_household_id: validated.household_id,
-          p_title: validated.title,
-          p_description: validated.description ?? '',
-          p_ingredients_json: validated.ingredients_json,
-          p_steps_json: validated.steps_json,
-          p_servings: validated.servings ?? 0,
-          p_prep_time_minutes: validated.prep_time_minutes ?? 0,
-          p_cook_time_minutes: validated.cook_time_minutes ?? 0,
-          p_notes: validated.notes ?? '',
-          p_user_id: validated.user_id,
-          // New metadata fields
-          p_cuisine: validated.cuisine ?? undefined,
-          p_meal_type: validated.meal_type ?? undefined,
-          p_key_ingredients: validated.key_ingredients ?? undefined,
-          p_priority: validated.priority ?? undefined,
-          p_status: validated.status ?? 'suggested',
-        },
-      );
+    // Call database function for atomic recipe + version creation
+    // Note: Database function handles null values, but generated types are strict
+    // Using type assertion to allow null values that the DB function accepts
+    const { data: recipeId, error: rpcError } = await this.supabase.rpc(
+      'create_recipe_with_version',
+      {
+        p_household_id: validated.household_id,
+        p_title: validated.title,
+        p_description: validated.description ?? '',
+        p_ingredients_json: validated.ingredients_json,
+        p_steps_json: validated.steps_json,
+        p_servings: validated.servings ?? 0,
+        p_prep_time_minutes: validated.prep_time_minutes ?? 0,
+        p_cook_time_minutes: validated.cook_time_minutes ?? 0,
+        p_notes: validated.notes ?? '',
+        p_user_id: validated.user_id,
+        // New metadata fields
+        p_cuisine: validated.cuisine ?? undefined,
+        p_meal_type: validated.meal_type ?? undefined,
+        p_key_ingredients: validated.key_ingredients ?? undefined,
+        p_priority: validated.priority ?? undefined,
+        p_status: validated.status ?? 'suggested',
+      },
+    );
 
-      if (rpcError) throw rpcError;
-      if (!recipeId) {
-        throw new AppError('Failed to create recipe - no ID returned', 'CREATE_ERROR');
-      }
-
-      // Fetch the created recipe to get current_version_id
-      const recipe = await this.getById(recipeId as RecipeId);
-
-      // Associate tags with the recipe version (if provided)
-      if (validated.tags && validated.tags.length > 0 && recipe.current_version_id) {
-        const versionId = recipe.current_version_id;
-        await Promise.all(
-          validated.tags.map((tagName) =>
-            this.tagService.addTagToVersion({
-              recipe_version_id: versionId,
-              tag_name: tagName,
-            }),
-          ),
-        );
-      }
-
-      // Return the recipe (tags will be loaded on subsequent reads)
-      return recipe;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new ValidationError('Invalid recipe data', { errors: error.errors });
-      }
-      if (error instanceof AppError) throw error;
-
-      console.error('RecipeService.create failed:', error);
-      throw new AppError('Failed to create recipe', 'CREATE_ERROR', 500);
+    if (rpcError) {
+      BaseService.handleSupabaseError(rpcError, 'RecipeService.create');
     }
+    if (!recipeId) {
+      throw new AppError('Failed to create recipe - no ID returned', 'CREATE_ERROR');
+    }
+
+    // Fetch the created recipe to get current_version_id
+    const recipe = await this.getById(recipeId as RecipeId);
+
+    // Associate tags with the recipe version (if provided)
+    if (validated.tags && validated.tags.length > 0 && recipe.current_version_id) {
+      const versionId = recipe.current_version_id;
+      await Promise.all(
+        validated.tags.map((tagName) =>
+          this.tagService.addTagToVersion({
+            recipe_version_id: versionId,
+            tag_name: tagName,
+          }),
+        ),
+      );
+    }
+
+    // Return the recipe (tags will be loaded on subsequent reads)
+    return recipe;
   }
 
   /**
@@ -133,24 +129,14 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getById(id: RecipeId): Promise<Recipe> {
-    try {
-      const { data, error } = await this.supabase.from('recipes').select('*').eq('id', id).single();
+    const { data, error } = await this.supabase.from('recipes').select('*').eq('id', id).single();
 
-      if (error) throw error;
-      if (!data) throw new NotFoundError('Recipe', id);
-
-      return data as unknown as Recipe;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      // Check if it's a "not found" error from Supabase
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST116') {
-        throw new NotFoundError('Recipe', id);
-      }
-
-      console.error('RecipeService.getById failed:', error);
-      throw new AppError('Failed to fetch recipe', 'FETCH_ERROR', 500, { id });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'RecipeService.getById', { id });
     }
+    if (!data) throw new NotFoundError('Recipe', id);
+
+    return data as unknown as Recipe;
   }
 
   /**
@@ -161,22 +147,17 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getByHousehold(householdId: HouseholdId): Promise<Recipe[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('recipes')
-        .select('*')
-        .eq('household_id', householdId)
-        .order('updated_at', { ascending: false });
+    const { data, error } = await this.supabase
+      .from('recipes')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('updated_at', { ascending: false });
 
-      if (error) throw error;
-
-      return (data ?? []) as unknown as Recipe[];
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('RecipeService.getByHousehold failed:', error);
-      throw new AppError('Failed to fetch recipes', 'FETCH_ERROR', 500, { householdId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'RecipeService.getByHousehold', { householdId });
     }
+
+    return (data ?? []) as unknown as Recipe[];
   }
 
   /**
@@ -196,70 +177,68 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async update(id: RecipeId, input: UpdateRecipeInput): Promise<Recipe> {
-    try {
-      const validated = UpdateRecipeInputSchema.parse(input);
+    const validated = BaseService.validateInput(
+      UpdateRecipeInputSchema,
+      input,
+      'Invalid update data',
+    );
 
-      // Check if recipe exists first
-      const existing = await this.getById(id);
-      if (!existing) {
-        throw new NotFoundError('Recipe', id);
+    // Check if recipe exists first
+    const existing = await this.getById(id);
+    if (!existing) {
+      throw new NotFoundError('Recipe', id);
+    }
+
+    // Determine if we need to create a new version
+    const hasVersionFields =
+      validated.ingredients_json !== undefined ||
+      validated.steps_json !== undefined ||
+      validated.servings !== undefined ||
+      validated.prep_time_minutes !== undefined ||
+      validated.cook_time_minutes !== undefined ||
+      validated.notes !== undefined;
+
+    if (hasVersionFields) {
+      // Create new version via database function
+      // Note: Database function handles null values, but generated types are strict
+      const { error: rpcError } = await this.supabase.rpc('update_recipe_create_version', {
+        p_recipe_id: id,
+        p_title: validated.title ?? existing.title,
+        p_description: validated.description ?? existing.description ?? '',
+        p_ingredients_json: validated.ingredients_json ?? [],
+        p_steps_json: validated.steps_json ?? [],
+        p_servings: validated.servings ?? 0,
+        p_prep_time_minutes: validated.prep_time_minutes ?? 0,
+        p_cook_time_minutes: validated.cook_time_minutes ?? 0,
+        p_notes: validated.notes ?? '',
+        p_user_id: validated.user_id,
+      });
+
+      if (rpcError) {
+        BaseService.handleSupabaseError(rpcError, 'RecipeService.update', { id });
       }
+    } else {
+      // Update metadata only (no new version)
+      const updateData: Record<string, unknown> = {};
+      if (validated.title !== undefined) updateData.title = validated.title;
+      if (validated.description !== undefined) updateData.description = validated.description;
+      if (validated.tags !== undefined) updateData.tags = validated.tags;
+      if (validated.is_favorite !== undefined) updateData.is_favorite = validated.is_favorite;
 
-      // Determine if we need to create a new version
-      const hasVersionFields =
-        validated.ingredients_json !== undefined ||
-        validated.steps_json !== undefined ||
-        validated.servings !== undefined ||
-        validated.prep_time_minutes !== undefined ||
-        validated.cook_time_minutes !== undefined ||
-        validated.notes !== undefined;
+      if (Object.keys(updateData).length > 0) {
+        const { error: updateError } = await this.supabase
+          .from('recipes')
+          .update(updateData)
+          .eq('id', id);
 
-      if (hasVersionFields) {
-        // Create new version via database function
-        // Note: Database function handles null values, but generated types are strict
-        const { error: rpcError } = await this.supabase.rpc('update_recipe_create_version', {
-          p_recipe_id: id,
-          p_title: validated.title ?? existing.title,
-          p_description: validated.description ?? existing.description ?? '',
-          p_ingredients_json: validated.ingredients_json ?? [],
-          p_steps_json: validated.steps_json ?? [],
-          p_servings: validated.servings ?? 0,
-          p_prep_time_minutes: validated.prep_time_minutes ?? 0,
-          p_cook_time_minutes: validated.cook_time_minutes ?? 0,
-          p_notes: validated.notes ?? '',
-          p_user_id: validated.user_id,
-        });
-
-        if (rpcError) throw rpcError;
-      } else {
-        // Update metadata only (no new version)
-        const updateData: Record<string, unknown> = {};
-        if (validated.title !== undefined) updateData.title = validated.title;
-        if (validated.description !== undefined) updateData.description = validated.description;
-        if (validated.tags !== undefined) updateData.tags = validated.tags;
-        if (validated.is_favorite !== undefined) updateData.is_favorite = validated.is_favorite;
-
-        if (Object.keys(updateData).length > 0) {
-          const { error: updateError } = await this.supabase
-            .from('recipes')
-            .update(updateData)
-            .eq('id', id);
-
-          if (updateError) throw updateError;
+        if (updateError) {
+          BaseService.handleSupabaseError(updateError, 'RecipeService.update', { id });
         }
       }
-
-      // Return updated recipe
-      return await this.getById(id);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new ValidationError('Invalid update data', { errors: error.errors });
-      }
-      if (error instanceof AppError) throw error;
-
-      console.error('RecipeService.update failed:', error);
-      throw new AppError('Failed to update recipe', 'UPDATE_ERROR', 500, { id });
     }
+
+    // Return updated recipe
+    return await this.getById(id);
   }
 
   /**
@@ -272,18 +251,13 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async delete(id: RecipeId): Promise<void> {
-    try {
-      // Check if recipe exists first
-      await this.getById(id);
+    // Check if recipe exists first
+    await this.getById(id);
 
-      const { error } = await this.supabase.from('recipes').delete().eq('id', id);
+    const { error } = await this.supabase.from('recipes').delete().eq('id', id);
 
-      if (error) throw error;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('RecipeService.delete failed:', error);
-      throw new AppError('Failed to delete recipe', 'DELETE_ERROR', 500, { id });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'RecipeService.delete', { id });
     }
   }
 
@@ -302,31 +276,27 @@ export class RecipeService extends BaseService {
     householdId: HouseholdId,
     limit: number = 20,
   ): Promise<RecipeSearchResult[]> {
-    try {
-      const validated = RecipeSearchSchema.parse({
+    const validated = BaseService.validateInput(
+      RecipeSearchSchema,
+      {
         query,
         household_id: householdId,
         limit,
-      });
+      },
+      'Invalid search parameters',
+    );
 
-      const { data, error } = await this.supabase.rpc('search_recipes', {
-        p_query: validated.query,
-        p_household_id: validated.household_id,
-        p_limit: validated.limit,
-      });
+    const { data, error } = await this.supabase.rpc('search_recipes', {
+      p_query: validated.query,
+      p_household_id: validated.household_id,
+      p_limit: validated.limit,
+    });
 
-      if (error) throw error;
-
-      return (data ?? []) as unknown as RecipeSearchResult[];
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new ValidationError('Invalid search parameters', { errors: error.errors });
-      }
-      if (error instanceof AppError) throw error;
-
-      console.error('RecipeService.search failed:', error);
-      throw new AppError('Failed to search recipes', 'SEARCH_ERROR', 500);
+    if (error) {
+      BaseService.handleSupabaseError(error, 'RecipeService.search');
     }
+
+    return (data ?? []) as unknown as RecipeSearchResult[];
   }
 
   /**
@@ -337,20 +307,15 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getVersionHistory(recipeId: RecipeId): Promise<VersionHistoryEntry[]> {
-    try {
-      const { data, error } = await this.supabase.rpc('get_recipe_version_history', {
-        p_recipe_id: recipeId,
-      });
+    const { data, error } = await this.supabase.rpc('get_recipe_version_history', {
+      p_recipe_id: recipeId,
+    });
 
-      if (error) throw error;
-
-      return (data ?? []) as unknown as VersionHistoryEntry[];
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('RecipeService.getVersionHistory failed:', error);
-      throw new AppError('Failed to fetch version history', 'FETCH_ERROR', 500, { recipeId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'RecipeService.getVersionHistory', { recipeId });
     }
+
+    return (data ?? []) as unknown as VersionHistoryEntry[];
   }
 
   /**
@@ -363,32 +328,22 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getVersion(recipeId: RecipeId, versionNumber: number): Promise<RecipeVersion> {
-    try {
-      const { data, error } = await this.supabase
-        .from('recipe_versions')
-        .select('*')
-        .eq('recipe_id', recipeId)
-        .eq('version_number', versionNumber)
-        .single();
+    const { data, error } = await this.supabase
+      .from('recipe_versions')
+      .select('*')
+      .eq('recipe_id', recipeId)
+      .eq('version_number', versionNumber)
+      .single();
 
-      if (error) throw error;
-      if (!data) throw new NotFoundError('RecipeVersion', `${recipeId}:v${versionNumber}`);
-
-      return data as unknown as RecipeVersion;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      // Check if it's a "not found" error from Supabase
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST116') {
-        throw new NotFoundError('RecipeVersion', `${recipeId}:v${versionNumber}`);
-      }
-
-      console.error('RecipeService.getVersion failed:', error);
-      throw new AppError('Failed to fetch recipe version', 'FETCH_ERROR', 500, {
+    if (error) {
+      BaseService.handleSupabaseError(error, 'RecipeService.getVersion', {
         recipeId,
         versionNumber,
       });
     }
+    if (!data) throw new NotFoundError('RecipeVersion', `${recipeId}:v${versionNumber}`);
+
+    return data as unknown as RecipeVersion;
   }
 
   /**
@@ -400,26 +355,21 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async toggleFavorite(id: RecipeId): Promise<Recipe> {
-    try {
-      // Get current recipe to check is_favorite status
-      const existing = await this.getById(id);
+    // Get current recipe to check is_favorite status
+    const existing = await this.getById(id);
 
-      // Toggle the favorite status
-      const { error: updateError } = await this.supabase
-        .from('recipes')
-        .update({ is_favorite: !existing.is_favorite })
-        .eq('id', id);
+    // Toggle the favorite status
+    const { error: updateError } = await this.supabase
+      .from('recipes')
+      .update({ is_favorite: !existing.is_favorite })
+      .eq('id', id);
 
-      if (updateError) throw updateError;
-
-      // Return updated recipe
-      return await this.getById(id);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('RecipeService.toggleFavorite failed:', error);
-      throw new AppError('Failed to toggle favorite', 'UPDATE_ERROR', 500, { id });
+    if (updateError) {
+      BaseService.handleSupabaseError(updateError, 'RecipeService.toggleFavorite', { id });
     }
+
+    // Return updated recipe
+    return await this.getById(id);
   }
 
   /**
@@ -439,34 +389,30 @@ export class RecipeService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async updateStatus(id: RecipeId, input: UpdateRecipeStatusInput): Promise<Recipe> {
-    try {
-      const validated = UpdateRecipeStatusSchema.parse(input);
+    const validated = BaseService.validateInput(
+      UpdateRecipeStatusSchema,
+      input,
+      'Invalid status input',
+    );
 
-      // Check if recipe exists first
-      const existing = await this.getById(id);
-      if (!existing) {
-        throw new NotFoundError('Recipe', id);
-      }
-
-      // Update the status
-      const { error: updateError } = await this.supabase
-        .from('recipes')
-        .update({ status: validated.status })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
-
-      // Return updated recipe
-      return await this.getById(id);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new ValidationError('Invalid status input', { errors: error.errors });
-      }
-      if (error instanceof AppError) throw error;
-
-      console.error('RecipeService.updateStatus failed:', error);
-      throw new AppError('Failed to update recipe status', 'UPDATE_ERROR', 500, { id });
+    // Check if recipe exists first
+    const existing = await this.getById(id);
+    if (!existing) {
+      throw new NotFoundError('Recipe', id);
     }
+
+    // Update the status
+    const { error: updateError } = await this.supabase
+      .from('recipes')
+      .update({ status: validated.status })
+      .eq('id', id);
+
+    if (updateError) {
+      BaseService.handleSupabaseError(updateError, 'RecipeService.updateStatus', { id });
+    }
+
+    // Return updated recipe
+    return await this.getById(id);
   }
 
   /**
