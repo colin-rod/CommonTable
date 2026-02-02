@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { AddMealButton } from './AddMealButton';
 
 describe('AddMealButton', () => {
-  it('should render with correct text', () => {
+  it('should render with aria-label "Add meal"', () => {
     const onClick = vi.fn();
     render(<AddMealButton onClick={onClick} />);
 
@@ -34,13 +34,21 @@ describe('AddMealButton', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('should be a full-width outlined button', () => {
+  it('should be an icon button with dashed border', () => {
     const onClick = vi.fn();
     render(<AddMealButton onClick={onClick} />);
 
     const button = screen.getByRole('button', { name: /add meal/i });
 
-    // Check for outlined variant class
-    expect(button.className).toContain('MuiButton-outlined');
+    // Check for IconButton class
+    expect(button.className).toContain('MuiIconButton');
+  });
+
+  it('should contain hover text "Add meal"', () => {
+    const onClick = vi.fn();
+    render(<AddMealButton onClick={onClick} />);
+
+    // Hover text is present in the DOM (with opacity: 0)
+    expect(screen.getByText('Add meal')).toBeInTheDocument();
   });
 });

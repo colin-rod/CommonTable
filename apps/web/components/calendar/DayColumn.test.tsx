@@ -50,13 +50,14 @@ describe('DayColumn', () => {
     expect(screen.getByText('Tue 20')).toBeInTheDocument();
   });
 
-  it('should render all 4 meal slots', () => {
+  it('should render all 4 meal slot cells', () => {
     render(<DayColumn {...defaultProps} />);
 
-    expect(screen.getByText('Breakfast')).toBeInTheDocument();
-    expect(screen.getByText('Lunch')).toBeInTheDocument();
-    expect(screen.getByText('Dinner')).toBeInTheDocument();
-    expect(screen.getByText('Snack')).toBeInTheDocument();
+    // Note: Meal type labels (Breakfast/Lunch/Dinner/Snack) are now in MealTypeTable's left column
+    // DayColumn component is deprecated - MealTypeTable renders MealSlotCells directly
+    // This test verifies that 4 meal slots are rendered (via add meal buttons)
+    const addButtons = screen.getAllByRole('button', { name: /add meal/i });
+    expect(addButtons).toHaveLength(4); // One for each meal slot
   });
 
   it('should render add meal buttons for empty slots', () => {

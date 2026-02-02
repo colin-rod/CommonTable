@@ -29,29 +29,8 @@ describe('MealSlotCell', () => {
     onMarkComplete: vi.fn(),
   };
 
-  it('should render meal slot label', () => {
-    render(<MealSlotCell {...defaultProps} />);
-
-    expect(screen.getByText('Dinner')).toBeInTheDocument();
-  });
-
-  it('should render breakfast label and icon', () => {
-    render(<MealSlotCell {...defaultProps} mealSlot="breakfast" />);
-
-    expect(screen.getByText('Breakfast')).toBeInTheDocument();
-  });
-
-  it('should render lunch label and icon', () => {
-    render(<MealSlotCell {...defaultProps} mealSlot="lunch" />);
-
-    expect(screen.getByText('Lunch')).toBeInTheDocument();
-  });
-
-  it('should render snack label and icon', () => {
-    render(<MealSlotCell {...defaultProps} mealSlot="snack" />);
-
-    expect(screen.getByText('Snack')).toBeInTheDocument();
-  });
+  // Note: Meal slot labels and icons have been moved to the fixed left column (MealTypeLabel)
+  // MealSlotCell now only shows the content (entry card or add button)
 
   it('should render AddMealButton when no entry', () => {
     render(<MealSlotCell {...defaultProps} />);

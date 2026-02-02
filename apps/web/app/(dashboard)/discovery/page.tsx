@@ -1,6 +1,6 @@
 'use client';
 
-import { Stack } from '@mui/material';
+import { Stack, Container } from '@mui/material';
 import { useState } from 'react';
 
 import { ShortlistDrawer } from '@/components/recipe/ShortlistDrawer';
@@ -34,15 +34,17 @@ export default function DiscoveryPage() {
   };
 
   return (
-    <Stack spacing={3}>
-      {/* Main Content: Recipe Discovery Panel (includes title) */}
-      <WhatCanICookPanel />
+    <Container maxWidth="md">
+      <Stack spacing={3}>
+        {/* Main Content: Recipe Discovery Panel (includes title) */}
+        <WhatCanICookPanel />
 
-      {/* Floating Action Button: Shortlist Access */}
-      <ShortlistFAB onClick={handleOpenDrawer} />
+        {/* Floating Action Button: Shortlist Access */}
+        <ShortlistFAB onClick={handleOpenDrawer} />
 
-      {/* Side Drawer: Shortlist Management */}
-      <ShortlistDrawer open={drawerOpen} onClose={handleCloseDrawer} />
-    </Stack>
+        {/* Side Drawer: Shortlist Management */}
+        <ShortlistDrawer open={drawerOpen} onClose={handleCloseDrawer} />
+      </Stack>
+    </Container>
   );
 }

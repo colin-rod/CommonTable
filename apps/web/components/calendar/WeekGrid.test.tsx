@@ -43,20 +43,18 @@ describe('WeekGrid', () => {
     expect(screen.getByText('Sat 24')).toBeInTheDocument();
   });
 
-  it('should render all meal slots for each day', () => {
+  it('should render all meal type labels in left column', () => {
     render(<WeekGrid {...defaultProps} />);
 
-    // Each day has 4 meal slots, 7 days = 28 meal slot labels total
-    // But due to how the component renders, we check for unique occurrences
-    const breakfast = screen.getAllByText('Breakfast');
-    const lunch = screen.getAllByText('Lunch');
-    const dinner = screen.getAllByText('Dinner');
-    const snack = screen.getAllByText('Snack');
+    // Meal type labels are now in the fixed left column (one per meal type)
+    expect(screen.getByText('Breakfast')).toBeInTheDocument();
+    expect(screen.getByText('Lunch')).toBeInTheDocument();
+    expect(screen.getByText('Dinner')).toBeInTheDocument();
+    expect(screen.getByText('Snack')).toBeInTheDocument();
 
-    expect(breakfast).toHaveLength(7);
-    expect(lunch).toHaveLength(7);
-    expect(dinner).toHaveLength(7);
-    expect(snack).toHaveLength(7);
+    // 7 days × 4 meal slots = 28 cells total
+    const addButtons = screen.getAllByRole('button', { name: /add meal/i });
+    expect(addButtons).toHaveLength(28);
   });
 
   it('should render entries in correct day column', () => {

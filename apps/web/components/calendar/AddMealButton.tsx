@@ -1,31 +1,56 @@
 'use client';
 
 import AddIcon from '@mui/icons-material/Add';
-import { Button } from '@mui/material';
+import { IconButton, Stack, Typography } from '@mui/material';
 
 interface AddMealButtonProps {
   onClick: () => void;
 }
 
 /**
- * Button for adding a meal to an empty calendar slot
+ * Icon button for adding a meal to an empty calendar slot
+ * Shows "Add meal" text on hover
  *
  * Design System Compliance:
- * - Outlined button variant (secondary action)
+ * - IconButton for secondary action
  * - Material Icon (Add)
- * - Calm, neutral label
+ * - Hover text with opacity transition
+ * - Dashed border to indicate empty state
+ * - aria-label for accessibility
  */
 export function AddMealButton({ onClick }: AddMealButtonProps) {
   return (
-    <Button
-      variant="outlined"
-      color="primary"
-      startIcon={<AddIcon />}
+    <IconButton
       onClick={onClick}
-      fullWidth
-      sx={{ justifyContent: 'flex-start' }}
+      aria-label="Add meal"
+      sx={{
+        width: '100%',
+        height: '100%',
+        minHeight: 48,
+        borderRadius: 1,
+        border: '1px dashed',
+        borderColor: 'divider',
+        '&:hover': {
+          bgcolor: 'action.hover',
+          '& .add-meal-text': {
+            opacity: 1,
+          },
+        },
+      }}
     >
-      Add meal
-    </Button>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <AddIcon fontSize="small" />
+        <Typography
+          variant="body2"
+          className="add-meal-text"
+          sx={{
+            opacity: 0,
+            transition: 'opacity 0.2s ease',
+          }}
+        >
+          Add meal
+        </Typography>
+      </Stack>
+    </IconButton>
   );
 }

@@ -1,6 +1,14 @@
 'use client';
 
-import { Typography, Stack, CircularProgress, Snackbar, Alert, Box } from '@mui/material';
+import {
+  Typography,
+  Stack,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Box,
+  Container,
+} from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -106,24 +114,26 @@ export default function ProfilePage() {
   }
 
   return (
-    <Stack spacing={3}>
-      {/* Page Title */}
-      <Typography variant="h5">Profile</Typography>
+    <Container maxWidth="md">
+      <Stack spacing={3}>
+        {/* Page Title */}
+        <Typography variant="h5">Profile</Typography>
 
-      {/* Profile Form */}
-      <ProfileForm user={user} onSubmit={handleSubmit} onCancel={handleCancel} />
+        {/* Profile Form */}
+        <ProfileForm user={user} onSubmit={handleSubmit} onCancel={handleCancel} />
 
-      {/* Success/Error Snackbar */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Stack>
+        {/* Success/Error Snackbar */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Stack>
+    </Container>
   );
 }
