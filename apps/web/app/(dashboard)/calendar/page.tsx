@@ -1,4 +1,4 @@
-import { Container, Typography, Stack } from '@mui/material';
+import { Typography, Stack } from '@mui/material';
 
 import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
 
@@ -15,19 +15,17 @@ import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
  */
 export default function CalendarPage() {
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
-      <Stack spacing={3}>
-        {/* Page Title */}
-        <Typography variant="h5">Meal Calendar</Typography>
+    <Stack spacing={3}>
+      {/* Page Title */}
+      <Typography variant="h5">Meal Calendar</Typography>
 
-        {/* Page Description */}
-        <Typography variant="body2" color="text.secondary">
-          Plan your household's meals for the week
-        </Typography>
+      {/* Page Description */}
+      <Typography variant="body2" color="text.secondary">
+        Plan your household's meals for the week
+      </Typography>
 
-        {/* Calendar Week View */}
-        <CalendarWeekView />
-      </Stack>
-    </Container>
+      {/* Calendar Week View */}
+      <CalendarWeekView />
+    </Stack>
   );
 }

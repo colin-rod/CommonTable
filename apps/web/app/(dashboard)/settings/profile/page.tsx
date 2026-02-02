@@ -1,6 +1,6 @@
 'use client';
 
-import { Container, Typography, Stack, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { Typography, Stack, CircularProgress, Snackbar, Alert, Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -93,11 +93,9 @@ export default function ProfilePage() {
   // Show loading state
   if (isLoading) {
     return (
-      <Container maxWidth="md">
-        <Stack spacing={3} alignItems="center" sx={{ mt: 4 }}>
-          <CircularProgress />
-        </Stack>
-      </Container>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
@@ -108,26 +106,24 @@ export default function ProfilePage() {
   }
 
   return (
-    <Container maxWidth="md">
-      <Stack spacing={3}>
-        {/* Page Title */}
-        <Typography variant="h5">Profile</Typography>
+    <Stack spacing={3}>
+      {/* Page Title */}
+      <Typography variant="h5">Profile</Typography>
 
-        {/* Profile Form */}
-        <ProfileForm user={user} onSubmit={handleSubmit} onCancel={handleCancel} />
+      {/* Profile Form */}
+      <ProfileForm user={user} onSubmit={handleSubmit} onCancel={handleCancel} />
 
-        {/* Success/Error Snackbar */}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Stack>
-    </Container>
+      {/* Success/Error Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Stack>
   );
 }

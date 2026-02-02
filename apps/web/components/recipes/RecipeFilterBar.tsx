@@ -131,139 +131,161 @@ export function RecipeFilterBar({
   };
 
   return (
-    <Stack
-      direction={{ xs: 'column', sm: 'row' }}
-      spacing={2}
-      alignItems={{ xs: 'stretch', sm: 'center' }}
-    >
-      {/* Tag Filter */}
-      <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 240 } }}>
-        <InputLabel id="tag-filter-label">Filter by tags</InputLabel>
-        <Select
-          labelId="tag-filter-label"
-          id="tag-filter"
-          multiple
-          value={selectedTags}
-          onChange={handleTagsChange}
-          input={<OutlinedInput label="Filter by tags" />}
-          renderValue={(selected) => (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-              {selected.map((tag) => (
-                <Chip key={tag} label={tag} size="small" />
-              ))}
-            </Box>
-          )}
-        >
-          {availableTags.length === 0 ? (
-            <MenuItem disabled>No tags available</MenuItem>
-          ) : (
-            availableTags.map((tag) => (
-              <MenuItem key={tag} value={tag}>
-                <Checkbox checked={selectedTags.includes(tag)} />
-                <ListItemText primary={tag} />
+    <Stack spacing={2}>
+      {/* Row 1: Primary Filters (most-used) */}
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          flexWrap: 'wrap',
+          gap: 2,
+          '& > *': {
+            flexShrink: 0,
+          },
+        }}
+      >
+        {/* Tag Filter */}
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 240 } }}>
+          <InputLabel id="tag-filter-label">Filter by tags</InputLabel>
+          <Select
+            labelId="tag-filter-label"
+            id="tag-filter"
+            multiple
+            value={selectedTags}
+            onChange={handleTagsChange}
+            input={<OutlinedInput label="Filter by tags" />}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {selected.map((tag) => (
+                  <Chip key={tag} label={tag} size="small" />
+                ))}
+              </Box>
+            )}
+          >
+            {availableTags.length === 0 ? (
+              <MenuItem disabled>No tags available</MenuItem>
+            ) : (
+              availableTags.map((tag) => (
+                <MenuItem key={tag} value={tag}>
+                  <Checkbox checked={selectedTags.includes(tag)} />
+                  <ListItemText primary={tag} />
+                </MenuItem>
+              ))
+            )}
+          </Select>
+        </FormControl>
+
+        {/* Favorites Toggle */}
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={showFavoritesOnly}
+              onChange={(e) => onFavoritesToggle(e.target.checked)}
+            />
+          }
+          label="Favorites only"
+        />
+
+        {/* Status Filter */}
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
+          <InputLabel id="status-filter-label">Status</InputLabel>
+          <Select
+            labelId="status-filter-label"
+            id="status-filter"
+            value={status ?? ''}
+            onChange={(e) => onStatusChange((e.target.value as RecipeStatus) || null)}
+            label="Status"
+          >
+            <MenuItem value="">
+              <em>All statuses</em>
+            </MenuItem>
+            {STATUS_OPTIONS.map((option) => (
+              <MenuItem key={option} value={option}>
+                {formatStatus(option)}
               </MenuItem>
-            ))
-          )}
-        </Select>
-      </FormControl>
+            ))}
+          </Select>
+        </FormControl>
 
-      {/* Sort Dropdown */}
-      <SortSelect value={sortBy} onChange={onSortChange} />
-
-      {/* Favorites Toggle */}
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={showFavoritesOnly}
-            onChange={(e) => onFavoritesToggle(e.target.checked)}
-          />
-        }
-        label="Favorites only"
-      />
-
-      {/* Cuisine Filter */}
-      <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
-        <InputLabel id="cuisine-filter-label">Cuisine</InputLabel>
-        <Select
-          labelId="cuisine-filter-label"
-          id="cuisine-filter"
-          value={cuisine ?? ''}
-          onChange={(e) => onCuisineChange((e.target.value as CuisineType) || null)}
-          label="Cuisine"
-        >
-          <MenuItem value="">
-            <em>All cuisines</em>
-          </MenuItem>
-          {CUISINE_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option}>
-              {formatCuisine(option)}
+        {/* Priority Filter */}
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 120 } }}>
+          <InputLabel id="priority-filter-label">Priority</InputLabel>
+          <Select
+            labelId="priority-filter-label"
+            id="priority-filter"
+            value={priority ?? ''}
+            onChange={(e) => onPriorityChange(e.target.value ? Number(e.target.value) : null)}
+            label="Priority"
+          >
+            <MenuItem value="">
+              <em>All priorities</em>
             </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+            {PRIORITY_OPTIONS.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Stack>
 
-      {/* Meal Type Filter */}
-      <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
-        <InputLabel id="meal-type-filter-label">Meal Type</InputLabel>
-        <Select
-          labelId="meal-type-filter-label"
-          id="meal-type-filter"
-          value={mealType ?? ''}
-          onChange={(e) => onMealTypeChange((e.target.value as MealType) || null)}
-          label="Meal Type"
-        >
-          <MenuItem value="">
-            <em>All meal types</em>
-          </MenuItem>
-          {MEAL_TYPE_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option}>
-              {formatMealType(option)}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {/* Row 2: Secondary Filters */}
+      <Stack
+        direction="row"
+        spacing={2}
+        sx={{
+          flexWrap: 'wrap',
+          gap: 2,
+          '& > *': {
+            flexShrink: 0,
+          },
+        }}
+      >
+        {/* Sort Dropdown */}
+        <SortSelect value={sortBy} onChange={onSortChange} />
 
-      {/* Status Filter */}
-      <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
-        <InputLabel id="status-filter-label">Status</InputLabel>
-        <Select
-          labelId="status-filter-label"
-          id="status-filter"
-          value={status ?? ''}
-          onChange={(e) => onStatusChange((e.target.value as RecipeStatus) || null)}
-          label="Status"
-        >
-          <MenuItem value="">
-            <em>All statuses</em>
-          </MenuItem>
-          {STATUS_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option}>
-              {formatStatus(option)}
+        {/* Cuisine Filter */}
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
+          <InputLabel id="cuisine-filter-label">Cuisine</InputLabel>
+          <Select
+            labelId="cuisine-filter-label"
+            id="cuisine-filter"
+            value={cuisine ?? ''}
+            onChange={(e) => onCuisineChange((e.target.value as CuisineType) || null)}
+            label="Cuisine"
+          >
+            <MenuItem value="">
+              <em>All cuisines</em>
             </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+            {CUISINE_OPTIONS.map((option) => (
+              <MenuItem key={option} value={option}>
+                {formatCuisine(option)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-      {/* Priority Filter */}
-      <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 120 } }}>
-        <InputLabel id="priority-filter-label">Priority</InputLabel>
-        <Select
-          labelId="priority-filter-label"
-          id="priority-filter"
-          value={priority ?? ''}
-          onChange={(e) => onPriorityChange(e.target.value ? Number(e.target.value) : null)}
-          label="Priority"
-        >
-          <MenuItem value="">
-            <em>All priorities</em>
-          </MenuItem>
-          {PRIORITY_OPTIONS.map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
+        {/* Meal Type Filter */}
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
+          <InputLabel id="meal-type-filter-label">Meal Type</InputLabel>
+          <Select
+            labelId="meal-type-filter-label"
+            id="meal-type-filter"
+            value={mealType ?? ''}
+            onChange={(e) => onMealTypeChange((e.target.value as MealType) || null)}
+            label="Meal Type"
+          >
+            <MenuItem value="">
+              <em>All meal types</em>
             </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+            {MEAL_TYPE_OPTIONS.map((option) => (
+              <MenuItem key={option} value={option}>
+                {formatMealType(option)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Stack>
     </Stack>
   );
 }

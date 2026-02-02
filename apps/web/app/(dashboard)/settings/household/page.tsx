@@ -1,16 +1,7 @@
 'use client';
 
 import { Add as AddIcon, Edit as EditIcon } from '@mui/icons-material';
-import {
-  Container,
-  Typography,
-  Stack,
-  Box,
-  Button,
-  List,
-  CircularProgress,
-  IconButton,
-} from '@mui/material';
+import { Typography, Stack, Box, Button, List, CircularProgress, IconButton } from '@mui/material';
 import { useState } from 'react';
 
 import { AddMemberDialog } from '@/components/household/AddMemberDialog';
@@ -44,24 +35,20 @@ export default function HouseholdSettingsPage() {
 
   if (loading) {
     return (
-      <Container maxWidth="md">
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
-      </Container>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="md">
-        <Stack spacing={3}>
-          <Typography variant="h5">Household Settings</Typography>
-          <Typography variant="body1" color="error">
-            Failed to load household settings. Please try again.
-          </Typography>
-        </Stack>
-      </Container>
+      <Stack spacing={3}>
+        <Typography variant="h5">Household Settings</Typography>
+        <Typography variant="body1" color="error">
+          Failed to load household settings. Please try again.
+        </Typography>
+      </Stack>
     );
   }
 
@@ -71,80 +58,77 @@ export default function HouseholdSettingsPage() {
   };
 
   return (
-    <Container maxWidth="md">
-      <Stack spacing={4}>
-        {/* Page Title */}
-        <Typography variant="h5">Household Settings</Typography>
+    <Stack spacing={4}>
+      {/* Page Title */}
+      <Typography variant="h5">Household Settings</Typography>
 
-        {/* Household Details Section */}
+      {/* Household Details Section */}
+      <Box>
+        <Stack spacing={2}>
+          <Typography variant="h6">Household Details</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body1">{household?.name || 'Unnamed Household'}</Typography>
+            {isAdmin && (
+              <IconButton
+                size="small"
+                onClick={() => setEditNameDialogOpen(true)}
+                aria-label="Edit household name"
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            )}
+          </Box>
+        </Stack>
+      </Box>
+
+      {/* Members Section */}
+      <Box>
+        <Stack spacing={2}>
+          <Typography variant="h6">Members</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {members.length} {members.length === 1 ? 'member' : 'members'} in your household
+          </Typography>
+          <List>
+            {members.map((member) => (
+              <MemberListItem key={member.user_id} member={member} isAdmin={isAdmin} />
+            ))}
+          </List>
+        </Stack>
+      </Box>
+
+      {/* Pending Invitations Section (Admin Only) */}
+      {isAdmin && invitations.length > 0 && (
         <Box>
           <Stack spacing={2}>
-            <Typography variant="h6">Household Details</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body1">{household?.name || 'Unnamed Household'}</Typography>
-              {isAdmin && (
-                <IconButton
-                  size="small"
-                  onClick={() => setEditNameDialogOpen(true)}
-                  aria-label="Edit household name"
-                >
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              )}
-            </Box>
-          </Stack>
-        </Box>
-
-        {/* Members Section */}
-        <Box>
-          <Stack spacing={2}>
-            <Typography variant="h6">Members</Typography>
+            <Typography variant="h6">Pending Invitations</Typography>
             <Typography variant="body2" color="text.secondary">
-              {members.length} {members.length === 1 ? 'member' : 'members'} in your household
+              {invitations.length} pending {invitations.length === 1 ? 'invitation' : 'invitations'}
             </Typography>
             <List>
-              {members.map((member) => (
-                <MemberListItem key={member.user_id} member={member} isAdmin={isAdmin} />
+              {invitations.map((invitation) => (
+                <InvitationListItem key={invitation.id} invitation={invitation} />
               ))}
             </List>
           </Stack>
         </Box>
+      )}
 
-        {/* Pending Invitations Section (Admin Only) */}
-        {isAdmin && invitations.length > 0 && (
-          <Box>
-            <Stack spacing={2}>
-              <Typography variant="h6">Pending Invitations</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {invitations.length} pending{' '}
-                {invitations.length === 1 ? 'invitation' : 'invitations'}
-              </Typography>
-              <List>
-                {invitations.map((invitation) => (
-                  <InvitationListItem key={invitation.id} invitation={invitation} />
-                ))}
-              </List>
-            </Stack>
-          </Box>
-        )}
-
-        {/* Admin Actions */}
-        {isAdmin && (
-          <Stack spacing={2} direction="row">
-            <Button variant="outlined" color="primary" onClick={() => setInviteDialogOpen(true)}>
-              Invite by Email
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={() => setAddMemberDialogOpen(true)}
-            >
-              Add Member
-            </Button>
-          </Stack>
-        )}
-      </Stack>
+      {/* Admin Actions */}
+      {isAdmin && (
+        <Stack spacing={2} direction="row">
+          <Button variant="outlined" color="primary" onClick={() => setInviteDialogOpen(true)}>
+            Invite by Email
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setAddMemberDialogOpen(true)}
+          >
+            Add Member
+          </Button>
+        </Stack>
+      )}
 
       {/* Dialogs */}
       {isAdmin && (
@@ -162,6 +146,6 @@ export default function HouseholdSettingsPage() {
           />
         </>
       )}
-    </Container>
+    </Stack>
   );
 }

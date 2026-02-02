@@ -3,7 +3,7 @@
 import { RecipeService } from '@commontable/api-client';
 import type { SortOption, CuisineType, MealType, RecipeStatus } from '@commontable/types';
 import { Add as AddIcon } from '@mui/icons-material';
-import { Container, Stack, Typography, Button, Box } from '@mui/material';
+import { Stack, Typography, Button, Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 
@@ -92,70 +92,62 @@ export default function RecipesPage() {
 
   if (error) {
     return (
-      <Container maxWidth="md" sx={{ py: 6 }}>
-        <Typography variant="body1" color="error">
-          Failed to load recipes. Please try again.
-        </Typography>
-      </Container>
+      <Typography variant="body1" color="error">
+        Failed to load recipes. Please try again.
+      </Typography>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Stack spacing={3}>
-        {/* Header */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <Typography variant="h5">Recipes</Typography>
-          <Stack direction="row" spacing={2}>
-            <Button variant="outlined" color="primary" onClick={handleImportRecipe}>
-              Import from URL
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={handleAddRecipe}
-            >
-              Add Recipe
-            </Button>
-          </Stack>
-        </Box>
+    <Stack spacing={3}>
+      {/* Header */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="h5">Recipes</Typography>
+        <Stack direction="row" spacing={2}>
+          <Button variant="outlined" color="primary" onClick={handleImportRecipe}>
+            Import from URL
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={handleAddRecipe}
+          >
+            Add Recipe
+          </Button>
+        </Stack>
+      </Box>
 
-        {/* Search */}
-        <RecipeSearchBar value={searchQuery} onChange={setSearchQuery} />
+      {/* Search */}
+      <RecipeSearchBar value={searchQuery} onChange={setSearchQuery} />
 
-        {/* Filters (Issue 4.3) */}
-        <RecipeFilterBar
-          selectedTags={selectedTags}
-          onTagsChange={setSelectedTags}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          showFavoritesOnly={showFavoritesOnly}
-          onFavoritesToggle={setShowFavoritesOnly}
-          availableTags={availableTags}
-          cuisine={cuisine}
-          onCuisineChange={setCuisine}
-          mealType={mealType}
-          onMealTypeChange={setMealType}
-          status={status}
-          onStatusChange={setStatus}
-          priority={priority}
-          onPriorityChange={setPriority}
-        />
+      {/* Filters (Issue 4.3) */}
+      <RecipeFilterBar
+        selectedTags={selectedTags}
+        onTagsChange={setSelectedTags}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        showFavoritesOnly={showFavoritesOnly}
+        onFavoritesToggle={setShowFavoritesOnly}
+        availableTags={availableTags}
+        cuisine={cuisine}
+        onCuisineChange={setCuisine}
+        mealType={mealType}
+        onMealTypeChange={setMealType}
+        status={status}
+        onStatusChange={setStatus}
+        priority={priority}
+        onPriorityChange={setPriority}
+      />
 
-        {/* Recipe List */}
-        <RecipeList
-          recipes={filteredRecipes}
-          loading={isLoading}
-          onToggleFavorite={toggleFavorite}
-        />
-      </Stack>
-    </Container>
+      {/* Recipe List */}
+      <RecipeList recipes={filteredRecipes} loading={isLoading} onToggleFavorite={toggleFavorite} />
+    </Stack>
   );
 }

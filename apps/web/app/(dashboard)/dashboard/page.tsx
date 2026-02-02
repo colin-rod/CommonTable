@@ -1,4 +1,4 @@
-import { Container, Typography, Stack, Box, Paper, Divider } from '@mui/material';
+import { Typography, Stack, Box, Paper, Divider } from '@mui/material';
 
 import { getCookingEventsByHousehold } from '@/app/actions/cookingEvent';
 import { getUpcomingCalendarEntries } from '@/app/actions/dashboard';
@@ -19,31 +19,29 @@ export default async function DashboardPage() {
   const upcomingMealsResult = await getUpcomingCalendarEntries();
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Stack spacing={4}>
-        {/* Upcoming Meals card */}
-        <Paper elevation={1} sx={{ p: 3 }}>
-          <UpcomingMeals entries={upcomingMealsResult.success ? upcomingMealsResult.data : []} />
-        </Paper>
+    <Stack spacing={4}>
+      {/* Upcoming Meals card */}
+      <Paper elevation={1} sx={{ p: 3 }}>
+        <UpcomingMeals entries={upcomingMealsResult.success ? upcomingMealsResult.data : []} />
+      </Paper>
 
-        <Divider />
+      <Divider />
 
-        {/* Recently Cooked card */}
-        <Paper elevation={1} sx={{ p: 3 }}>
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Recently Cooked
+      {/* Recently Cooked card */}
+      <Paper elevation={1} sx={{ p: 3 }}>
+        <Box>
+          <Typography variant="h6" gutterBottom>
+            Recently Cooked
+          </Typography>
+          {cookingEventsResult.success ? (
+            <HouseholdActivityFeed events={cookingEventsResult.data} />
+          ) : (
+            <Typography variant="body2" color="error.main">
+              Failed to load cooking history
             </Typography>
-            {cookingEventsResult.success ? (
-              <HouseholdActivityFeed events={cookingEventsResult.data} />
-            ) : (
-              <Typography variant="body2" color="error.main">
-                Failed to load cooking history
-              </Typography>
-            )}
-          </Box>
-        </Paper>
-      </Stack>
-    </Container>
+          )}
+        </Box>
+      </Paper>
+    </Stack>
   );
 }
