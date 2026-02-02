@@ -218,8 +218,8 @@ describe('BaseService', () => {
 
       expect(result.created_at).toBeInstanceOf(Date);
       expect(result.updated_at).toBeInstanceOf(Date);
-      expect(result.created_at.toISOString()).toBe('2026-01-30T10:00:00.000Z');
-      expect(result.updated_at.toISOString()).toBe('2026-01-30T12:00:00.000Z');
+      expect((result.created_at as unknown as Date).toISOString()).toBe('2026-01-30T10:00:00.000Z');
+      expect((result.updated_at as unknown as Date).toISOString()).toBe('2026-01-30T12:00:00.000Z');
     });
 
     it('should preserve null dates as null', () => {
@@ -329,13 +329,13 @@ describe('BaseService', () => {
         { id: '2', created_at: '2026-01-30T11:00:00Z' },
       ];
 
-      const originalFirstCreatedAt = arr[0].created_at;
+      const originalFirstCreatedAt = arr[0]!.created_at;
 
       TestService.testHydrateDatesArray(arr, ['created_at']);
 
       // Original array should still have string dates
-      expect(arr[0].created_at).toBe(originalFirstCreatedAt);
-      expect(typeof arr[0].created_at).toBe('string');
+      expect(arr[0]!.created_at).toBe(originalFirstCreatedAt);
+      expect(typeof arr[0]!.created_at).toBe('string');
     });
 
     it('should handle multiple date fields per object', () => {

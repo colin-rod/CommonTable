@@ -131,6 +131,11 @@ export abstract class BaseService {
    * @returns ISO date string (YYYY-MM-DD)
    */
   protected static toDateString(date: Date): string {
-    return date.toISOString().split('T')[0];
+    const isoString = date.toISOString();
+    const datePart = isoString.split('T')[0];
+    if (!datePart) {
+      throw new Error('Failed to extract date part from ISO string');
+    }
+    return datePart;
   }
 }

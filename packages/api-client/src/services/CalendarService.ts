@@ -65,7 +65,7 @@ export class CalendarService extends BaseService {
       'planned_date',
       'created_at',
       'updated_at',
-    ]) as CalendarEntry[];
+    ]) as unknown as CalendarEntry[];
   }
 
   /**
@@ -92,7 +92,7 @@ export class CalendarService extends BaseService {
       'planned_date',
       'created_at',
       'updated_at',
-    ]) as CalendarEntry;
+    ]) as unknown as CalendarEntry;
   }
 
   /**
@@ -132,7 +132,7 @@ export class CalendarService extends BaseService {
       'planned_date',
       'created_at',
       'updated_at',
-    ]) as CalendarEntry;
+    ]) as unknown as CalendarEntry;
   }
 
   /**
@@ -181,7 +181,7 @@ export class CalendarService extends BaseService {
       'planned_date',
       'created_at',
       'updated_at',
-    ]) as CalendarEntry;
+    ]) as unknown as CalendarEntry;
   }
 
   /**
@@ -222,6 +222,6 @@ export class CalendarService extends BaseService {
       'planned_date',
       'created_at',
       'updated_at',
-    ]) as CalendarEntry;
+    ]) as unknown as CalendarEntry;
   }
 }

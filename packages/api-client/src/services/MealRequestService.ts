@@ -83,7 +83,7 @@ export class MealRequestService extends BaseService {
       'requested_date',
       'created_at',
       'updated_at',
-    ]) as MealRequest[];
+    ]) as unknown as MealRequest[];
   }
 
   /**
@@ -110,7 +110,7 @@ export class MealRequestService extends BaseService {
       'requested_date',
       'created_at',
       'updated_at',
-    ]) as MealRequest;
+    ]) as unknown as MealRequest;
   }
 
   /**
@@ -151,7 +151,7 @@ export class MealRequestService extends BaseService {
       'requested_date',
       'created_at',
       'updated_at',
-    ]) as MealRequest;
+    ]) as unknown as MealRequest;
   }
 
   /**
@@ -183,7 +183,7 @@ export class MealRequestService extends BaseService {
       'requested_date',
       'created_at',
       'updated_at',
-    ]) as MealRequest;
+    ]) as unknown as MealRequest;
   }
 
   /**
@@ -218,7 +218,7 @@ export class MealRequestService extends BaseService {
       'requested_date',
       'created_at',
       'updated_at',
-    ]) as MealRequest;
+    ]) as unknown as MealRequest;
   }
 
   /**
