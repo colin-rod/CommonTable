@@ -1969,6 +1969,132 @@ export class RecipeService {
 }
 ```
 
+### BaseService Helper Methods
+
+All services extend `BaseService` and have access to these protected static helper methods that centralize common patterns:
+
+#### Error Handling
+
+`handleSupabaseError` - Centralized Supabase error handler that maps error codes to typed AppError subclasses:
+
+```typescript
+// Centralized error handling replaces verbose try/catch blocks
+const { data, error } = await this.supabase
+  .from('calendar_entries')
+  .select('*')
+  .eq('id', id)
+  .single();
+
+if (error) {
+  BaseService.handleSupabaseError(error, 'CalendarService.getById', { id });
+}
+if (!data) throw new NotFoundError('CalendarEntry', id);
+
+return BaseService.hydrateDates(data, ['planned_date', 'created_at', 'updated_at']);
+```
+
+**Error Code Mapping**:
+
+- `PGRST116` / `PGRST204` → `NotFoundError`
+- `23505` (duplicate key) → `ConflictError`
+- All other errors → `AppError` with logging
+
+**Before (verbose)**:
+
+```typescript
+try {
+  const { data, error } = await this.supabase.from('table').select('*').eq('id', id).single();
+  if (error) throw error;
+  if (!data) throw new NotFoundError('Resource', id);
+  return data;
+} catch (error) {
+  if (error instanceof AppError) throw error;
+  console.error('Service.method failed:', error);
+  throw new AppError('Failed to fetch resource', 'FETCH_ERROR', 500, { id });
+}
+```
+
+**After (concise)**:
+
+```typescript
+const { data, error } = await this.supabase.from('table').select('*').eq('id', id).single();
+if (error) BaseService.handleSupabaseError(error, 'Service.method', { id });
+if (!data) throw new NotFoundError('Resource', id);
+return data;
+```
+
+#### Input Validation
+
+`validateInput` - Zod validation wrapper with consistent error conversion:
+
+```typescript
+// Before (7 lines)
+try {
+  const validated = CreateRecipeSchema.parse(input);
+  // Use validated
+} catch (error) {
+  if (error instanceof z.ZodError) {
+    throw new ValidationError('Invalid recipe data', { errors: error.errors });
+  }
+  throw error;
+}
+
+// After (1 line)
+const validated = BaseService.validateInput(CreateRecipeSchema, input, 'Invalid recipe data');
+```
+
+#### Date Hydration
+
+`hydrateDates` - Convert string date fields to Date objects:
+
+```typescript
+// Before (manual field conversion)
+return {
+  ...entry,
+  planned_date: new Date(entry.planned_date),
+  created_at: new Date(entry.created_at),
+  updated_at: new Date(entry.updated_at),
+};
+
+// After (declarative)
+return BaseService.hydrateDates(entry, ['planned_date', 'created_at', 'updated_at']);
+```
+
+`hydrateDatesArray` - Batch date hydration for arrays:
+
+```typescript
+// Before (map with manual conversion)
+return (data || []).map((entry) => ({
+  ...entry,
+  planned_date: new Date(entry.planned_date),
+  created_at: new Date(entry.created_at),
+  updated_at: new Date(entry.updated_at),
+}));
+
+// After (single call)
+return BaseService.hydrateDatesArray(data || [], ['planned_date', 'created_at', 'updated_at']);
+```
+
+#### Date Serialization
+
+`toDateString` - Convert Date to ISO date string (YYYY-MM-DD format) for database DATE columns:
+
+```typescript
+// Before
+planned_date: validated.planned_date.toISOString().split('T')[0];
+
+// After
+planned_date: BaseService.toDateString(validated.planned_date);
+```
+
+**Benefits**:
+
+- Reduces boilerplate by ~30-40% per service
+- Consistent error handling across all services
+- Type-safe with proper type guards (`unknown` instead of `any`)
+- Centralized logging
+- Easier to maintain (changes in one place)
+
 ### Component Error Handling
 
 ```typescript
