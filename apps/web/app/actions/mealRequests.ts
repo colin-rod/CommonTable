@@ -1,11 +1,12 @@
 'use server';
 
-import { MealRequestService, type CreateMealRequestInput } from '@commontable/api-client';
+import { MealRequestService } from '@commontable/api-client';
 import type {
   MealRequest,
   MealRequestId,
   MealRequestStatus,
   CalendarEntry,
+  CreateMealRequestInput,
 } from '@commontable/types';
 import { revalidatePath } from 'next/cache';
 

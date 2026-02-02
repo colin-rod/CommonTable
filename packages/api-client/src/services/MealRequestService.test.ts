@@ -1,9 +1,15 @@
-import { NotFoundError, ValidationError, AppError } from '@commontable/types';
-import type { MealRequest, MealRequestId } from '@commontable/types';
+import {
+  NotFoundError,
+  ValidationError,
+  AppError,
+  type CreateMealRequestInput,
+  type MealRequest,
+  type MealRequestId,
+} from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { MealRequestService, type CreateMealRequestInput } from './MealRequestService';
+import { MealRequestService } from './MealRequestService';
 
 // Mock Supabase client
 const createMockSupabaseClient = () => {

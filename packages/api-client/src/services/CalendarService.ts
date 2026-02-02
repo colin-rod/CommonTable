@@ -1,33 +1,18 @@
-import type { CalendarEntry, CalendarEntryId, CalendarEntryStatus } from '@commontable/types';
-import { NotFoundError, MealSlotSchema } from '@commontable/types';
+import type {
+  CalendarEntry,
+  CalendarEntryId,
+  CalendarEntryStatus,
+  CreateCalendarEntryInput,
+  UpdateCalendarEntryInput,
+} from '@commontable/types';
+import {
+  NotFoundError,
+  CreateCalendarEntrySchema,
+  UpdateCalendarEntrySchema,
+} from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { z } from 'zod';
 
 import { BaseService } from './BaseService';
-
-/**
- * Input schema for creating a calendar entry
- */
-const CreateCalendarEntrySchema = z.object({
-  recipe_id: z.string().nullable(),
-  planned_date: z.date(),
-  meal_slot: MealSlotSchema,
-  notes: z.string().nullable().optional(),
-});
-
-export type CreateCalendarEntryInput = z.infer<typeof CreateCalendarEntrySchema>;
-
-/**
- * Input schema for updating a calendar entry
- */
-const UpdateCalendarEntrySchema = z.object({
-  recipe_id: z.string().nullable().optional(),
-  planned_date: z.date().optional(),
-  meal_slot: MealSlotSchema.optional(),
-  notes: z.string().nullable().optional(),
-});
-
-export type UpdateCalendarEntryInput = z.infer<typeof UpdateCalendarEntrySchema>;
 
 /**
  * Service for managing calendar entries

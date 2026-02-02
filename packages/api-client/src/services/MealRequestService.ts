@@ -3,43 +3,18 @@ import type {
   MealRequestId,
   MealRequestStatus,
   CalendarEntry,
+  CreateMealRequestInput,
 } from '@commontable/types';
-import { NotFoundError, MealSlotSchema } from '@commontable/types';
+import {
+  NotFoundError,
+  CreateMealRequestSchema,
+  UpdateStatusSchema,
+  UpdatePrioritySchema,
+} from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { z } from 'zod';
 
 import { BaseService } from './BaseService';
 import { CalendarService } from './CalendarService';
-
-/**
- * Input schema for creating a meal request
- */
-const CreateMealRequestSchema = z
-  .object({
-    recipe_id: z.string().uuid().nullable(),
-    requested_date: z.date(),
-    requested_meal_slot: MealSlotSchema,
-    notes: z.union([z.string().min(1).max(500), z.null()]),
-  })
-  .refine((data) => data.recipe_id !== null || data.notes !== null, {
-    message: 'Must provide either a recipe or notes',
-  });
-
-export type CreateMealRequestInput = z.infer<typeof CreateMealRequestSchema>;
-
-/**
- * Input schema for updating meal request status
- */
-const UpdateStatusSchema = z.object({
-  status: z.enum(['open', 'planned', 'dismissed']),
-});
-
-/**
- * Input schema for updating meal request priority
- */
-const UpdatePrioritySchema = z.object({
-  priority: z.number().int(),
-});
 
 /**
  * Service for managing meal requests

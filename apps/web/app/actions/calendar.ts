@@ -6,7 +6,7 @@ import type {
   CalendarEntryId,
   CreateCalendarEntryInput,
   UpdateCalendarEntryInput,
-} from '@commontable/api-client';
+} from '@commontable/types';
 import { revalidatePath } from 'next/cache';
 
 import { createClient } from '@/lib/supabase/server';

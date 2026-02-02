@@ -1,7 +1,6 @@
 'use client';
 
-import type { CreateMealRequestInput } from '@commontable/api-client';
-import type { MealRequestStatus, MealRequestId } from '@commontable/types';
+import type { CreateMealRequestInput, MealRequestStatus, MealRequestId } from '@commontable/types';
 import { Typography, Stack, Button, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { useState } from 'react';
 
