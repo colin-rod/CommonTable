@@ -1,5 +1,5 @@
 import type { CalendarEntry, CalendarEntryId, CalendarEntryStatus } from '@commontable/types';
-import { NotFoundError, ValidationError, AppError } from '@commontable/types';
+import { NotFoundError, ValidationError, AppError, MealSlotSchema } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
@@ -11,7 +11,7 @@ import { BaseService } from './BaseService';
 const CreateCalendarEntrySchema = z.object({
   recipe_id: z.string().nullable(),
   planned_date: z.date(),
-  meal_slot: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+  meal_slot: MealSlotSchema,
   notes: z.string().nullable().optional(),
 });
 
@@ -23,7 +23,7 @@ export type CreateCalendarEntryInput = z.infer<typeof CreateCalendarEntrySchema>
 const UpdateCalendarEntrySchema = z.object({
   recipe_id: z.string().nullable().optional(),
   planned_date: z.date().optional(),
-  meal_slot: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
+  meal_slot: MealSlotSchema.optional(),
   notes: z.string().nullable().optional(),
 });
 

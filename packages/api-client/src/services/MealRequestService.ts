@@ -4,7 +4,7 @@ import type {
   MealRequestStatus,
   CalendarEntry,
 } from '@commontable/types';
-import { NotFoundError, ValidationError, AppError } from '@commontable/types';
+import { NotFoundError, ValidationError, AppError, MealSlotSchema } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
@@ -18,7 +18,7 @@ const CreateMealRequestSchema = z
   .object({
     recipe_id: z.string().uuid().nullable(),
     requested_date: z.date(),
-    requested_meal_slot: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
+    requested_meal_slot: MealSlotSchema,
     notes: z.union([z.string().min(1).max(500), z.null()]),
   })
   .refine((data) => data.recipe_id !== null || data.notes !== null, {

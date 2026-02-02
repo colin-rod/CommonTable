@@ -1,10 +1,11 @@
 // Domain models
 
 // Import recipe metadata enum types from schemas to avoid duplication
+import type { MealSlot } from './schemas/calendar';
 import type { CuisineType, MealType, RecipeStatus } from './schemas/recipe';
 
 // Re-export to maintain backward compatibility
-export type { CuisineType, MealType, RecipeStatus };
+export type { CuisineType, MealType, RecipeStatus, MealSlot };
 
 // Branded ID types
 export type RecipeId = string & { __brand: 'RecipeId' };
@@ -152,9 +153,6 @@ export interface RecipeVersionTagWithName extends RecipeVersionTag {
 export interface AiTagSuggestionWithTag extends AiTagSuggestion {
   tag: Tag;
 }
-
-// Meal slot type (shared by calendar_entries and meal_requests)
-export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 // Calendar entry status lifecycle
 export type CalendarEntryStatus = 'planned' | 'confirmed' | 'completed' | 'cancelled';
