@@ -1,5 +1,5 @@
 import {
-  AppError,
+  type Database,
   type HouseholdId,
   type Recipe,
   type RecipeId,
@@ -10,6 +10,8 @@ import {
   type MealSlot,
 } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
+
+import { BaseService } from './BaseService';
 
 /**
  * Default weights for suggestion scoring algorithm
@@ -46,8 +48,10 @@ interface FactorScores {
 /**
  * Service for generating recipe suggestions based on context
  */
-export class RecipeSuggestionService {
-  constructor(private supabase: SupabaseClient) {}
+export class RecipeSuggestionService extends BaseService {
+  constructor(supabase: SupabaseClient<Database>) {
+    super(supabase);
+  }
 
   /**
    * Get top N recipe suggestions for a household based on context
@@ -64,66 +68,63 @@ export class RecipeSuggestionService {
     weights?: Partial<SuggestionWeights>,
     limit: number = 5,
   ): Promise<RecipeSuggestion[]> {
-    try {
-      // Merge custom weights with defaults
-      const effectiveWeights: SuggestionWeights = {
-        ...DEFAULT_WEIGHTS,
-        ...weights,
-      };
+    // Merge custom weights with defaults
+    const effectiveWeights: SuggestionWeights = {
+      ...DEFAULT_WEIGHTS,
+      ...weights,
+    };
 
-      // Fetch all household recipes
-      const { data: recipes, error } = await this.supabase
-        .from('recipes')
-        .select('*')
-        .eq('household_id', householdId)
-        .order('created_at', { ascending: false });
+    // Fetch all household recipes
+    const { data: recipes, error } = await this.supabase
+      .from('recipes')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      if (!recipes || recipes.length === 0) return [];
-
-      // Convert database recipes to typed Recipe objects
-      const typedRecipes: Recipe[] = recipes.map((recipe) => ({
-        ...recipe,
-        id: recipe.id as RecipeId,
-        household_id: recipe.household_id as HouseholdId,
-        current_version_id: recipe.current_version_id,
-        rolling_score: recipe.rolling_score,
-        tags: recipe.tags || [],
-        is_favorite: recipe.is_favorite,
-        last_cooked_at: recipe.last_cooked_at ? new Date(recipe.last_cooked_at) : null,
-        created_by: recipe.created_by,
-        created_at: new Date(recipe.created_at),
-        updated_at: new Date(recipe.updated_at),
-        description: recipe.description,
-        title: recipe.title,
-      }));
-
-      // Calculate max recency for normalization
-      const maxRecency = this.calculateMaxRecency(typedRecipes);
-
-      // Score each recipe
-      const scoredSuggestions: RecipeSuggestion[] = typedRecipes.map((recipe) => {
-        const factorScores = this.calculateFactorScores(recipe, context, maxRecency);
-        const totalScore = this.calculateTotalScore(factorScores, effectiveWeights);
-        const badge = this.assignBadge(recipe, factorScores);
-        const matchingTags = this.findMatchingTags(recipe, context);
-
-        return {
-          recipe,
-          score: totalScore,
-          badge,
-          matchingTags,
-        };
-      });
-
-      // Sort by score descending and limit
-      return scoredSuggestions.sort((a, b) => b.score - a.score).slice(0, limit);
-    } catch (error) {
-      console.error('RecipeSuggestionService.getSuggestions failed:', error);
-      throw new AppError('Failed to get recipe suggestions', 'SUGGESTION_ERROR', 500, {
+    if (error) {
+      BaseService.handleSupabaseError(error, 'RecipeSuggestionService.getSuggestions', {
         householdId,
       });
     }
+    if (!recipes || recipes.length === 0) return [];
+
+    // Convert database recipes to typed Recipe objects
+    const typedRecipes: Recipe[] = recipes.map((recipe) => ({
+      ...recipe,
+      id: recipe.id as RecipeId,
+      household_id: recipe.household_id as HouseholdId,
+      current_version_id: recipe.current_version_id,
+      rolling_score: recipe.rolling_score,
+      tags: recipe.tags || [],
+      is_favorite: recipe.is_favorite,
+      last_cooked_at: recipe.last_cooked_at ? new Date(recipe.last_cooked_at) : null,
+      created_by: recipe.created_by,
+      created_at: new Date(recipe.created_at),
+      updated_at: new Date(recipe.updated_at),
+      description: recipe.description,
+      title: recipe.title,
+    }));
+
+    // Calculate max recency for normalization
+    const maxRecency = this.calculateMaxRecency(typedRecipes);
+
+    // Score each recipe
+    const scoredSuggestions: RecipeSuggestion[] = typedRecipes.map((recipe) => {
+      const factorScores = this.calculateFactorScores(recipe, context, maxRecency);
+      const totalScore = this.calculateTotalScore(factorScores, effectiveWeights);
+      const badge = this.assignBadge(recipe, factorScores);
+      const matchingTags = this.findMatchingTags(recipe, context);
+
+      return {
+        recipe,
+        score: totalScore,
+        badge,
+        matchingTags,
+      };
+    });
+
+    // Sort by score descending and limit
+    return scoredSuggestions.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
   /**

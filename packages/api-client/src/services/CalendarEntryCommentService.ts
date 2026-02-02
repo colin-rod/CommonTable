@@ -7,12 +7,10 @@ import {
   type CreateCalendarEntryCommentInput,
   type Database,
   CreateCalendarEntryCommentSchema,
-  ValidationError,
   NotFoundError,
   AppError,
 } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { z } from 'zod';
 
 import { BaseService } from './BaseService';
 
@@ -39,25 +37,22 @@ export class CalendarEntryCommentService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getByCalendarEntryId(calendarEntryId: CalendarEntryId): Promise<CalendarEntryComment[]> {
-    try {
-      // order() returns a PromiseLike, must await it
-      const query = this.supabase
-        .from('calendar_entry_comments')
-        .select('*')
-        .eq('calendar_entry_id', calendarEntryId)
-        .order('created_at', { ascending: true });
+    // order() returns a PromiseLike, must await it
+    const query = this.supabase
+      .from('calendar_entry_comments')
+      .select('*')
+      .eq('calendar_entry_id', calendarEntryId)
+      .order('created_at', { ascending: true });
 
-      const { data, error } = await query;
+    const { data, error } = await query;
 
-      if (error) throw error;
-
-      return (data ?? []) as unknown as CalendarEntryComment[];
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('CalendarEntryCommentService.getByCalendarEntryId failed:', error);
-      throw new AppError('Failed to fetch comments', 'FETCH_ERROR', 500, { calendarEntryId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CalendarEntryCommentService.getByCalendarEntryId', {
+        calendarEntryId,
+      });
     }
+
+    return (data ?? []) as unknown as CalendarEntryComment[];
   }
 
   /**
@@ -77,64 +72,67 @@ export class CalendarEntryCommentService extends BaseService {
    * @throws {AppError} If user not authenticated or database operation fails
    */
   async create(input: CreateCalendarEntryCommentInput): Promise<CalendarEntryComment> {
-    try {
-      // 1. Validate input
-      const validated = CreateCalendarEntryCommentSchema.parse(input);
+    // 1. Validate input
+    const validated = BaseService.validateInput(
+      CreateCalendarEntryCommentSchema,
+      input,
+      'Invalid comment data',
+    );
 
-      // 2. Get current user
-      const {
-        data: { user },
-        error: authError,
-      } = await this.supabase.auth.getUser();
+    // 2. Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await this.supabase.auth.getUser();
 
-      if (authError) throw authError;
-      if (!user) {
-        throw new AppError('User not authenticated', 'UNAUTHORIZED', 401);
-      }
-
-      const userId = user.id as UserId;
-
-      // 3. Verify calendar entry exists and get household_id
-      const { data: calendarEntry, error: entryError } = await this.supabase
-        .from('calendar_entries')
-        .select('household_id')
-        .eq('id', validated.calendar_entry_id)
-        .single();
-
-      if (entryError || !calendarEntry) {
-        throw new NotFoundError('Calendar entry', validated.calendar_entry_id);
-      }
-
-      const householdId = calendarEntry.household_id as HouseholdId;
-
-      // 4. Insert comment (denormalize household_id for RLS efficiency)
-      const { data: comment, error: insertError } = await this.supabase
-        .from('calendar_entry_comments')
-        .insert({
-          calendar_entry_id: validated.calendar_entry_id,
-          household_id: householdId,
-          comment_text: validated.comment_text,
-          created_by: userId,
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-      if (!comment) {
-        throw new AppError('Failed to create comment - no data returned', 'CREATE_ERROR');
-      }
-
-      // 5. Return created comment
-      return comment as unknown as CalendarEntryComment;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new ValidationError('Invalid comment data', { errors: error.errors });
-      }
-      if (error instanceof AppError) throw error;
-
-      console.error('CalendarEntryCommentService.create failed:', error);
-      throw new AppError('Failed to create comment', 'CREATE_ERROR', 500);
+    if (authError) {
+      BaseService.handleSupabaseError(authError, 'CalendarEntryCommentService.create.auth');
     }
+    if (!user) {
+      throw new AppError('User not authenticated', 'UNAUTHORIZED', 401);
+    }
+
+    const userId = user.id as UserId;
+
+    // 3. Verify calendar entry exists and get household_id
+    const { data: calendarEntry, error: entryError } = await this.supabase
+      .from('calendar_entries')
+      .select('household_id')
+      .eq('id', validated.calendar_entry_id)
+      .single();
+
+    if (entryError) {
+      BaseService.handleSupabaseError(entryError, 'CalendarEntryCommentService.create.fetchEntry', {
+        calendar_entry_id: validated.calendar_entry_id,
+      });
+    }
+    if (!calendarEntry) {
+      throw new NotFoundError('Calendar entry', validated.calendar_entry_id);
+    }
+
+    const householdId = calendarEntry.household_id as HouseholdId;
+
+    // 4. Insert comment (denormalize household_id for RLS efficiency)
+    const { data: comment, error: insertError } = await this.supabase
+      .from('calendar_entry_comments')
+      .insert({
+        calendar_entry_id: validated.calendar_entry_id,
+        household_id: householdId,
+        comment_text: validated.comment_text,
+        created_by: userId,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      BaseService.handleSupabaseError(insertError, 'CalendarEntryCommentService.create.insert');
+    }
+    if (!comment) {
+      throw new AppError('Failed to create comment - no data returned', 'CREATE_ERROR');
+    }
+
+    // 5. Return created comment
+    return comment as unknown as CalendarEntryComment;
   }
 
   /**
@@ -146,27 +144,17 @@ export class CalendarEntryCommentService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getById(id: CalendarEntryCommentId): Promise<CalendarEntryComment> {
-    try {
-      const { data, error } = await this.supabase
-        .from('calendar_entry_comments')
-        .select('*')
-        .eq('id', id)
-        .single();
+    const { data, error } = await this.supabase
+      .from('calendar_entry_comments')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-      if (error) throw error;
-      if (!data) throw new NotFoundError('Comment', id);
-
-      return data as unknown as CalendarEntryComment;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      // Check if it's a "not found" error from Supabase
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST116') {
-        throw new NotFoundError('Comment', id);
-      }
-
-      console.error('CalendarEntryCommentService.getById failed:', error);
-      throw new AppError('Failed to fetch comment', 'FETCH_ERROR', 500, { id });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CalendarEntryCommentService.getById', { id });
     }
+    if (!data) throw new NotFoundError('Comment', id);
+
+    return data as unknown as CalendarEntryComment;
   }
 }
