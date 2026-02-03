@@ -1,5 +1,5 @@
-import { ValidationError, ConflictError } from '@commontable/types';
-import type { Database } from '@commontable/types';
+import { ValidationError, ConflictError, AppError } from '@commontable/types';
+import type { Database, UserId } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 
@@ -36,6 +36,10 @@ describe('TagService', () => {
         updated_at: new Date().toISOString(),
       };
 
+      // Mock RLS function for household ID
+      const mockRpc = vi.fn().mockResolvedValue({ data: 'household-456', error: null });
+      (mockSupabase.rpc as Mock).mockImplementation(mockRpc);
+
       const mockFrom = vi.fn().mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -46,11 +50,12 @@ describe('TagService', () => {
 
       (mockSupabase.from as Mock).mockImplementation(mockFrom);
 
-      const result = await service.create({ name: 'Pasta' });
+      const result = await service.create({ name: 'Pasta' }, 'user-789' as UserId);
 
       expect(result).toEqual(mockTag);
       expect(result.name).toBe('pasta'); // normalized
       expect(mockFrom).toHaveBeenCalledWith('tags');
+      expect(mockRpc).toHaveBeenCalledWith('get_user_household_id');
     });
 
     it('should normalize tag name (lowercase, trim)', async () => {
@@ -62,6 +67,10 @@ describe('TagService', () => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+
+      // Mock RLS function for household ID
+      const mockRpc = vi.fn().mockResolvedValue({ data: 'household-456', error: null });
+      (mockSupabase.rpc as Mock).mockImplementation(mockRpc);
 
       const mockInsert = vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -75,23 +84,32 @@ describe('TagService', () => {
 
       (mockSupabase.from as Mock).mockImplementation(mockFrom);
 
-      const result = await service.create({ name: '  Italian Cuisine  ' });
+      const result = await service.create({ name: '  Italian Cuisine  ' }, 'user-789' as UserId);
 
       expect(result.name).toBe('italian cuisine');
       expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ name: 'italian cuisine' }));
     });
 
     it('should throw ValidationError for empty name', async () => {
-      await expect(service.create({ name: '' })).rejects.toThrow(ValidationError);
+      await expect(service.create({ name: '' }, 'user-789' as UserId)).rejects.toThrow(
+        ValidationError,
+      );
     });
 
     it('should throw ValidationError for name > 20 chars', async () => {
       await expect(
-        service.create({ name: 'this-is-a-very-long-tag-name-exceeding-twenty-characters' }),
+        service.create(
+          { name: 'this-is-a-very-long-tag-name-exceeding-twenty-characters' },
+          'user-789' as UserId,
+        ),
       ).rejects.toThrow(ValidationError);
     });
 
     it('should throw error if database insert fails', async () => {
+      // Mock RLS function for household ID
+      const mockRpc = vi.fn().mockResolvedValue({ data: 'household-456', error: null });
+      (mockSupabase.rpc as Mock).mockImplementation(mockRpc);
+
       const mockFrom = vi.fn().mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
@@ -105,7 +123,7 @@ describe('TagService', () => {
 
       (mockSupabase.from as Mock).mockImplementation(mockFrom);
 
-      await expect(service.create({ name: 'pasta' })).rejects.toThrow();
+      await expect(service.create({ name: 'pasta' }, 'user-789' as UserId)).rejects.toThrow();
     });
   });
 
@@ -218,8 +236,15 @@ describe('TagService', () => {
         created_at: new Date().toISOString(),
       };
 
-      // Mock getOrCreateTag
-      const mockRpc = vi.fn().mockResolvedValue({ data: mockTagId, error: null });
+      // Mock RLS function for household ID and getOrCreateTag RPC
+      const mockRpc = vi.fn((fn: string) => {
+        if (fn === 'get_user_household_id') {
+          return Promise.resolve({ data: '550e8400-e29b-41d4-a716-446655440003', error: null });
+        } else if (fn === 'get_or_create_tag') {
+          return Promise.resolve({ data: mockTagId, error: null });
+        }
+        return Promise.resolve({ data: null, error: null });
+      });
       (mockSupabase.rpc as Mock).mockImplementation(mockRpc);
 
       // Mock getById for getOrCreateTag
@@ -247,10 +272,13 @@ describe('TagService', () => {
 
       (mockSupabase.from as Mock).mockImplementation(mockFrom);
 
-      const result = await service.addTagToVersion({
-        recipe_version_id: mockVersionId,
-        tag_name: 'pasta',
-      });
+      const result = await service.addTagToVersion(
+        {
+          recipe_version_id: mockVersionId,
+          tag_name: 'pasta',
+        },
+        '550e8400-e29b-41d4-a716-446655440004' as UserId,
+      );
 
       expect(result.tag_id).toBe(mockTagId);
       expect(result.recipe_version_id).toBe(mockVersionId);
@@ -268,8 +296,15 @@ describe('TagService', () => {
         updated_at: new Date().toISOString(),
       };
 
-      // Mock getOrCreateTag
-      const mockRpc = vi.fn().mockResolvedValue({ data: mockTagId, error: null });
+      // Mock RLS function for household ID and getOrCreateTag RPC
+      const mockRpc = vi.fn((fn: string) => {
+        if (fn === 'get_user_household_id') {
+          return Promise.resolve({ data: '550e8400-e29b-41d4-a716-446655440003', error: null });
+        } else if (fn === 'get_or_create_tag') {
+          return Promise.resolve({ data: mockTagId, error: null });
+        }
+        return Promise.resolve({ data: null, error: null });
+      });
       (mockSupabase.rpc as Mock).mockImplementation(mockRpc);
 
       // Mock getById for getOrCreateTag
@@ -301,10 +336,13 @@ describe('TagService', () => {
       (mockSupabase.from as Mock).mockImplementation(mockFrom);
 
       await expect(
-        service.addTagToVersion({
-          recipe_version_id: mockVersionId,
-          tag_name: 'pasta',
-        }),
+        service.addTagToVersion(
+          {
+            recipe_version_id: mockVersionId,
+            tag_name: 'pasta',
+          },
+          '550e8400-e29b-41d4-a716-446655440004' as UserId,
+        ),
       ).rejects.toThrow(ConflictError);
     });
   });
@@ -382,6 +420,46 @@ describe('TagService', () => {
       expect(mockRpc).toHaveBeenCalledWith('get_household_tags', {
         p_household_id: 'household-456',
       });
+    });
+  });
+
+  describe('getCurrentHouseholdId (private method)', () => {
+    it('should call RLS function and return household ID', async () => {
+      const mockHouseholdId = 'household-456';
+      const mockRpc = vi.fn().mockResolvedValue({
+        data: mockHouseholdId,
+        error: null,
+      });
+      (mockSupabase.rpc as Mock).mockImplementation(mockRpc);
+
+      // Access private method for testing
+      const result = await (service as any).getCurrentHouseholdId();
+
+      expect(result).toBe(mockHouseholdId);
+      expect(mockRpc).toHaveBeenCalledWith('get_user_household_id');
+    });
+
+    it('should throw AppError if RLS function returns error', async () => {
+      const mockRpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'Not authenticated' },
+      });
+      (mockSupabase.rpc as Mock).mockImplementation(mockRpc);
+
+      await expect((service as any).getCurrentHouseholdId()).rejects.toThrow(AppError);
+      await expect((service as any).getCurrentHouseholdId()).rejects.toThrow(
+        'Failed to get current household ID',
+      );
+    });
+
+    it('should throw AppError if RLS function returns no data', async () => {
+      const mockRpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      });
+      (mockSupabase.rpc as Mock).mockImplementation(mockRpc);
+
+      await expect((service as any).getCurrentHouseholdId()).rejects.toThrow(AppError);
     });
   });
 });

@@ -108,10 +108,13 @@ export class RecipeService extends BaseService {
       const versionId = recipe.current_version_id;
       await Promise.all(
         validated.tags.map((tagName) =>
-          this.tagService.addTagToVersion({
-            recipe_version_id: versionId,
-            tag_name: tagName,
-          }),
+          this.tagService.addTagToVersion(
+            {
+              recipe_version_id: versionId,
+              tag_name: tagName,
+            },
+            validated.user_id as UserId,
+          ),
         ),
       );
     }

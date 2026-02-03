@@ -42,19 +42,22 @@ export class TagService extends BaseService {
    * Create a new tag
    *
    * @param input - Tag creation input (name will be normalized)
+   * @param userId - User ID creating the tag
    * @returns Created tag
    * @throws {ValidationError} If input validation fails
    * @throws {AppError} If database operation fails
    */
-  async create(input: CreateTagInput): Promise<Tag> {
+  async create(input: CreateTagInput, userId: UserId): Promise<Tag> {
     const validated = BaseService.validateInput(CreateTagInputSchema, input, 'Invalid tag data');
+
+    const householdId = await this.getCurrentHouseholdId();
 
     const { data, error } = await this.supabase
       .from('tags')
       .insert({
-        household_id: await this.getCurrentHouseholdId(),
+        household_id: householdId,
         name: validated.name, // Already normalized by schema
-        created_by: await this.getCurrentUserId(),
+        created_by: userId,
       })
       .select()
       .single();
@@ -193,23 +196,22 @@ export class TagService extends BaseService {
    * Associate tag with recipe version
    *
    * @param input - Association input
+   * @param userId - User ID creating the association
    * @returns Created association
    * @throws {ValidationError} If input validation fails
    * @throws {AppError} If database operation fails
    */
-  async addTagToVersion(input: AddTagToVersionInput): Promise<RecipeVersionTag> {
+  async addTagToVersion(input: AddTagToVersionInput, userId: UserId): Promise<RecipeVersionTag> {
     const validated = BaseService.validateInput(
       AddTagToVersionInputSchema,
       input,
       'Invalid tag association',
     );
 
+    const householdId = await this.getCurrentHouseholdId();
+
     // Get or create tag
-    const tag = await this.getOrCreateTag(
-      validated.tag_name,
-      await this.getCurrentHouseholdId(),
-      await this.getCurrentUserId(),
-    );
+    const tag = await this.getOrCreateTag(validated.tag_name, householdId, userId);
 
     // Create association
     const { data, error } = await this.supabase
@@ -217,7 +219,7 @@ export class TagService extends BaseService {
       .insert({
         recipe_version_id: validated.recipe_version_id,
         tag_id: tag.id,
-        created_by: await this.getCurrentUserId(),
+        created_by: userId,
       })
       .select()
       .single();
@@ -325,20 +327,18 @@ export class TagService extends BaseService {
   }
 
   /**
-   * Helper: Get current household ID from context
-   * TODO: Replace with actual auth context
+   * Helper: Get current household ID from authenticated context via RLS function
+   *
+   * @returns Current user's household ID
+   * @throws {AppError} If user is not authenticated or has no household
    */
   private async getCurrentHouseholdId(): Promise<HouseholdId> {
-    // Placeholder - will be replaced with actual auth context
-    return 'household-placeholder' as HouseholdId;
-  }
+    const { data, error } = await this.supabase.rpc('get_user_household_id');
 
-  /**
-   * Helper: Get current user ID from context
-   * TODO: Replace with actual auth context
-   */
-  private async getCurrentUserId(): Promise<UserId> {
-    // Placeholder - will be replaced with actual auth context
-    return 'user-placeholder' as UserId;
+    if (error || !data) {
+      throw new AppError('Failed to get current household ID', 'AUTH_ERROR', 401);
+    }
+
+    return data as HouseholdId;
   }
 }
