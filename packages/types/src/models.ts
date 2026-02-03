@@ -154,6 +154,12 @@ export interface AiTagSuggestionWithTag extends AiTagSuggestion {
   tag: Tag;
 }
 
+// Tag with usage count (from get_household_tags function)
+export interface TagWithUsageCount {
+  tag_name: string;
+  usage_count: number;
+}
+
 // Calendar entry status lifecycle
 export type CalendarEntryStatus = 'planned' | 'confirmed' | 'completed' | 'cancelled';
 

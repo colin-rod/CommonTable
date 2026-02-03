@@ -18,13 +18,8 @@ import type {
   UserId,
   Tag,
   RecipeVersionTag,
+  TagWithUsageCount,
 } from '@commontable/types';
-
-// Temporary: Define TagWithUsageCount locally until types package exports correctly
-interface TagWithUsageCount {
-  tag_name: string;
-  usage_count: number;
-}
 
 import { BaseService } from './BaseService';
 
