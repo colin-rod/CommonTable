@@ -32,6 +32,12 @@ interface MockRecipe {
   created_by: string;
   created_at: string;
   updated_at: string;
+  // New metadata fields (optional for backward compatibility with existing tests)
+  status?: 'suggested' | 'planned' | 'cooked';
+  cuisine?: string | null;
+  meal_type?: string | null;
+  key_ingredients?: string[] | null;
+  priority?: number | null;
 }
 
 interface MockRecipeVersion {

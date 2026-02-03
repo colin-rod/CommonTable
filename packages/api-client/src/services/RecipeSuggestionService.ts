@@ -3,11 +3,13 @@ import {
   type HouseholdId,
   type Recipe,
   type RecipeId,
+  type RecipeVersionId,
   type RecipeSuggestion,
   type SuggestionBadge,
   type SuggestionContext,
   type SuggestionWeights,
   type MealSlot,
+  type UserId,
 } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -89,21 +91,27 @@ export class RecipeSuggestionService extends BaseService {
     if (!recipes || recipes.length === 0) return [];
 
     // Convert database recipes to typed Recipe objects
-    const typedRecipes: Recipe[] = recipes.map((recipe) => ({
-      ...recipe,
-      id: recipe.id as RecipeId,
-      household_id: recipe.household_id as HouseholdId,
-      current_version_id: recipe.current_version_id,
-      rolling_score: recipe.rolling_score,
-      tags: recipe.tags || [],
-      is_favorite: recipe.is_favorite,
-      last_cooked_at: recipe.last_cooked_at ? new Date(recipe.last_cooked_at) : null,
-      created_by: recipe.created_by,
-      created_at: new Date(recipe.created_at),
-      updated_at: new Date(recipe.updated_at),
-      description: recipe.description,
-      title: recipe.title,
-    }));
+    const typedRecipes: Recipe[] = recipes.map((recipe) => {
+      // Type assertion: tags column exists in DB but not yet in generated types
+      const recipeWithTags = recipe as typeof recipe & { tags?: string[] };
+
+      return {
+        ...recipe,
+        id: recipe.id as RecipeId,
+        household_id: recipe.household_id as HouseholdId,
+        current_version_id: recipe.current_version_id as RecipeVersionId | null,
+        rolling_score: recipe.rolling_score,
+        tags: recipeWithTags.tags || [], // tags column exists but not yet in generated types
+        key_ingredients: recipe.key_ingredients || [], // default to empty array if null
+        is_favorite: recipe.is_favorite,
+        last_cooked_at: recipe.last_cooked_at ? new Date(recipe.last_cooked_at) : null,
+        created_by: recipe.created_by as UserId,
+        created_at: new Date(recipe.created_at),
+        updated_at: new Date(recipe.updated_at),
+        description: recipe.description,
+        title: recipe.title,
+      };
+    });
 
     // Calculate max recency for normalization
     const maxRecency = this.calculateMaxRecency(typedRecipes);
