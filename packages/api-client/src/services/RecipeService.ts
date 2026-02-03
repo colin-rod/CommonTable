@@ -70,15 +70,15 @@ export class RecipeService extends BaseService {
 
     // Call database function for atomic recipe + version creation
     // Note: Database function handles null values, but generated types are strict
-    // Using type assertion to allow null values that the DB function accepts
+    // Provide default empty arrays for JSON fields to satisfy type constraints
     const { data: recipeId, error: rpcError } = await this.supabase.rpc(
       'create_recipe_with_version',
       {
         p_household_id: validated.household_id,
         p_title: validated.title,
         p_description: validated.description ?? '',
-        p_ingredients_json: validated.ingredients_json,
-        p_steps_json: validated.steps_json,
+        p_ingredients_json: validated.ingredients_json ?? [],
+        p_steps_json: validated.steps_json ?? [],
         p_servings: validated.servings ?? 0,
         p_prep_time_minutes: validated.prep_time_minutes ?? 0,
         p_cook_time_minutes: validated.cook_time_minutes ?? 0,
