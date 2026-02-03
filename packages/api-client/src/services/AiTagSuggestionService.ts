@@ -4,6 +4,9 @@ import type {
   AiTagSuggestionWithTag,
   RecipeVersionId,
   Database,
+  TagId,
+  HouseholdId,
+  UserId,
 } from '@commontable/types';
 import { NotFoundError } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -43,7 +46,25 @@ export class AiTagSuggestionService extends BaseService {
       });
     }
 
-    return (data as AiTagSuggestionWithTag[]) ?? [];
+    if (!data) return [];
+
+    // Transform database response to branded types
+    return data.map((item) => ({
+      ...item,
+      id: item.id as AiTagSuggestionId,
+      recipe_version_id: item.recipe_version_id as RecipeVersionId,
+      tag_id: item.tag_id as unknown as TagId,
+      created_at: new Date(item.created_at),
+      accepted_at: item.accepted_at ? new Date(item.accepted_at) : null,
+      tag: {
+        ...item.tag,
+        id: item.tag.id as unknown as TagId,
+        household_id: item.tag.household_id as unknown as HouseholdId,
+        created_by: item.tag.created_by as unknown as UserId,
+        created_at: new Date(item.tag.created_at),
+        updated_at: new Date(item.tag.updated_at),
+      },
+    }));
   }
 
   /**
@@ -75,7 +96,14 @@ export class AiTagSuggestionService extends BaseService {
     }
     if (!data) throw new NotFoundError('AI tag suggestion', suggestionId);
 
-    return data as AiTagSuggestion;
+    return {
+      ...data,
+      id: data.id as AiTagSuggestionId,
+      recipe_version_id: data.recipe_version_id as RecipeVersionId,
+      tag_id: data.tag_id as unknown as TagId,
+      created_at: new Date(data.created_at),
+      accepted_at: data.accepted_at ? new Date(data.accepted_at) : null,
+    };
   }
 
   /**
@@ -106,7 +134,14 @@ export class AiTagSuggestionService extends BaseService {
     }
     if (!data) throw new NotFoundError('AI tag suggestion', suggestionId);
 
-    const suggestion = data as AiTagSuggestion;
+    const suggestion: AiTagSuggestion = {
+      ...data,
+      id: data.id as AiTagSuggestionId,
+      recipe_version_id: data.recipe_version_id as RecipeVersionId,
+      tag_id: data.tag_id as unknown as TagId,
+      created_at: new Date(data.created_at),
+      accepted_at: data.accepted_at ? new Date(data.accepted_at) : null,
+    };
 
     // Remove the tag from recipe_version_tags
     const { error: deleteError } = await this.supabase
