@@ -33,6 +33,9 @@ describe('RecipeListItem Component', () => {
     key_ingredients: ['pasta', 'eggs', 'cheese'],
     priority: 1,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
   };
 
   beforeEach(() => {

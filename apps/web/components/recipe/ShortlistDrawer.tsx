@@ -1,8 +1,9 @@
 'use client';
 
-import { Close as CloseIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Add as AddIcon } from '@mui/icons-material';
 import {
   Box,
+  Button,
   CircularProgress,
   Drawer,
   IconButton,
@@ -10,10 +11,14 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Snackbar,
+  Stack,
   Typography,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
+import { useRecipeQueue } from '@/hooks/useRecipeQueue';
 import { useShortlistStore } from '@/stores/useShortlistStore';
 
 interface ShortlistDrawerProps {
@@ -24,10 +29,39 @@ interface ShortlistDrawerProps {
 export function ShortlistDrawer({ open, onClose }: ShortlistDrawerProps) {
   const router = useRouter();
   const { items, loading, error, remove } = useShortlistStore();
+  const { addToQueue } = useRecipeQueue();
+  const [addingToQueue, setAddingToQueue] = useState<string | null>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
 
   const handleRecipeClick = (recipeId: string) => {
     router.push(`/recipes/${recipeId}`);
     onClose(); // Close drawer after navigation
+  };
+
+  const handleAddToQueue = async (recipeId: string, recipeTitle: string) => {
+    try {
+      setAddingToQueue(recipeId);
+      await addToQueue(recipeId);
+      setSnackbarMessage(`Added "${recipeTitle}" to queue`);
+    } catch (err) {
+      console.error('Failed to add to queue:', err);
+      setSnackbarMessage('Failed to add to queue');
+    } finally {
+      setAddingToQueue(null);
+    }
+  };
+
+  const handleAddAllToQueue = async () => {
+    try {
+      setAddingToQueue('all');
+      await Promise.all(items.map((item) => addToQueue(item.recipe.id)));
+      setSnackbarMessage(`Added ${items.length} recipes to queue`);
+    } catch (err) {
+      console.error('Failed to add all to queue:', err);
+      setSnackbarMessage('Failed to add all to queue');
+    } finally {
+      setAddingToQueue(null);
+    }
   };
 
   return (
@@ -39,12 +73,30 @@ export function ShortlistDrawer({ open, onClose }: ShortlistDrawerProps) {
     >
       <Box sx={{ p: 2 }}>
         {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Typography variant="h6">Shortlist {items.length > 0 && `(${items.length})`}</Typography>
-          <IconButton onClick={onClose} aria-label="Close shortlist">
-            <CloseIcon />
-          </IconButton>
-        </Box>
+        <Stack spacing={2} sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6">
+              Shortlist {items.length > 0 && `(${items.length})`}
+            </Typography>
+            <IconButton onClick={onClose} aria-label="Close shortlist">
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* Add All to Queue Button */}
+          {!loading && !error && items.length > 0 && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAddAllToQueue}
+              disabled={addingToQueue === 'all'}
+              fullWidth
+              startIcon={<AddIcon />}
+            >
+              {addingToQueue === 'all' ? 'Adding All...' : 'Add All to Queue'}
+            </Button>
+          )}
+        </Stack>
 
         {/* Loading State */}
         {loading && (
@@ -81,13 +133,25 @@ export function ShortlistDrawer({ open, onClose }: ShortlistDrawerProps) {
               <ListItem
                 key={item.id}
                 secondaryAction={
-                  <IconButton
-                    edge="end"
-                    aria-label={`Remove ${item.recipe.title} from shortlist`}
-                    onClick={() => remove(item.recipe.id)}
-                  >
-                    <CloseIcon />
-                  </IconButton>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                      onClick={() => handleAddToQueue(item.recipe.id, item.recipe.title)}
+                      disabled={addingToQueue === item.recipe.id}
+                      startIcon={<AddIcon />}
+                    >
+                      {addingToQueue === item.recipe.id ? 'Adding...' : 'Queue'}
+                    </Button>
+                    <IconButton
+                      edge="end"
+                      aria-label={`Remove ${item.recipe.title} from shortlist`}
+                      onClick={() => remove(item.recipe.id)}
+                    >
+                      <CloseIcon />
+                    </IconButton>
+                  </Stack>
                 }
               >
                 <ListItemButton onClick={() => handleRecipeClick(item.recipe.id)}>
@@ -100,6 +164,14 @@ export function ShortlistDrawer({ open, onClose }: ShortlistDrawerProps) {
             ))}
           </List>
         )}
+
+        {/* Success Snackbar */}
+        <Snackbar
+          open={!!snackbarMessage}
+          autoHideDuration={3000}
+          onClose={() => setSnackbarMessage(null)}
+          message={snackbarMessage}
+        />
       </Box>
     </Drawer>
   );

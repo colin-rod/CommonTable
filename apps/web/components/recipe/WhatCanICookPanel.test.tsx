@@ -42,6 +42,9 @@ const createMockRecipe = (id: string, title: string, tags: string[]): Recipe => 
   key_ingredients: [],
   priority: null,
   status: 'suggested',
+  cooking_method: null,
+  dietary_categories: null,
+  dish_category: null,
 });
 
 const mockRecipes: Recipe[] = [

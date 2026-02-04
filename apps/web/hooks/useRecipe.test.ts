@@ -5,8 +5,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { useRecipe } from './useRecipe';
 
-import { createClient } from '@/lib/supabase/client';
-
 // Mock Supabase client
 vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn(() => ({})),
@@ -39,6 +37,9 @@ describe('useRecipe Hook', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
     current_version: {
       id: 'version-123' as any,
       recipe_id: mockRecipeId,

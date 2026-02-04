@@ -317,4 +317,78 @@ export class CookingEventService extends BaseService {
     // Database triggers handle rolling_score and last_cooked_at automatically
     // No manual recalculation needed
   }
+
+  /**
+   * Get all cooking events for a household in a specific month
+   * Used for historical calendar view showing past cooking events
+   *
+   * @param householdId - Household ID
+   * @param year - Year (e.g., 2026)
+   * @param month - Month (1-12, where 1 = January)
+   * @returns Array of cooking events sorted by cooked_at ASC (oldest first)
+   * @throws {AppError} If database operation fails
+   */
+  async getEventsForMonth(
+    householdId: HouseholdId,
+    year: number,
+    month: number,
+  ): Promise<CookingEvent[]> {
+    // Calculate start and end of month in UTC
+    const startOfMonth = new Date(Date.UTC(year, month - 1, 1));
+    const endOfMonth = new Date(Date.UTC(year, month, 1));
+
+    const { data, error } = await this.supabase
+      .from('cooking_events')
+      .select('*')
+      .eq('household_id', householdId)
+      .gte('cooked_at', startOfMonth.toISOString())
+      .lt('cooked_at', endOfMonth.toISOString())
+      .order('cooked_at', { ascending: true });
+
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.getEventsForMonth', {
+        householdId,
+        year,
+        month,
+      });
+    }
+
+    return BaseService.hydrateDatesArray(data ?? [], ['cooked_at']) as unknown as CookingEvent[];
+  }
+
+  /**
+   * Get all cooking events for a household on a specific date
+   * Used for calendar day detail dialog showing all recipes cooked that day
+   *
+   * @param householdId - Household ID
+   * @param date - Target date
+   * @returns Array of cooking events sorted by cooked_at ASC (oldest first)
+   * @throws {AppError} If database operation fails
+   */
+  async getEventsForDate(householdId: HouseholdId, date: Date): Promise<CookingEvent[]> {
+    // Calculate start and end of day in UTC
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+
+    const startOfDay = new Date(Date.UTC(year, month, day));
+    const endOfDay = new Date(Date.UTC(year, month, day + 1));
+
+    const { data, error } = await this.supabase
+      .from('cooking_events')
+      .select('*')
+      .eq('household_id', householdId)
+      .gte('cooked_at', startOfDay.toISOString())
+      .lt('cooked_at', endOfDay.toISOString())
+      .order('cooked_at', { ascending: true });
+
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.getEventsForDate', {
+        householdId,
+        date,
+      });
+    }
+
+    return BaseService.hydrateDatesArray(data ?? [], ['cooked_at']) as unknown as CookingEvent[];
+  }
 }

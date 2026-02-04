@@ -46,6 +46,9 @@ const createMockShortlistItem = (id: string, title: string): ShortlistItem => ({
     key_ingredients: [],
     priority: null,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
   },
   addedBy: {
     id: 'user-123' as UserId,

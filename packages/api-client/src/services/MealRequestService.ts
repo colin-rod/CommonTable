@@ -7,6 +7,7 @@ import type {
 } from '@commontable/types';
 import {
   NotFoundError,
+  ValidationError,
   CreateMealRequestSchema,
   UpdateStatusSchema,
   UpdatePrioritySchema,
@@ -194,6 +195,69 @@ export class MealRequestService extends BaseService {
       'created_at',
       'updated_at',
     ]) as unknown as MealRequest;
+  }
+
+  /**
+   * Add meal request to shortlist
+   * Creates a shortlist entry and updates request status to 'planned'
+   *
+   * @param id - Meal request ID
+   * @returns Object containing updated request and created shortlist entry
+   * @throws {NotFoundError} If request does not exist
+   * @throws {ValidationError} If request has no recipe_id
+   * @throws {AppError} If database operation fails
+   */
+  async addToShortlist(id: MealRequestId): Promise<{
+    mealRequest: MealRequest;
+    shortlistEntry: {
+      id: string;
+      household_id: string;
+      recipe_id: string;
+      meal_request_id: string;
+      added_by: string;
+      notes: string | null;
+      created_at: Date;
+    };
+  }> {
+    // Fetch the request
+    const request = await this.getById(id);
+
+    // Validate that request has a recipe_id
+    if (!request.recipe_id) {
+      throw new ValidationError('Cannot add meal request to shortlist without a recipe_id', { id });
+    }
+
+    // Create shortlist entry
+    const { data: shortlistEntry, error: insertError } = await this.supabase
+      .from('recipe_shortlists')
+      .insert({
+        recipe_id: request.recipe_id,
+        household_id: request.household_id,
+        added_by_user_id: request.requested_by,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      BaseService.handleSupabaseError(insertError, 'MealRequestService.addToShortlist', { id });
+    }
+
+    // Update request status to 'planned'
+    const updatedRequest = await this.updateStatus(id, 'planned');
+
+    // Transform shortlist entry to match expected shape
+    return {
+      mealRequest: updatedRequest,
+      shortlistEntry: {
+        id: shortlistEntry.id,
+        household_id: shortlistEntry.household_id,
+        recipe_id: shortlistEntry.recipe_id,
+        meal_request_id: id,
+        added_by: shortlistEntry.added_by_user_id,
+        notes: null,
+        created_at: new Date(shortlistEntry.added_at),
+      },
+    };
   }
 
   /**

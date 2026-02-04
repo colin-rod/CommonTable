@@ -83,6 +83,9 @@ describe('recipe server actions', () => {
     key_ingredients: ['pasta', 'eggs', 'bacon'],
     priority: 3,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
   };
 
   const mockUser = { id: 'auth-user-1', email: 'test@example.com' };
@@ -119,6 +122,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);
@@ -148,6 +154,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);
@@ -181,6 +190,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);
@@ -217,6 +229,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);
@@ -252,6 +267,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);

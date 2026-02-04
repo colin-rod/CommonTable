@@ -58,6 +58,8 @@ interface MockQueryBuilder {
   maybeSingle: ReturnType<typeof vi.fn>;
   range: ReturnType<typeof vi.fn>;
   in: ReturnType<typeof vi.fn>;
+  gte: ReturnType<typeof vi.fn>;
+  lt: ReturnType<typeof vi.fn>;
   then?: (resolve: (value: any) => void, reject?: (reason: any) => void) => Promise<any>;
 }
 
@@ -81,6 +83,8 @@ function createMockQueryBuilder<T>(resolvedValue?: {
     maybeSingle: vi.fn().mockResolvedValue(defaultValue),
     range: vi.fn().mockResolvedValue(defaultValue),
     in: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
     then: (resolve) => {
       resolve(defaultValue);
       return Promise.resolve(defaultValue);
@@ -761,6 +765,138 @@ describe('CookingEventService', () => {
       vi.mocked(mockSupabase.from).mockReturnValueOnce(getBuilder as any);
 
       await expect(service.delete(mockCookingEventId)).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('getEventsForMonth', () => {
+    it('should return all cooking events for a given month', async () => {
+      const mockEvents: MockCookingEvent[] = [
+        {
+          id: 'event-1',
+          recipe_id: mockRecipeId,
+          recipe_version_id: mockRecipeVersionId,
+          household_id: mockHouseholdId,
+          cooked_at: '2026-02-05T12:00:00Z',
+          servings_made: 4,
+          rating: 5,
+          notes: 'Delicious!',
+          cooked_by: mockUserId,
+        },
+        {
+          id: 'event-2',
+          recipe_id: mockRecipeId,
+          recipe_version_id: mockRecipeVersionId,
+          household_id: mockHouseholdId,
+          cooked_at: '2026-02-15T18:00:00Z',
+          servings_made: 2,
+          rating: 4,
+          notes: null,
+          cooked_by: mockUserId,
+        },
+      ];
+
+      const queryBuilder = createMockQueryBuilder({ data: mockEvents, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(queryBuilder as any);
+
+      const result = await service.getEventsForMonth(mockHouseholdId, 2026, 2);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('cooking_events');
+      expect(queryBuilder.select).toHaveBeenCalledWith('*');
+      expect(queryBuilder.eq).toHaveBeenCalledWith('household_id', mockHouseholdId);
+      expect(queryBuilder.gte).toHaveBeenCalledWith('cooked_at', '2026-02-01T00:00:00.000Z');
+      expect(queryBuilder.lt).toHaveBeenCalledWith('cooked_at', '2026-03-01T00:00:00.000Z');
+      expect(queryBuilder.order).toHaveBeenCalledWith('cooked_at', { ascending: true });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]!.id).toBe('event-1');
+      expect(result[0]!.cooked_at).toBeInstanceOf(Date);
+      expect(result[1]!.id).toBe('event-2');
+    });
+
+    it('should return empty array when no events exist for month', async () => {
+      const queryBuilder = createMockQueryBuilder({ data: [], error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(queryBuilder as any);
+
+      const result = await service.getEventsForMonth(mockHouseholdId, 2026, 12);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should throw AppError on database error', async () => {
+      const queryBuilder = createMockQueryBuilder({
+        data: null,
+        error: { message: 'Database error' },
+      });
+      vi.mocked(mockSupabase.from).mockReturnValue(queryBuilder as any);
+
+      await expect(service.getEventsForMonth(mockHouseholdId, 2026, 2)).rejects.toThrow(AppError);
+    });
+  });
+
+  describe('getEventsForDate', () => {
+    it('should return all cooking events for a specific date', async () => {
+      const targetDate = new Date('2026-02-15');
+      const mockEvents: MockCookingEvent[] = [
+        {
+          id: 'event-1',
+          recipe_id: mockRecipeId,
+          recipe_version_id: mockRecipeVersionId,
+          household_id: mockHouseholdId,
+          cooked_at: '2026-02-15T12:00:00Z',
+          servings_made: 4,
+          rating: 5,
+          notes: 'Lunch',
+          cooked_by: mockUserId,
+        },
+        {
+          id: 'event-2',
+          recipe_id: mockRecipeId,
+          recipe_version_id: mockRecipeVersionId,
+          household_id: mockHouseholdId,
+          cooked_at: '2026-02-15T18:30:00Z',
+          servings_made: 2,
+          rating: 4,
+          notes: 'Dinner',
+          cooked_by: mockUserId,
+        },
+      ];
+
+      const queryBuilder = createMockQueryBuilder({ data: mockEvents, error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(queryBuilder as any);
+
+      const result = await service.getEventsForDate(mockHouseholdId, targetDate);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('cooking_events');
+      expect(queryBuilder.select).toHaveBeenCalledWith('*');
+      expect(queryBuilder.eq).toHaveBeenCalledWith('household_id', mockHouseholdId);
+      expect(queryBuilder.gte).toHaveBeenCalledWith('cooked_at', '2026-02-15T00:00:00.000Z');
+      expect(queryBuilder.lt).toHaveBeenCalledWith('cooked_at', '2026-02-16T00:00:00.000Z');
+      expect(queryBuilder.order).toHaveBeenCalledWith('cooked_at', { ascending: true });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]!.id).toBe('event-1');
+      expect(result[0]!.cooked_at).toBeInstanceOf(Date);
+    });
+
+    it('should return empty array when no events exist for date', async () => {
+      const targetDate = new Date('2026-12-25');
+      const queryBuilder = createMockQueryBuilder({ data: [], error: null });
+      vi.mocked(mockSupabase.from).mockReturnValue(queryBuilder as any);
+
+      const result = await service.getEventsForDate(mockHouseholdId, targetDate);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should throw AppError on database error', async () => {
+      const targetDate = new Date('2026-02-15');
+      const queryBuilder = createMockQueryBuilder({
+        data: null,
+        error: { message: 'Database error' },
+      });
+      vi.mocked(mockSupabase.from).mockReturnValue(queryBuilder as any);
+
+      await expect(service.getEventsForDate(mockHouseholdId, targetDate)).rejects.toThrow(AppError);
     });
   });
 });

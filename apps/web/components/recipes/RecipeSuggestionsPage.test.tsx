@@ -33,6 +33,9 @@ describe('RecipeSuggestionsPage', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
   };
 
   const mockRecipe2: Recipe = {
@@ -54,6 +57,9 @@ describe('RecipeSuggestionsPage', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
   };
 
   const mockSuggestions: RecipeSuggestion[] = [
