@@ -1,9 +1,9 @@
 import { Typography, Stack } from '@mui/material';
 
-import { CalendarWeekView } from '@/components/calendar/CalendarWeekView';
+import { HistoricalCalendarView } from '@/components/calendar/HistoricalCalendarView';
 
 /**
- * Calendar page - Week view for meal planning
+ * Calendar page - Historical view for cooking events
  *
  * Route: /calendar
  *
@@ -17,15 +17,15 @@ export default function CalendarPage() {
   return (
     <Stack spacing={3}>
       {/* Page Title */}
-      <Typography variant="h5">Meal Calendar</Typography>
+      <Typography variant="h5">Cooking History</Typography>
 
       {/* Page Description */}
       <Typography variant="body2" color="text.secondary">
-        Plan your household's meals for the week
+        View past cooking events for your household
       </Typography>
 
-      {/* Calendar Week View */}
-      <CalendarWeekView />
+      {/* Historical Calendar View */}
+      <HistoricalCalendarView />
     </Stack>
   );
 }

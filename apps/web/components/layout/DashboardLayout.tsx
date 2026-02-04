@@ -1,8 +1,9 @@
 'use client';
 
 import BoltIcon from '@mui/icons-material/Bolt';
-import CalendarIcon from '@mui/icons-material/CalendarToday';
 import ExploreIcon from '@mui/icons-material/Explore';
+import HistoryIcon from '@mui/icons-material/History';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -60,9 +61,14 @@ const navItems: NavItem[] = [
     icon: <RestaurantIcon />,
   },
   {
-    label: 'Calendar',
+    label: 'Queue',
+    href: '/queue' as Route,
+    icon: <ListAltIcon />,
+  },
+  {
+    label: 'History',
     href: '/calendar',
-    icon: <CalendarIcon />,
+    icon: <HistoryIcon />,
   },
   {
     label: 'Tags',

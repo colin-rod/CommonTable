@@ -101,7 +101,7 @@ export class RecipeQueueService extends BaseService {
         position: nextPosition,
         status: 'queued',
         // household_id and added_by are handled by RLS/triggers
-      } as { recipe_id: string; household_id: string })
+      } as never)
       .select()
       .single();
 
@@ -200,7 +200,7 @@ export class RecipeQueueService extends BaseService {
         servings_made: input?.servings_made || null,
         notes: input?.notes || null,
         // cooked_by is handled by triggers
-      } as { recipe_id: string; household_id: string })
+      } as never)
       .select()
       .single();
 
