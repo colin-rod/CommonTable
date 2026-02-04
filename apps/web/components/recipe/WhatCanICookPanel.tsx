@@ -1,6 +1,6 @@
 'use client';
 
-import type { RecipeId, SortOption, UserId } from '@commontable/types';
+import type { RecipeId, SortOption } from '@commontable/types';
 import {
   Box,
   Button,
@@ -51,7 +51,7 @@ export function WhatCanICookPanel() {
       return;
     }
 
-    await addToShortlist(recipeId, user.profile.id as UserId);
+    await addToShortlist(recipeId, user.id);
   };
 
   const toggleTag = (tag: string) => {

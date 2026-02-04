@@ -5,6 +5,7 @@ import type {
   HouseholdId,
   UserId,
   ProfileId,
+  AuthUserId,
   User,
 } from '@commontable/types';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -72,7 +73,7 @@ const mockAuthenticatedUser: User = {
   email: 'test@example.com',
   profile: {
     id: 'profile-456' as ProfileId,
-    auth_user_id: 'auth-123' as UserId,
+    auth_user_id: 'auth-123' as AuthUserId,
     display_name: 'Test User',
     avatar_url: null,
     member_type: 'authenticated',
