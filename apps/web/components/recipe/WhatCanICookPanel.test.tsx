@@ -419,10 +419,10 @@ describe('WhatCanICookPanel', () => {
       const buttons = screen.getAllByRole('button', { name: /add to shortlist/i });
       await user.click(buttons[0]!);
 
-      // Should be called with profile ID, not placeholder
+      // Should be called with auth user ID (not profile ID)
       expect(mockAddToShortlist).toHaveBeenCalledWith(
         'recipe-1' as RecipeId,
-        'profile-456' as ProfileId, // ← Profile ID from mockAuthenticatedUser
+        'auth-123' as UserId, // ← Auth user ID from mockAuthenticatedUser
       );
     });
 
