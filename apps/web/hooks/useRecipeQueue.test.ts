@@ -172,10 +172,10 @@ describe('useRecipeQueue Hook', () => {
       });
 
       expect(result.current.entries).toHaveLength(2);
-      expect(result.current.lanes).toHaveProperty('dinner');
-      expect(result.current.lanes).toHaveProperty('lunch');
-      expect(result.current.lanes.dinner).toHaveLength(1);
-      expect(result.current.lanes.lunch).toHaveLength(1);
+      expect(result.current.lanes).toHaveProperty('main_dish');
+      expect(result.current.lanes).toHaveProperty('side_dish');
+      expect(result.current.lanes.main_dish).toHaveLength(1);
+      expect(result.current.lanes.side_dish).toHaveLength(1);
     });
 
     it('should group by cuisine', async () => {
@@ -279,11 +279,11 @@ describe('useRecipeQueue Hook', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const dinnerLane = result.current.lanes.dinner;
-      expect(dinnerLane).toHaveLength(3);
-      expect(dinnerLane?.[0]?.position).toBe(1);
-      expect(dinnerLane?.[1]?.position).toBe(2);
-      expect(dinnerLane?.[2]?.position).toBe(3);
+      const mainDishLane = result.current.lanes.main_dish;
+      expect(mainDishLane).toHaveLength(3);
+      expect(mainDishLane?.[0]?.position).toBe(1);
+      expect(mainDishLane?.[1]?.position).toBe(2);
+      expect(mainDishLane?.[2]?.position).toBe(3);
     });
   });
 
