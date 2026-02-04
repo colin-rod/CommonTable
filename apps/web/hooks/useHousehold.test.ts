@@ -13,6 +13,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useAuth } from './useAuth';
 import { useHousehold } from './useHousehold';
 
+import * as householdActions from '@/app/actions/household';
+
 // Mock Supabase client
 vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn(() => ({})),
@@ -26,6 +28,14 @@ vi.mock('@commontable/api-client', () => ({
 // Mock useAuth hook
 vi.mock('./useAuth', () => ({
   useAuth: vi.fn(),
+}));
+
+// Mock server actions
+vi.mock('@/app/actions/household', () => ({
+  updateHouseholdName: vi.fn(),
+  updateMemberRole: vi.fn(),
+  resendInvitation: vi.fn(),
+  cancelInvitation: vi.fn(),
 }));
 
 describe('useHousehold Hook', () => {
@@ -574,6 +584,334 @@ describe('useHousehold Hook', () => {
       expect(typeof addManagedMember).toBe('function');
       expect(typeof removeMember).toBe('function');
       expect(typeof refresh).toBe('function');
+    });
+  });
+
+  describe('updateHouseholdName', () => {
+    beforeEach(() => {
+      vi.mocked(useAuth).mockReturnValue({
+        household: mockHousehold,
+        householdRole: 'admin',
+      } as any);
+
+      mockHouseholdService.listMembers.mockResolvedValue(mockMembers);
+      mockHouseholdService.listInvitations.mockResolvedValue(mockInvitations);
+    });
+
+    it('should update household name successfully', async () => {
+      vi.mocked(householdActions.updateHouseholdName).mockResolvedValue({
+        success: true,
+        data: { ...mockHousehold, name: 'Updated Household' },
+      });
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await result.current.updateHouseholdName('Updated Household');
+      });
+
+      expect(householdActions.updateHouseholdName).toHaveBeenCalledWith(
+        mockHouseholdId,
+        'Updated Household',
+      );
+      expect(mockHouseholdService.listMembers).toHaveBeenCalledTimes(2); // Initial load + refresh
+    });
+
+    it('should refresh data after update', async () => {
+      vi.mocked(householdActions.updateHouseholdName).mockResolvedValue({
+        success: true,
+        data: { ...mockHousehold, name: 'New Name' },
+      });
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialCallCount = mockHouseholdService.listMembers.mock.calls.length;
+
+      await act(async () => {
+        await result.current.updateHouseholdName('New Name');
+      });
+
+      expect(mockHouseholdService.listMembers).toHaveBeenCalledTimes(initialCallCount + 1);
+    });
+
+    it('should handle errors during update', async () => {
+      const errorMessage = 'Failed to update household name';
+      vi.mocked(householdActions.updateHouseholdName).mockResolvedValue({
+        success: false,
+        error: { message: errorMessage },
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await expect(result.current.updateHouseholdName('Bad Name')).rejects.toThrow(errorMessage);
+      });
+    });
+
+    it('should throw error when updating without household', async () => {
+      vi.mocked(useAuth).mockReturnValue({
+        household: null,
+        householdRole: null,
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await expect(result.current.updateHouseholdName('Test')).rejects.toThrow(
+        'No household selected',
+      );
+    });
+  });
+
+  describe('updateMemberRole', () => {
+    beforeEach(() => {
+      vi.mocked(useAuth).mockReturnValue({
+        household: mockHousehold,
+        householdRole: 'admin',
+      } as any);
+
+      mockHouseholdService.listMembers.mockResolvedValue(mockMembers);
+      mockHouseholdService.listInvitations.mockResolvedValue(mockInvitations);
+    });
+
+    it('should update member role with optimistic UI', async () => {
+      vi.mocked(householdActions.updateMemberRole).mockResolvedValue({
+        success: true,
+        data: { ...mockMembers[1]!, role: 'admin' },
+      });
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const memberToUpdate = mockMembers[1]!.user_id;
+
+      await act(async () => {
+        await result.current.updateMemberRole(memberToUpdate, 'admin');
+      });
+
+      expect(householdActions.updateMemberRole).toHaveBeenCalledWith(
+        mockHouseholdId,
+        memberToUpdate,
+        'admin',
+      );
+    });
+
+    it('should refresh data after role change', async () => {
+      vi.mocked(householdActions.updateMemberRole).mockResolvedValue({
+        success: true,
+        data: { ...mockMembers[1]!, role: 'admin' },
+      });
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const initialCallCount = mockHouseholdService.listMembers.mock.calls.length;
+
+      await act(async () => {
+        await result.current.updateMemberRole(mockMembers[1]!.user_id, 'admin');
+      });
+
+      expect(mockHouseholdService.listMembers).toHaveBeenCalledTimes(initialCallCount + 1);
+    });
+
+    it('should handle errors during role update', async () => {
+      const errorMessage = 'Failed to update member role';
+      vi.mocked(householdActions.updateMemberRole).mockResolvedValue({
+        success: false,
+        error: { message: errorMessage },
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await expect(
+          result.current.updateMemberRole(mockMembers[1]!.user_id, 'admin'),
+        ).rejects.toThrow(errorMessage);
+      });
+    });
+
+    it('should throw error when updating role without household', async () => {
+      vi.mocked(useAuth).mockReturnValue({
+        household: null,
+        householdRole: null,
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await expect(result.current.updateMemberRole('user-1', 'admin')).rejects.toThrow(
+        'No household selected',
+      );
+    });
+  });
+
+  describe('resendInvitation', () => {
+    beforeEach(() => {
+      vi.mocked(useAuth).mockReturnValue({
+        household: mockHousehold,
+        householdRole: 'admin',
+      } as any);
+
+      mockHouseholdService.listMembers.mockResolvedValue(mockMembers);
+      mockHouseholdService.listInvitations.mockResolvedValue(mockInvitations);
+    });
+
+    it('should resend invitation successfully', async () => {
+      vi.mocked(householdActions.resendInvitation).mockResolvedValue({
+        success: true,
+        data: mockInvitations[0],
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const invitationId = mockInvitations[0]!.id;
+
+      await act(async () => {
+        await result.current.resendInvitation(invitationId);
+      });
+
+      expect(householdActions.resendInvitation).toHaveBeenCalledWith(invitationId);
+    });
+
+    it('should update invitation timestamp optimistically', async () => {
+      vi.mocked(householdActions.resendInvitation).mockResolvedValue({
+        success: true,
+        data: mockInvitations[0],
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const originalTimestamp = result.current.invitations[0]!.invited_at;
+
+      await act(async () => {
+        await result.current.resendInvitation(mockInvitations[0]!.id);
+      });
+
+      // Timestamp should be updated
+      const updatedTimestamp = result.current.invitations[0]!.invited_at;
+      expect(updatedTimestamp).not.toBe(originalTimestamp);
+    });
+
+    it('should handle errors', async () => {
+      const errorMessage = 'Failed to resend invitation';
+      vi.mocked(householdActions.resendInvitation).mockResolvedValue({
+        success: false,
+        error: { message: errorMessage },
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await expect(result.current.resendInvitation(mockInvitations[0]!.id)).rejects.toThrow(
+          errorMessage,
+        );
+      });
+    });
+  });
+
+  describe('cancelInvitation', () => {
+    beforeEach(() => {
+      vi.mocked(useAuth).mockReturnValue({
+        household: mockHousehold,
+        householdRole: 'admin',
+      } as any);
+
+      mockHouseholdService.listMembers.mockResolvedValue(mockMembers);
+      mockHouseholdService.listInvitations.mockResolvedValue(mockInvitations);
+    });
+
+    it('should cancel invitation successfully', async () => {
+      vi.mocked(householdActions.cancelInvitation).mockResolvedValue({
+        success: true,
+        data: null,
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const invitationId = mockInvitations[0]!.id;
+
+      await act(async () => {
+        await result.current.cancelInvitation(invitationId);
+      });
+
+      expect(householdActions.cancelInvitation).toHaveBeenCalledWith(invitationId);
+    });
+
+    it('should remove invitation from state', async () => {
+      vi.mocked(householdActions.cancelInvitation).mockResolvedValue({
+        success: true,
+        data: null,
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.invitations).toHaveLength(1);
+
+      await act(async () => {
+        await result.current.cancelInvitation(mockInvitations[0]!.id);
+      });
+
+      expect(result.current.invitations).toHaveLength(0);
+    });
+
+    it('should handle errors', async () => {
+      const errorMessage = 'Failed to cancel invitation';
+      vi.mocked(householdActions.cancelInvitation).mockResolvedValue({
+        success: false,
+        error: { message: errorMessage },
+      } as any);
+
+      const { result } = renderHook(() => useHousehold());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      await act(async () => {
+        await expect(result.current.cancelInvitation(mockInvitations[0]!.id)).rejects.toThrow(
+          errorMessage,
+        );
+      });
     });
   });
 });
