@@ -115,7 +115,7 @@ export class ShortlistService extends BaseService {
 
   /**
    * Get all shortlisted recipes for household
-   * Includes recipe details and user attribution
+   * Includes recipe details and user attribution with display names
    *
    * @param householdId - Household ID to get shortlist for
    * @returns Array of shortlisted recipes with user attribution
@@ -126,18 +126,31 @@ export class ShortlistService extends BaseService {
       const { data, error } = await this.supabase
         .from('recipe_shortlists')
         .select('*, recipes(*)')
-        .eq('household_id', householdId);
+        .eq('household_id', householdId)
+        .order('added_at', { ascending: false });
 
       if (error) throw error;
-      if (!data) return [];
+      if (!data || data.length === 0) return [];
 
-      // Transform database response to ShortlistItem format
+      // Extract unique user IDs for batch profile lookup
+      const userIds = [...new Set(data.map((row) => row.added_by_user_id))];
+
+      // Fetch profiles in single query
+      const { data: profilesData } = await this.supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds);
+
+      // Build lookup map for O(1) access
+      const profilesMap = new Map((profilesData ?? []).map((p) => [p.id, p.display_name]));
+
+      // Transform database response to ShortlistItem format with user names
       return data.map((row) => ({
         id: row.id,
         recipe: row.recipes as unknown as Recipe,
         addedBy: {
           id: row.added_by_user_id as UserId,
-          name: 'User', // TODO: Add user name lookup
+          name: profilesMap.get(row.added_by_user_id) ?? 'Unknown member',
         },
         addedAt: new Date(row.added_at),
       }));
