@@ -19,11 +19,13 @@ import { useMemo, useState } from 'react';
 
 import { RecipeGrid } from './RecipeGrid';
 
+import { useAuth } from '@/hooks/useAuth';
 import { useRecipeFilters } from '@/hooks/useRecipeFilters';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useShortlistStore } from '@/stores/useShortlistStore';
 
 export function WhatCanICookPanel() {
+  const { user } = useAuth();
   const { recipes, loading, error } = useRecipes();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -44,9 +46,12 @@ export function WhatCanICookPanel() {
   const { add: addToShortlist, hasRecipe } = useShortlistStore();
 
   const handleAddToShortlist = async (recipeId: RecipeId) => {
-    // TODO: Get current user ID from auth context
-    const userId = 'temp-user-id' as UserId;
-    await addToShortlist(recipeId, userId);
+    if (!user?.profile) {
+      console.error('Cannot add to shortlist: user not authenticated');
+      return;
+    }
+
+    await addToShortlist(recipeId, user.profile.id as UserId);
   };
 
   const toggleTag = (tag: string) => {
