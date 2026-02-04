@@ -1,5 +1,5 @@
-import { RecipeQueueService, RecipeService } from '@commontable/api-client';
-import type { QueueEntry, Recipe, RecipeId } from '@commontable/types';
+import { RecipeQueueService, RecipeService, type QueueEntry } from '@commontable/api-client';
+import type { Recipe, RecipeId } from '@commontable/types';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
@@ -21,66 +21,70 @@ describe('useRecipeQueue Hook', () => {
     id: 'recipe-1' as RecipeId,
     household_id: 'household-1' as any,
     title: 'Pasta Carbonara',
-    servings: 4,
-    meal_type: 'dinner',
+    description: null,
+    current_version_id: 'version-1' as any,
+    rolling_score: null,
+    tags: [],
+    is_favorite: false,
+    last_cooked_at: null,
+    created_by: 'user-1' as any,
+    created_at: new Date('2024-01-01T00:00:00Z'),
+    updated_at: new Date('2024-01-01T00:00:00Z'),
     cuisine: 'italian',
+    meal_type: 'main_dish',
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
     cooking_method: 'stovetop',
     dietary_categories: ['vegetarian'],
     dish_category: 'main',
-    current_version_id: 'version-1' as any,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-    created_by: 'user-1' as any,
-    last_cooked_at: null,
-    last_cooked_by: null,
-    is_favorite: false,
-    tags: [],
   };
 
   const mockRecipe2: Recipe = {
     id: 'recipe-2' as RecipeId,
     household_id: 'household-1' as any,
     title: 'Caesar Salad',
-    servings: 2,
-    meal_type: 'lunch',
+    description: null,
+    current_version_id: 'version-2' as any,
+    rolling_score: null,
+    tags: [],
+    is_favorite: false,
+    last_cooked_at: null,
+    created_by: 'user-1' as any,
+    created_at: new Date('2024-01-02T00:00:00Z'),
+    updated_at: new Date('2024-01-02T00:00:00Z'),
     cuisine: 'american',
+    meal_type: 'side_dish',
+    key_ingredients: [],
+    priority: null,
+    status: 'suggested',
     cooking_method: 'no_cook',
     dietary_categories: [],
     dish_category: 'salad',
-    current_version_id: 'version-2' as any,
-    created_at: '2024-01-02T00:00:00Z',
-    updated_at: '2024-01-02T00:00:00Z',
-    created_by: 'user-1' as any,
-    last_cooked_at: null,
-    last_cooked_by: null,
-    is_favorite: false,
-    tags: [],
   };
 
   const mockQueueEntry1: QueueEntry = {
     id: 'entry-1',
     recipe_id: 'recipe-1' as RecipeId,
-    user_id: 'user-1' as any,
+    added_by: 'user-1' as any,
     household_id: 'household-1' as any,
     status: 'queued',
     position: 1,
-    created_at: '2024-01-10T00:00:00Z',
-    updated_at: '2024-01-10T00:00:00Z',
-    completed_at: null,
-    rating: null,
+    notes: null,
+    created_at: new Date('2024-01-10T00:00:00Z'),
+    updated_at: new Date('2024-01-10T00:00:00Z'),
   };
 
   const mockQueueEntry2: QueueEntry = {
     id: 'entry-2',
     recipe_id: 'recipe-2' as RecipeId,
-    user_id: 'user-1' as any,
+    added_by: 'user-1' as any,
     household_id: 'household-1' as any,
     status: 'queued',
     position: 2,
-    created_at: '2024-01-11T00:00:00Z',
-    updated_at: '2024-01-11T00:00:00Z',
-    completed_at: null,
-    rating: null,
+    notes: null,
+    created_at: new Date('2024-01-11T00:00:00Z'),
+    updated_at: new Date('2024-01-11T00:00:00Z'),
   };
 
   const mockQueueService = {

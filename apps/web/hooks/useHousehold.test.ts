@@ -6,6 +6,7 @@ import type {
   AddManagedMemberInput,
   Household,
   HouseholdId,
+  ProfileId,
 } from '@commontable/types';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -759,7 +760,7 @@ describe('useHousehold Hook', () => {
 
       const { result } = renderHook(() => useHousehold());
 
-      await expect(result.current.updateMemberRole('user-1', 'admin')).rejects.toThrow(
+      await expect(result.current.updateMemberRole('user-1' as ProfileId, 'admin')).rejects.toThrow(
         'No household selected',
       );
     });

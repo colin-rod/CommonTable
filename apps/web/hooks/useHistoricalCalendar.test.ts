@@ -1,5 +1,11 @@
 import { CookingEventService } from '@commontable/api-client';
-import type { CookingEvent, Household, HouseholdId, RecipeId } from '@commontable/types';
+import type {
+  CookingEvent,
+  CookingEventId,
+  Household,
+  HouseholdId,
+  RecipeId,
+} from '@commontable/types';
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
@@ -32,29 +38,27 @@ describe('useHistoricalCalendar Hook', () => {
   };
 
   const mockCookingEvent1: CookingEvent = {
-    id: 'event-1',
+    id: 'event-1' as CookingEventId,
     recipe_id: 'recipe-1' as RecipeId,
+    recipe_version_id: 'version-1' as any,
     household_id: mockHouseholdId,
     cooked_by: 'user-1' as any,
-    cooked_at: '2024-01-15T12:00:00Z',
-    servings: 4,
+    cooked_at: new Date('2024-01-15T12:00:00Z'),
+    servings_made: 4,
     rating: 5,
     notes: 'Delicious!',
-    created_at: '2024-01-15T12:00:00Z',
-    updated_at: '2024-01-15T12:00:00Z',
   };
 
   const mockCookingEvent2: CookingEvent = {
-    id: 'event-2',
+    id: 'event-2' as CookingEventId,
     recipe_id: 'recipe-2' as RecipeId,
+    recipe_version_id: 'version-2' as any,
     household_id: mockHouseholdId,
     cooked_by: 'user-2' as any,
-    cooked_at: '2024-01-20T18:00:00Z',
-    servings: 2,
+    cooked_at: new Date('2024-01-20T18:00:00Z'),
+    servings_made: 2,
     rating: 4,
     notes: null,
-    created_at: '2024-01-20T18:00:00Z',
-    updated_at: '2024-01-20T18:00:00Z',
   };
 
   const mockCookingEventService = {

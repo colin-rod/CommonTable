@@ -24,14 +24,13 @@ describe('useCookingEvents Hook', () => {
   const mockCookingEvent: CookingEvent = {
     id: 'event-1' as CookingEventId,
     recipe_id: 'recipe-1' as RecipeId,
+    recipe_version_id: 'version-1' as any,
     household_id: 'household-1' as HouseholdId,
     cooked_by: 'user-1' as any,
-    cooked_at: '2024-01-15T12:00:00Z',
-    servings: 4,
+    cooked_at: new Date('2024-01-15T12:00:00Z'),
+    servings_made: 4,
     rating: 5,
     notes: 'Delicious!',
-    created_at: '2024-01-15T12:00:00Z',
-    updated_at: '2024-01-15T12:00:00Z',
   };
 
   beforeEach(() => {
@@ -42,8 +41,9 @@ describe('useCookingEvents Hook', () => {
     it('should create cooking event successfully', async () => {
       const input: CreateCookingEventInput = {
         recipe_id: 'recipe-1' as RecipeId,
-        cooked_at: '2024-01-15T12:00:00Z',
-        servings: 4,
+        recipe_version_id: 'version-1' as any,
+        cooked_at: new Date('2024-01-15T12:00:00Z'),
+        servings_made: 4,
         rating: 5,
         notes: 'Delicious!',
       };
@@ -70,8 +70,9 @@ describe('useCookingEvents Hook', () => {
     it('should handle errors', async () => {
       const input: CreateCookingEventInput = {
         recipe_id: 'recipe-1' as RecipeId,
-        cooked_at: '2024-01-15T12:00:00Z',
-        servings: 4,
+        recipe_version_id: 'version-1' as any,
+        cooked_at: new Date('2024-01-15T12:00:00Z'),
+        servings_made: 4,
       };
 
       const errorMessage = 'Failed to log meal';
@@ -96,8 +97,9 @@ describe('useCookingEvents Hook', () => {
     it('should set loading state correctly', async () => {
       const input: CreateCookingEventInput = {
         recipe_id: 'recipe-1' as RecipeId,
-        cooked_at: '2024-01-15T12:00:00Z',
-        servings: 4,
+        recipe_version_id: 'version-1' as any,
+        cooked_at: new Date('2024-01-15T12:00:00Z'),
+        servings_made: 4,
       };
 
       vi.mocked(cookingEventActions.createCookingEvent).mockResolvedValue({
@@ -119,8 +121,9 @@ describe('useCookingEvents Hook', () => {
     it('should handle thrown errors', async () => {
       const input: CreateCookingEventInput = {
         recipe_id: 'recipe-1' as RecipeId,
-        cooked_at: '2024-01-15T12:00:00Z',
-        servings: 4,
+        recipe_version_id: 'version-1' as any,
+        cooked_at: new Date('2024-01-15T12:00:00Z'),
+        servings_made: 4,
       };
 
       const error = new Error('Network error');
@@ -285,8 +288,9 @@ describe('useCookingEvents Hook', () => {
     it('should clear error on successful operation after failure', async () => {
       const input: CreateCookingEventInput = {
         recipe_id: 'recipe-1' as RecipeId,
-        cooked_at: '2024-01-15T12:00:00Z',
-        servings: 4,
+        recipe_version_id: 'version-1' as any,
+        cooked_at: new Date('2024-01-15T12:00:00Z'),
+        servings_made: 4,
       };
 
       // First call fails
