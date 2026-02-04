@@ -49,27 +49,28 @@ serve(async (req) => {
   }
 
   try {
-    // Validate authentication
+    // Validate authentication token exists
     const token = getAuthToken(req);
 
-    // Verify token with Supabase Auth
+    // Create Supabase client (Edge Runtime automatically handles JWT from Authorization header)
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       throw new EdgeFunctionError('Missing Supabase configuration', 500, 'CONFIG_ERROR');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: { Authorization: `Bearer ${token}` },
       },
     });
 
+    // Get authenticated user from context (Edge Runtime populates user from JWT)
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser(token);
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       throw new UnauthorizedError('Invalid or expired token');
