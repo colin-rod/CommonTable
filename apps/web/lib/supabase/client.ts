@@ -5,9 +5,9 @@ import { createBrowserClient } from '@supabase/ssr';
 // Uses NEXT_PUBLIC_* variables only (publishable key, RLS enforced)
 export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabasePublishableKey) {
+  if (!supabaseUrl || !supabaseAnonKey) {
     if (typeof window === 'undefined') {
       return new Proxy(
         {},
@@ -22,5 +22,5 @@ export function createClient() {
     throw new Error('Missing public Supabase environment variables');
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabasePublishableKey);
+  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 }
