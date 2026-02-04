@@ -202,9 +202,6 @@ describe('RecipeService', () => {
         p_key_ingredients: [],
         p_priority: undefined,
         p_status: 'suggested',
-        cooking_method: undefined,
-        dietary_categories: [],
-        dish_category: undefined,
         // NEW metadata fields for queue lanes (defaults when not provided)
         p_cooking_method: undefined,
         p_dietary_categories: [], // Default empty array from schema
@@ -282,9 +279,6 @@ describe('RecipeService', () => {
         p_key_ingredients: ['vegetables'],
         p_priority: undefined,
         p_status: 'suggested',
-        cooking_method: undefined,
-        dietary_categories: [],
-        dish_category: undefined,
         // NEW metadata fields for queue lanes
         p_cooking_method: 'quick',
         p_dietary_categories: ['vegetarian', 'vegan'],

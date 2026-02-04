@@ -51,7 +51,7 @@ export function WhatCanICookPanel() {
       return;
     }
 
-    await addToShortlist(recipeId, user.id);
+    await addToShortlist(recipeId, user.profile.id);
   };
 
   const toggleTag = (tag: string) => {
