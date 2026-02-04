@@ -12,8 +12,9 @@ This directory should contain PWA icons for installation on mobile devices.
 - Use the CommonTable logo/branding
 - Follow Material Design icon guidelines
 - Icons should be simple and recognizable at small sizes
-- Use the primary brand color (#1976d2) or a simplified version
+- Use the primary brand color (#4D7C0F) with an off-white foreground (#F8F7F2)
 
-## TODO
+## Current Assets
 
-Generate actual PWA icons based on the CommonTable branding.
+This directory contains the generated PWA icons (192x192 and 512x512) using a
+minimal plate + fork mark in the primary brand color.
