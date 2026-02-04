@@ -1,6 +1,6 @@
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
-import { ValidationError } from './errors.ts';
+import { UnauthorizedError, ValidationError } from './errors.ts';
 
 /**
  * Validate request body against a Zod schema
@@ -48,13 +48,13 @@ export function getAuthToken(req: Request): string {
   const authHeader = req.headers.get('Authorization');
 
   if (!authHeader) {
-    throw new ValidationError('Missing Authorization header');
+    throw new UnauthorizedError('Missing Authorization header');
   }
 
   const token = authHeader.replace('Bearer ', '');
 
   if (!token) {
-    throw new ValidationError('Invalid Authorization header format');
+    throw new UnauthorizedError('Invalid Authorization header format');
   }
 
   return token;

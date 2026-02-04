@@ -72,8 +72,19 @@ serve(async (req) => {
       error: authError,
     } = await supabase.auth.getUser();
 
+    if (authError) {
+      console.error('Token validation failed:', {
+        message: authError.message,
+        code: authError.code,
+        status: authError.status,
+        supabaseUrl: supabaseUrl, // Log to verify correct instance
+      });
+    }
+
     if (authError || !user) {
-      throw new UnauthorizedError('Invalid or expired token');
+      throw new UnauthorizedError(
+        `Invalid or expired token: ${authError?.message || 'No user found'}`,
+      );
     }
 
     // Validate request body
