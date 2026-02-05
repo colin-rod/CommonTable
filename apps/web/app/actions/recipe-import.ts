@@ -59,6 +59,47 @@ function formatError(error: unknown): { message: string; code?: string } {
   return { message: 'An unexpected error occurred' };
 }
 
+async function parseInvokeError(error: unknown): Promise<{
+  message: string;
+  status?: number;
+  edgeCode?: string;
+}> {
+  const fallbackMessage = 'Import service request failed';
+
+  if (!error || typeof error !== 'object') {
+    return { message: fallbackMessage };
+  }
+
+  const errorWithContext = error as {
+    message?: string;
+    context?: {
+      status?: number;
+      statusText?: string;
+      json?: () => Promise<unknown>;
+    };
+  };
+
+  const status = errorWithContext.context?.status;
+  let edgeCode: string | undefined;
+  let message =
+    errorWithContext.message ||
+    (status
+      ? `HTTP ${status}: ${errorWithContext.context?.statusText || 'Request failed'}`
+      : null) ||
+    fallbackMessage;
+
+  if (typeof errorWithContext.context?.json === 'function') {
+    const errorData = await errorWithContext.context.json().catch(() => null);
+    if (errorData && typeof errorData === 'object') {
+      const payload = errorData as { error?: string; message?: string; code?: string };
+      message = payload.error || payload.message || message;
+      edgeCode = payload.code;
+    }
+  }
+
+  return { message, status, edgeCode };
+}
+
 /**
  * Fetch recipe preview from URL using the recipe-import Edge Function
  *
@@ -93,40 +134,35 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
       };
     }
 
-    // Get Supabase project URL from environment
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!supabaseUrl) {
-      throw new Error('NEXT_PUBLIC_SUPABASE_URL not configured');
-    }
-
-    // Call recipe-import Edge Function
-    // eslint-disable-next-line no-undef
-    const response = await fetch(`${supabaseUrl}/functions/v1/recipe-import`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ url }),
+    // Call recipe-import Edge Function via Supabase client.
+    const { data, error } = await supabase.functions.invoke('recipe-import', {
+      body: { url },
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+    if (error) {
+      const parsedError = await parseInvokeError(error);
+      const errorCode =
+        parsedError.edgeCode ||
+        (parsedError.status === 401 ? 'UNAUTHORIZED' : 'EDGE_FUNCTION_ERROR');
+
+      console.error('recipe-import invoke failed', {
+        status: parsedError.status,
+        code: errorCode,
+        message: parsedError.message,
+      });
 
       return {
         success: false,
         error: {
-          message: errorMessage,
-          code: response.status === 401 ? 'UNAUTHORIZED' : 'EDGE_FUNCTION_ERROR',
+          message: parsedError.message,
+          code: errorCode,
         },
       };
     }
 
-    const result = await response.json();
-
-    // Edge Function returns { data: RecipeImportResponse }
-    if (!result.data) {
+    // supabase.functions.invoke returns the function payload body.
+    const result = data as { data?: RecipeImportResponse } | null;
+    if (!result?.data) {
       return {
         success: false,
         error: { message: 'Invalid response from import service', code: 'INVALID_RESPONSE' },
