@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { fetchRecipePreview } from './recipe-import';
 
@@ -26,6 +26,8 @@ vi.mock('@/lib/supabase/server', () => ({
 describe('recipe-import server actions', () => {
   const mockUser = { id: 'auth-user-1', email: 'test@example.com' };
   const recipeUrl = 'https://www.allrecipes.com/recipe/24074/alysias-basic-meat-lasagna/';
+  const originalAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const originalPublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   const mockPreview = {
     preview: {
@@ -44,6 +46,8 @@ describe('recipe-import server actions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = 'test-publishable-key';
 
     mockAuth.getUser.mockResolvedValue({
       data: { user: mockUser },
@@ -54,6 +58,20 @@ describe('recipe-import server actions', () => {
       data: { session: { access_token: 'test-access-token' } },
       error: null,
     });
+  });
+
+  afterEach(() => {
+    if (originalAnonKey === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalAnonKey;
+    }
+
+    if (originalPublishableKey === undefined) {
+      delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    } else {
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = originalPublishableKey;
+    }
   });
 
   it('returns success data when recipe-import function invocation succeeds', async () => {
@@ -67,6 +85,29 @@ describe('recipe-import server actions', () => {
     expect(result).toEqual({ success: true, data: mockPreview });
     expect(mockFunctions.invoke).toHaveBeenCalledWith('recipe-import', {
       body: { url: recipeUrl },
+      headers: {
+        Authorization: 'Bearer test-access-token',
+        apikey: 'test-anon-key',
+      },
+    });
+  });
+
+  it('falls back to publishable key when anon key is missing', async () => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    mockFunctions.invoke.mockResolvedValue({
+      data: { data: mockPreview },
+      error: null,
+    });
+
+    const result = await fetchRecipePreview(recipeUrl);
+
+    expect(result).toEqual({ success: true, data: mockPreview });
+    expect(mockFunctions.invoke).toHaveBeenCalledWith('recipe-import', {
+      body: { url: recipeUrl },
+      headers: {
+        Authorization: 'Bearer test-access-token',
+        apikey: 'test-publishable-key',
+      },
     });
   });
 

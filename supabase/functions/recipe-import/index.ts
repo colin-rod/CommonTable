@@ -54,13 +54,15 @@ serve(async (req) => {
 
     // Create Supabase client (Edge Runtime automatically handles JWT from Authorization header)
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const supabasePublishableKey = Deno.env.get('PUBLISHABLE_KEY');
+    const supabaseApiKey = supabaseAnonKey || supabasePublishableKey;
 
-    if (!supabaseUrl || !supabasePublishableKey) {
+    if (!supabaseUrl || !supabaseApiKey) {
       throw new EdgeFunctionError('Missing Supabase configuration', 500, 'CONFIG_ERROR');
     }
 
-    const supabase = createClient(supabaseUrl, supabasePublishableKey, {
+    const supabase = createClient(supabaseUrl, supabaseApiKey, {
       global: {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -70,7 +72,7 @@ serve(async (req) => {
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser(token);
 
     if (authError) {
       console.error('Token validation failed:', {

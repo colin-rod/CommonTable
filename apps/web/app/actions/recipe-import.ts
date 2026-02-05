@@ -134,9 +134,27 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
       };
     }
 
+    const apiKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!apiKey) {
+      return {
+        success: false,
+        error: { message: 'Missing Supabase API key configuration', code: 'CONFIG_ERROR' },
+      };
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY is missing; falling back to publishable key');
+    }
+
     // Call recipe-import Edge Function via Supabase client.
     const { data, error } = await supabase.functions.invoke('recipe-import', {
       body: { url },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: apiKey,
+      },
     });
 
     if (error) {
