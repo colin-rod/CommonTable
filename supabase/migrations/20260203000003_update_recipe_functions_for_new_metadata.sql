@@ -120,7 +120,7 @@ BEGIN
 
   RETURN v_recipe_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =============================================================================
 -- COMMENTS FOR DOCUMENTATION
