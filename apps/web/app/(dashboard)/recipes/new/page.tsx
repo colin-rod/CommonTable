@@ -63,6 +63,9 @@ export default function CreateRecipePage() {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);

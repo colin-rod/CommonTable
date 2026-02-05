@@ -1,7 +1,13 @@
 'use client';
 
-import type { CreateCalendarEntryInput, UpdateCalendarEntryInput } from '@commontable/api-client';
-import type { MealSlot, RecipeId, CalendarEntryId, CalendarEntry } from '@commontable/types';
+import type {
+  CreateCalendarEntryInput,
+  UpdateCalendarEntryInput,
+  MealSlot,
+  RecipeId,
+  CalendarEntryId,
+  CalendarEntry,
+} from '@commontable/types';
 import { Box, CircularProgress, Typography, Snackbar } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect } from 'react';

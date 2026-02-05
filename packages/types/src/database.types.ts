@@ -532,6 +532,57 @@ export type Database = {
           },
         ];
       };
+      recipe_queue: {
+        Row: {
+          added_by: string;
+          created_at: string;
+          household_id: string;
+          id: string;
+          notes: string | null;
+          position: number;
+          recipe_id: string;
+          status: Database['public']['Enums']['queue_status'];
+          updated_at: string;
+        };
+        Insert: {
+          added_by: string;
+          created_at?: string;
+          household_id: string;
+          id?: string;
+          notes?: string | null;
+          position?: number;
+          recipe_id: string;
+          status?: Database['public']['Enums']['queue_status'];
+          updated_at?: string;
+        };
+        Update: {
+          added_by?: string;
+          created_at?: string;
+          household_id?: string;
+          id?: string;
+          notes?: string | null;
+          position?: number;
+          recipe_id?: string;
+          status?: Database['public']['Enums']['queue_status'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recipe_queue_household_id_fkey';
+            columns: ['household_id'];
+            isOneToOne: false;
+            referencedRelation: 'households';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'recipe_queue_recipe_id_fkey';
+            columns: ['recipe_id'];
+            isOneToOne: false;
+            referencedRelation: 'recipes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       recipe_shortlists: {
         Row: {
           added_at: string;
@@ -662,11 +713,14 @@ export type Database = {
       };
       recipes: {
         Row: {
+          cooking_method: Database['public']['Enums']['cooking_method'] | null;
           created_at: string;
           created_by: string;
           cuisine: Database['public']['Enums']['cuisine_type'] | null;
           current_version_id: string | null;
           description: string | null;
+          dietary_categories: Database['public']['Enums']['dietary_category'][] | null;
+          dish_category: Database['public']['Enums']['dish_category'] | null;
           household_id: string;
           id: string;
           is_favorite: boolean;
@@ -681,11 +735,14 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          cooking_method?: Database['public']['Enums']['cooking_method'] | null;
           created_at?: string;
           created_by: string;
           cuisine?: Database['public']['Enums']['cuisine_type'] | null;
           current_version_id?: string | null;
           description?: string | null;
+          dietary_categories?: Database['public']['Enums']['dietary_category'][] | null;
+          dish_category?: Database['public']['Enums']['dish_category'] | null;
           household_id: string;
           id?: string;
           is_favorite?: boolean;
@@ -700,11 +757,14 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          cooking_method?: Database['public']['Enums']['cooking_method'] | null;
           created_at?: string;
           created_by?: string;
           cuisine?: Database['public']['Enums']['cuisine_type'] | null;
           current_version_id?: string | null;
           description?: string | null;
+          dietary_categories?: Database['public']['Enums']['dietary_category'][] | null;
+          dish_category?: Database['public']['Enums']['dish_category'] | null;
           household_id?: string;
           id?: string;
           is_favorite?: boolean;
@@ -791,8 +851,11 @@ export type Database = {
       create_recipe_with_version: {
         Args: {
           p_cook_time_minutes: number;
+          p_cooking_method?: Database['public']['Enums']['cooking_method'];
           p_cuisine?: Database['public']['Enums']['cuisine_type'];
           p_description: string;
+          p_dietary_categories?: Database['public']['Enums']['dietary_category'][];
+          p_dish_category?: Database['public']['Enums']['dish_category'];
           p_household_id: string;
           p_ingredients_json: Json;
           p_key_ingredients?: string[];
@@ -927,6 +990,15 @@ export type Database = {
       };
     };
     Enums: {
+      cooking_method:
+        | 'quick'
+        | 'slow_cook'
+        | 'instant_pot'
+        | 'bake'
+        | 'grill'
+        | 'stovetop'
+        | 'air_fryer'
+        | 'no_cook';
       cuisine_type:
         | 'african'
         | 'american'
@@ -957,8 +1029,21 @@ export type Database = {
         | 'thai'
         | 'vegetable'
         | 'vietnamese';
+      dietary_category:
+        | 'vegetarian'
+        | 'vegan'
+        | 'gluten_free'
+        | 'dairy_free'
+        | 'keto'
+        | 'paleo'
+        | 'low_carb'
+        | 'low_fat'
+        | 'high_protein'
+        | 'pescatarian';
+      dish_category: 'main' | 'side' | 'appetizer' | 'soup' | 'salad' | 'bread' | 'condiment';
       meal_request_status: 'open' | 'planned' | 'dismissed';
       meal_type: 'main_dish' | 'side_dish' | 'breakfast' | 'dessert' | 'snack' | 'beverage';
+      queue_status: 'queued' | 'cooking' | 'cooked';
       recipe_status: 'suggested' | 'to_buy' | 'to_cook' | 'cooked';
     };
     CompositeTypes: {
@@ -1088,6 +1173,16 @@ export const Constants = {
   },
   public: {
     Enums: {
+      cooking_method: [
+        'quick',
+        'slow_cook',
+        'instant_pot',
+        'bake',
+        'grill',
+        'stovetop',
+        'air_fryer',
+        'no_cook',
+      ],
       cuisine_type: [
         'african',
         'american',
@@ -1119,8 +1214,22 @@ export const Constants = {
         'vegetable',
         'vietnamese',
       ],
+      dietary_category: [
+        'vegetarian',
+        'vegan',
+        'gluten_free',
+        'dairy_free',
+        'keto',
+        'paleo',
+        'low_carb',
+        'low_fat',
+        'high_protein',
+        'pescatarian',
+      ],
+      dish_category: ['main', 'side', 'appetizer', 'soup', 'salad', 'bread', 'condiment'],
       meal_request_status: ['open', 'planned', 'dismissed'],
       meal_type: ['main_dish', 'side_dish', 'breakfast', 'dessert', 'snack', 'beverage'],
+      queue_status: ['queued', 'cooking', 'cooked'],
       recipe_status: ['suggested', 'to_buy', 'to_cook', 'cooked'],
     },
   },

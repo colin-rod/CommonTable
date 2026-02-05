@@ -26,6 +26,9 @@ describe('EditCalendarEntryDialog', () => {
       key_ingredients: [],
       priority: null,
       status: 'suggested',
+      cooking_method: null,
+      dietary_categories: null,
+      dish_category: null,
     },
     {
       id: 'recipe-2' as RecipeId,
@@ -46,6 +49,9 @@ describe('EditCalendarEntryDialog', () => {
       key_ingredients: [],
       priority: null,
       status: 'suggested',
+      cooking_method: null,
+      dietary_categories: null,
+      dish_category: null,
     },
   ];
 

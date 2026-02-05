@@ -1,11 +1,7 @@
 'use client';
 
 import type { MealSlot, CalendarEntry } from '@commontable/types';
-import BreakfastIcon from '@mui/icons-material/Coffee';
-import SnackIcon from '@mui/icons-material/Cookie';
-import DinnerIcon from '@mui/icons-material/NightsStay';
-import LunchIcon from '@mui/icons-material/WbSunny';
-import { Paper, Typography, Box } from '@mui/material';
+import { Paper } from '@mui/material';
 
 import { AddMealButton } from './AddMealButton';
 import { CalendarEntryCard } from './CalendarEntryCard';
@@ -21,39 +17,16 @@ interface MealSlotCellProps {
 }
 
 /**
- * Get icon for meal slot
- */
-function getMealSlotIcon(slot: MealSlot) {
-  switch (slot) {
-    case 'breakfast':
-      return <BreakfastIcon fontSize="small" />;
-    case 'lunch':
-      return <LunchIcon fontSize="small" />;
-    case 'dinner':
-      return <DinnerIcon fontSize="small" />;
-    case 'snack':
-      return <SnackIcon fontSize="small" />;
-  }
-}
-
-/**
- * Get display name for meal slot
- */
-function getMealSlotLabel(slot: MealSlot): string {
-  return slot.charAt(0).toUpperCase() + slot.slice(1);
-}
-
-/**
- * Single meal slot cell with entry or add button
+ * Single meal slot cell with entry or add button (no header)
  *
  * Design System Compliance:
  * - Paper with elevation={1}
- * - Typography: body1 for label
- * - Material Icons for meal slots
- * - Spacing: 8px base grid
+ * - No meal icons or labels (moved to left column)
+ * - Spacing: 16px padding (p: 2)
+ * - Consistent minimum height
  */
 export function MealSlotCell({
-  mealSlot,
+  mealSlot: _mealSlot,
   entry,
   onAddMeal,
   onEdit,
@@ -62,15 +35,7 @@ export function MealSlotCell({
   onMarkComplete,
 }: MealSlotCellProps) {
   return (
-    <Paper elevation={1} sx={{ p: 2 }}>
-      {/* Meal slot label with icon */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-        {getMealSlotIcon(mealSlot)}
-        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-          {getMealSlotLabel(mealSlot)}
-        </Typography>
-      </Box>
-
+    <Paper elevation={1} sx={{ p: 2, minHeight: 100 }}>
       {/* Show entry or add button */}
       {entry ? (
         <CalendarEntryCard

@@ -375,13 +375,13 @@ import { describe, it, expect } from 'vitest';
 
 describe('example-function Edge Function', () => {
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   it('should process valid requests', async () => {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/example-function`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ message: 'Test' }),

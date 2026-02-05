@@ -1,7 +1,9 @@
 'use client';
 
-import CalendarIcon from '@mui/icons-material/CalendarToday';
+import BoltIcon from '@mui/icons-material/Bolt';
 import ExploreIcon from '@mui/icons-material/Explore';
+import HistoryIcon from '@mui/icons-material/History';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -12,6 +14,7 @@ import {
   AppBar,
   Badge,
   Box,
+  Button,
   Divider,
   Drawer,
   IconButton,
@@ -29,6 +32,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import type { ReactElement, ReactNode, MouseEvent } from 'react';
 import { useState } from 'react';
 
+import { QuickActionsDropdown } from '@/components/dashboard/QuickActions';
 import { WelcomeDialog } from '@/components/onboarding/WelcomeDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -57,9 +61,14 @@ const navItems: NavItem[] = [
     icon: <RestaurantIcon />,
   },
   {
-    label: 'Calendar',
+    label: 'Queue',
+    href: '/queue' as Route,
+    icon: <ListAltIcon />,
+  },
+  {
+    label: 'History',
     href: '/calendar',
-    icon: <CalendarIcon />,
+    icon: <HistoryIcon />,
   },
   {
     label: 'Tags',
@@ -119,6 +128,10 @@ export function DashboardLayout({
   // User menu state
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
 
+  // Quick actions menu state
+  const [quickActionsAnchor, setQuickActionsAnchor] = useState<null | HTMLElement>(null);
+  const quickActionsOpen = Boolean(quickActionsAnchor);
+
   /**
    * Toggle mobile drawer
    */
@@ -145,6 +158,20 @@ export function DashboardLayout({
    */
   const handleUserMenuClose = () => {
     setUserMenuAnchor(null);
+  };
+
+  /**
+   * Open quick actions menu
+   */
+  const handleQuickActionsOpen = (event: MouseEvent<HTMLElement>) => {
+    setQuickActionsAnchor(event.currentTarget);
+  };
+
+  /**
+   * Close quick actions menu
+   */
+  const handleQuickActionsClose = () => {
+    setQuickActionsAnchor(null);
   };
 
   /**
@@ -260,6 +287,26 @@ export function DashboardLayout({
           {/* Spacer */}
           <Box sx={{ flexGrow: 1 }} />
 
+          {/* Quick Actions dropdown */}
+          <Button
+            variant="outlined"
+            color="inherit"
+            startIcon={<BoltIcon />}
+            onClick={handleQuickActionsOpen}
+            aria-label="Quick actions menu"
+            aria-controls={quickActionsOpen ? 'quick-actions-menu' : undefined}
+            aria-haspopup="true"
+            aria-expanded={quickActionsOpen ? 'true' : undefined}
+            sx={{ mr: 2 }}
+          >
+            Quick Actions
+          </Button>
+          <QuickActionsDropdown
+            anchorEl={quickActionsAnchor}
+            open={quickActionsOpen}
+            onClose={handleQuickActionsClose}
+          />
+
           {/* User menu */}
           {user && (
             <>
@@ -331,7 +378,11 @@ export function DashboardLayout({
           '& .MuiDrawer-paper': {
             boxSizing: 'border-box',
             width: DRAWER_WIDTH,
-            position: 'static',
+            position: 'fixed',
+            height: '100vh',
+            top: 0,
+            left: 0,
+            zIndex: (theme) => theme.zIndex.drawer,
           },
         }}
         open

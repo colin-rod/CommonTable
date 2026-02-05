@@ -1,4 +1,13 @@
-import type { Recipe, RecipeId, RecipeVersionId, HouseholdId, UserId } from '@commontable/types';
+import type {
+  Recipe,
+  RecipeId,
+  RecipeVersionId,
+  HouseholdId,
+  UserId,
+  ProfileId,
+  AuthUserId,
+  User,
+} from '@commontable/types';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -9,6 +18,7 @@ import { WhatCanICookPanel } from './WhatCanICookPanel';
 const mockUseRecipes = vi.fn();
 const mockUseRecipeFilters = vi.fn();
 const mockUseShortlistStore = vi.fn();
+const mockUseAuth = vi.fn();
 
 vi.mock('@/hooks/useRecipes', () => ({
   useRecipes: () => mockUseRecipes(),
@@ -20,6 +30,10 @@ vi.mock('@/hooks/useRecipeFilters', () => ({
 
 vi.mock('@/stores/useShortlistStore', () => ({
   useShortlistStore: () => mockUseShortlistStore(),
+}));
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => mockUseAuth(),
 }));
 
 // Mock recipe data
@@ -42,6 +56,9 @@ const createMockRecipe = (id: string, title: string, tags: string[]): Recipe => 
   key_ingredients: [],
   priority: null,
   status: 'suggested',
+  cooking_method: null,
+  dietary_categories: null,
+  dish_category: null,
 });
 
 const mockRecipes: Recipe[] = [
@@ -49,6 +66,28 @@ const mockRecipes: Recipe[] = [
   createMockRecipe('recipe-2', 'Pizza Margherita', ['pizza', 'italian']),
   createMockRecipe('recipe-3', 'Chicken Curry', ['chicken', 'curry', 'indian']),
 ];
+
+// Mock authenticated user
+const mockAuthenticatedUser: User = {
+  id: 'auth-123' as UserId,
+  email: 'test@example.com',
+  profile: {
+    id: 'profile-456' as ProfileId,
+    auth_user_id: 'auth-123' as AuthUserId,
+    display_name: 'Test User',
+    avatar_url: null,
+    member_type: 'authenticated',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  household: {
+    id: 'household-789' as HouseholdId,
+    name: 'Test Household',
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+  },
+  household_role: 'member',
+};
 
 describe('WhatCanICookPanel', () => {
   const mockToggleFavorite = vi.fn();
@@ -74,6 +113,25 @@ describe('WhatCanICookPanel', () => {
       error: null,
       add: mockAddToShortlist,
       hasRecipe: () => false,
+    });
+
+    // Mock authenticated user by default
+    mockUseAuth.mockReturnValue({
+      user: mockAuthenticatedUser,
+      session: null,
+      household: mockAuthenticatedUser.household,
+      householdRole: 'member',
+      isAuthenticated: true,
+      isLoading: false,
+      isError: false,
+      error: null,
+      initialized: true,
+      signUp: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      resetPassword: vi.fn(),
+      updatePassword: vi.fn(),
+      clearError: vi.fn(),
     });
   });
 
@@ -349,6 +407,88 @@ describe('WhatCanICookPanel', () => {
       // First card should show "Added" button
       const addedButtons = screen.getAllByRole('button', { name: /added/i });
       expect(addedButtons.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Auth Context Integration', () => {
+    it('should use authenticated user profile ID when adding to shortlist', async () => {
+      const user = userEvent.setup();
+
+      render(<WhatCanICookPanel />);
+
+      const buttons = screen.getAllByRole('button', { name: /add to shortlist/i });
+      await user.click(buttons[0]!);
+
+      // Should be called with auth user ID (not profile ID)
+      expect(mockAddToShortlist).toHaveBeenCalledWith(
+        'recipe-1' as RecipeId,
+        'auth-123' as UserId, // ← Auth user ID from mockAuthenticatedUser
+      );
+    });
+
+    it('should not add to shortlist if user is not authenticated', async () => {
+      const user = userEvent.setup();
+
+      // Mock unauthenticated state
+      mockUseAuth.mockReturnValue({
+        user: null,
+        session: null,
+        household: null,
+        householdRole: null,
+        isAuthenticated: false,
+        isLoading: false,
+        isError: false,
+        error: null,
+        initialized: true,
+        signUp: vi.fn(),
+        signIn: vi.fn(),
+        signOut: vi.fn(),
+        resetPassword: vi.fn(),
+        updatePassword: vi.fn(),
+        clearError: vi.fn(),
+      });
+
+      render(<WhatCanICookPanel />);
+
+      const buttons = screen.getAllByRole('button', { name: /add to shortlist/i });
+      await user.click(buttons[0]!);
+
+      // Should NOT be called when user is not authenticated
+      expect(mockAddToShortlist).not.toHaveBeenCalled();
+    });
+
+    it('should not add to shortlist if user has no profile', async () => {
+      const user = userEvent.setup();
+
+      // Mock user without profile (edge case)
+      mockUseAuth.mockReturnValue({
+        user: {
+          ...mockAuthenticatedUser,
+          profile: null as any, // User without profile
+        },
+        session: null,
+        household: null,
+        householdRole: null,
+        isAuthenticated: true,
+        isLoading: false,
+        isError: false,
+        error: null,
+        initialized: true,
+        signUp: vi.fn(),
+        signIn: vi.fn(),
+        signOut: vi.fn(),
+        resetPassword: vi.fn(),
+        updatePassword: vi.fn(),
+        clearError: vi.fn(),
+      });
+
+      render(<WhatCanICookPanel />);
+
+      const buttons = screen.getAllByRole('button', { name: /add to shortlist/i });
+      await user.click(buttons[0]!);
+
+      // Should NOT be called when user has no profile
+      expect(mockAddToShortlist).not.toHaveBeenCalled();
     });
   });
 

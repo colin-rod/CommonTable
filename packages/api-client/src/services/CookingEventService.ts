@@ -10,12 +10,10 @@ import {
   type Database,
   CreateCookingEventSchema,
   UpdateCookingEventSchema,
-  ValidationError,
   NotFoundError,
   AppError,
 } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { z } from 'zod';
 
 import { BaseService } from './BaseService';
 
@@ -58,95 +56,95 @@ export class CookingEventService extends BaseService {
    * @throws {AppError} If user not authenticated or database operation fails
    */
   async create(input: CreateCookingEventInput): Promise<CookingEvent> {
-    try {
-      // 1. Validate input
-      const validated = CreateCookingEventSchema.parse(input);
+    // 1. Validate input
+    const validated = BaseService.validateInput(
+      CreateCookingEventSchema,
+      input,
+      'Invalid cooking event data',
+    );
 
-      // 2. Get current user
-      const {
-        data: { user },
-        error: authError,
-      } = await this.supabase.auth.getUser();
+    // 2. Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await this.supabase.auth.getUser();
 
-      if (authError) throw authError;
-      if (!user) {
-        throw new AppError('User not authenticated', 'UNAUTHORIZED', 401);
-      }
+    if (authError) {
+      BaseService.handleSupabaseError(authError, 'CookingEventService.create.auth');
+    }
+    if (!user) {
+      throw new AppError('User not authenticated', 'UNAUTHORIZED', 401);
+    }
 
-      const userId = user.id as UserId;
+    const userId = user.id as UserId;
 
-      // 3. Fetch recipe to get household_id
-      const { data: recipe, error: recipeError } = await this.supabase
-        .from('recipes')
-        .select('household_id')
-        .eq('id', validated.recipe_id)
-        .single();
+    // 3. Fetch recipe to get household_id
+    const { data: recipe, error: recipeError } = await this.supabase
+      .from('recipes')
+      .select('household_id')
+      .eq('id', validated.recipe_id)
+      .single();
 
-      if (recipeError || !recipe) {
-        throw new NotFoundError('Recipe', validated.recipe_id);
-      }
+    if (recipeError) {
+      BaseService.handleSupabaseError(recipeError, 'CookingEventService.create.fetchRecipe', {
+        recipe_id: validated.recipe_id,
+      });
+    }
+    if (!recipe) {
+      throw new NotFoundError('Recipe', validated.recipe_id);
+    }
 
-      const householdId = recipe.household_id as HouseholdId;
+    const householdId = recipe.household_id as HouseholdId;
 
-      // 4. Insert cooking event
-      const { data: cookingEvent, error: insertError } = await this.supabase
-        .from('cooking_events')
-        .insert({
-          recipe_id: validated.recipe_id,
-          recipe_version_id: validated.recipe_version_id,
-          household_id: householdId,
-          cooked_at: validated.cooked_at?.toISOString() || new Date().toISOString(),
-          servings_made: validated.servings_made ?? null,
-          rating: validated.rating ?? null,
-          notes: validated.notes ?? null,
-          cooked_by: userId,
-        })
-        .select()
-        .single();
+    // 4. Insert cooking event
+    const { data: cookingEvent, error: insertError } = await this.supabase
+      .from('cooking_events')
+      .insert({
+        recipe_id: validated.recipe_id,
+        recipe_version_id: validated.recipe_version_id,
+        household_id: householdId,
+        cooked_at: validated.cooked_at?.toISOString() || new Date().toISOString(),
+        servings_made: validated.servings_made ?? null,
+        rating: validated.rating ?? null,
+        notes: validated.notes ?? null,
+        cooked_by: userId,
+      })
+      .select()
+      .single();
 
-      if (insertError) throw insertError;
-      if (!cookingEvent) {
-        throw new AppError('Failed to create cooking event - no data returned', 'CREATE_ERROR');
-      }
+    if (insertError) {
+      BaseService.handleSupabaseError(insertError, 'CookingEventService.create.insert');
+    }
+    if (!cookingEvent) {
+      throw new AppError('Failed to create cooking event - no data returned', 'CREATE_ERROR');
+    }
 
-      // 6. Update recipe status to 'cooked' (auto-transition on cooking event)
-      const { error: recipeStatusError } = await this.supabase
-        .from('recipes')
-        .update({ status: 'cooked' })
-        .eq('id', validated.recipe_id);
+    // 6. Update recipe status to 'cooked' (auto-transition on cooking event)
+    const { error: recipeStatusError } = await this.supabase
+      .from('recipes')
+      .update({ status: 'cooked' })
+      .eq('id', validated.recipe_id);
 
-      if (recipeStatusError) {
-        console.error('Failed to update recipe status to cooked:', recipeStatusError);
+    if (recipeStatusError) {
+      console.error('Failed to update recipe status to cooked:', recipeStatusError);
+      // Non-fatal: cooking event was created successfully
+    }
+
+    // 7. If calendar_entry_id provided, update status to 'completed'
+    if (validated.calendar_entry_id) {
+      const { error: updateError } = await this.supabase
+        .from('calendar_entries')
+        .update({ status: 'completed' })
+        .eq('id', validated.calendar_entry_id);
+
+      if (updateError) {
+        console.error('Failed to update calendar entry status:', updateError);
         // Non-fatal: cooking event was created successfully
       }
-
-      // 7. If calendar_entry_id provided, update status to 'completed'
-      if (validated.calendar_entry_id) {
-        const { error: updateError } = await this.supabase
-          .from('calendar_entries')
-          .update({ status: 'completed' })
-          .eq('id', validated.calendar_entry_id);
-
-        if (updateError) {
-          console.error('Failed to update calendar entry status:', updateError);
-          // Non-fatal: cooking event was created successfully
-        }
-      }
-
-      // 8. Return created cooking event (convert date string to Date)
-      return {
-        ...cookingEvent,
-        cooked_at: new Date(cookingEvent.cooked_at),
-      } as unknown as CookingEvent;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new ValidationError('Invalid cooking event data', { errors: error.errors });
-      }
-      if (error instanceof AppError) throw error;
-
-      console.error('CookingEventService.create failed:', error);
-      throw new AppError('Failed to create cooking event', 'CREATE_ERROR', 500);
     }
+
+    // 8. Return created cooking event (convert date string to Date)
+    return BaseService.hydrateDates(cookingEvent, ['cooked_at']) as unknown as CookingEvent;
   }
 
   /**
@@ -158,31 +156,18 @@ export class CookingEventService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getById(id: CookingEventId): Promise<CookingEvent> {
-    try {
-      const { data, error } = await this.supabase
-        .from('cooking_events')
-        .select('*')
-        .eq('id', id)
-        .single();
+    const { data, error } = await this.supabase
+      .from('cooking_events')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-      if (error) throw error;
-      if (!data) throw new NotFoundError('CookingEvent', id);
-
-      return {
-        ...data,
-        cooked_at: new Date(data.cooked_at),
-      } as unknown as CookingEvent;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      // Check if it's a "not found" error from Supabase
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'PGRST116') {
-        throw new NotFoundError('CookingEvent', id);
-      }
-
-      console.error('CookingEventService.getById failed:', error);
-      throw new AppError('Failed to fetch cooking event', 'FETCH_ERROR', 500, { id });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.getById', { id });
     }
+    if (!data) throw new NotFoundError('CookingEvent', id);
+
+    return BaseService.hydrateDates(data, ['cooked_at']) as unknown as CookingEvent;
   }
 
   /**
@@ -193,25 +178,17 @@ export class CookingEventService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getByRecipeId(recipeId: RecipeId): Promise<CookingEvent[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('cooking_events')
-        .select('*')
-        .eq('recipe_id', recipeId)
-        .order('cooked_at', { ascending: false });
+    const { data, error } = await this.supabase
+      .from('cooking_events')
+      .select('*')
+      .eq('recipe_id', recipeId)
+      .order('cooked_at', { ascending: false });
 
-      if (error) throw error;
-
-      return (data ?? []).map((event) => ({
-        ...event,
-        cooked_at: new Date(event.cooked_at),
-      })) as unknown as CookingEvent[];
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('CookingEventService.getByRecipeId failed:', error);
-      throw new AppError('Failed to fetch cooking events', 'FETCH_ERROR', 500, { recipeId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.getByRecipeId', { recipeId });
     }
+
+    return BaseService.hydrateDatesArray(data ?? [], ['cooked_at']) as unknown as CookingEvent[];
   }
 
   /**
@@ -228,49 +205,46 @@ export class CookingEventService extends BaseService {
     limit: number = 50,
     offset: number = 0,
   ): Promise<CookingEventWithRecipeAndProfile[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('cooking_events')
-        .select(
-          `
-          *,
-          recipes!inner(title)
-        `,
-        )
-        .eq('household_id', householdId)
-        .order('cooked_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+    const { data, error } = await this.supabase
+      .from('cooking_events')
+      .select(
+        `
+        *,
+        recipes!inner(title)
+      `,
+      )
+      .eq('household_id', householdId)
+      .order('cooked_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-      if (error) throw error;
-
-      // Fetch profile information separately since there's no FK relationship
-      const profileIds = [...new Set((data ?? []).map((e) => e.cooked_by))];
-      const { data: profilesData } = await this.supabase
-        .from('profiles')
-        .select('id, display_name')
-        .in('id', profileIds);
-
-      const profilesMap = new Map((profilesData ?? []).map((p) => [p.id, p.display_name]));
-
-      return (data ?? []).map((event) => ({
-        id: event.id,
-        recipe_id: event.recipe_id,
-        recipe_version_id: event.recipe_version_id,
-        household_id: event.household_id,
-        cooked_at: new Date(event.cooked_at),
-        servings_made: event.servings_made,
-        rating: event.rating,
-        notes: event.notes,
-        cooked_by: event.cooked_by,
-        recipe_title: event.recipes?.title ?? 'Unknown recipe',
-        cooked_by_name: profilesMap.get(event.cooked_by) ?? 'Unknown member',
-      })) as unknown as CookingEventWithRecipeAndProfile[];
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('CookingEventService.getByHouseholdId failed:', error);
-      throw new AppError('Failed to fetch cooking events', 'FETCH_ERROR', 500, { householdId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.getByHouseholdId', {
+        householdId,
+      });
     }
+
+    // Fetch profile information separately since there's no FK relationship
+    const profileIds = [...new Set((data ?? []).map((e) => e.cooked_by))];
+    const { data: profilesData } = await this.supabase
+      .from('profiles')
+      .select('id, display_name')
+      .in('id', profileIds);
+
+    const profilesMap = new Map((profilesData ?? []).map((p) => [p.id, p.display_name]));
+
+    return (data ?? []).map((event) => ({
+      id: event.id,
+      recipe_id: event.recipe_id,
+      recipe_version_id: event.recipe_version_id,
+      household_id: event.household_id,
+      cooked_at: new Date(event.cooked_at),
+      servings_made: event.servings_made,
+      rating: event.rating,
+      notes: event.notes,
+      cooked_by: event.cooked_by,
+      recipe_title: event.recipes?.title ?? 'Unknown recipe',
+      cooked_by_name: profilesMap.get(event.cooked_by) ?? 'Unknown member',
+    })) as unknown as CookingEventWithRecipeAndProfile[];
   }
 
   /**
@@ -287,44 +261,37 @@ export class CookingEventService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async update(id: CookingEventId, input: UpdateCookingEventInput): Promise<CookingEvent> {
-    try {
-      const validated = UpdateCookingEventSchema.parse(input);
+    const validated = BaseService.validateInput(
+      UpdateCookingEventSchema,
+      input,
+      'Invalid cooking event update data',
+    );
 
-      // Check if cooking event exists first
-      await this.getById(id);
+    // Check if cooking event exists first
+    await this.getById(id);
 
-      const updateData: Record<string, unknown> = {};
-      if (validated.rating !== undefined) updateData.rating = validated.rating;
-      if (validated.notes !== undefined) updateData.notes = validated.notes;
-      if (validated.servings_made !== undefined) updateData.servings_made = validated.servings_made;
+    const updateData: Record<string, unknown> = {};
+    if (validated.rating !== undefined) updateData.rating = validated.rating;
+    if (validated.notes !== undefined) updateData.notes = validated.notes;
+    if (validated.servings_made !== undefined) updateData.servings_made = validated.servings_made;
 
-      if (Object.keys(updateData).length === 0) {
-        // No updates provided, return existing event
-        return await this.getById(id);
-      }
-
-      const { data, error } = await this.supabase
-        .from('cooking_events')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return {
-        ...data,
-        cooked_at: new Date(data.cooked_at),
-      } as unknown as CookingEvent;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new ValidationError('Invalid cooking event update data', { errors: error.errors });
-      }
-      if (error instanceof AppError) throw error;
-
-      console.error('CookingEventService.update failed:', error);
-      throw new AppError('Failed to update cooking event', 'UPDATE_ERROR', 500, { id });
+    if (Object.keys(updateData).length === 0) {
+      // No updates provided, return existing event
+      return await this.getById(id);
     }
+
+    const { data, error } = await this.supabase
+      .from('cooking_events')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.update', { id });
+    }
+
+    return BaseService.hydrateDates(data, ['cooked_at']) as unknown as CookingEvent;
   }
 
   /**
@@ -338,21 +305,90 @@ export class CookingEventService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async delete(id: CookingEventId): Promise<void> {
-    try {
-      // Check if cooking event exists first (throws NotFoundError if not found)
-      await this.getById(id);
+    // Check if cooking event exists first (throws NotFoundError if not found)
+    await this.getById(id);
 
-      const { error } = await this.supabase.from('cooking_events').delete().eq('id', id);
+    const { error } = await this.supabase.from('cooking_events').delete().eq('id', id);
 
-      if (error) throw error;
-
-      // Database triggers handle rolling_score and last_cooked_at automatically
-      // No manual recalculation needed
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('CookingEventService.delete failed:', error);
-      throw new AppError('Failed to delete cooking event', 'DELETE_ERROR', 500, { id });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.delete', { id });
     }
+
+    // Database triggers handle rolling_score and last_cooked_at automatically
+    // No manual recalculation needed
+  }
+
+  /**
+   * Get all cooking events for a household in a specific month
+   * Used for historical calendar view showing past cooking events
+   *
+   * @param householdId - Household ID
+   * @param year - Year (e.g., 2026)
+   * @param month - Month (1-12, where 1 = January)
+   * @returns Array of cooking events sorted by cooked_at ASC (oldest first)
+   * @throws {AppError} If database operation fails
+   */
+  async getEventsForMonth(
+    householdId: HouseholdId,
+    year: number,
+    month: number,
+  ): Promise<CookingEvent[]> {
+    // Calculate start and end of month in UTC
+    const startOfMonth = new Date(Date.UTC(year, month - 1, 1));
+    const endOfMonth = new Date(Date.UTC(year, month, 1));
+
+    const { data, error } = await this.supabase
+      .from('cooking_events')
+      .select('*')
+      .eq('household_id', householdId)
+      .gte('cooked_at', startOfMonth.toISOString())
+      .lt('cooked_at', endOfMonth.toISOString())
+      .order('cooked_at', { ascending: true });
+
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.getEventsForMonth', {
+        householdId,
+        year,
+        month,
+      });
+    }
+
+    return BaseService.hydrateDatesArray(data ?? [], ['cooked_at']) as unknown as CookingEvent[];
+  }
+
+  /**
+   * Get all cooking events for a household on a specific date
+   * Used for calendar day detail dialog showing all recipes cooked that day
+   *
+   * @param householdId - Household ID
+   * @param date - Target date
+   * @returns Array of cooking events sorted by cooked_at ASC (oldest first)
+   * @throws {AppError} If database operation fails
+   */
+  async getEventsForDate(householdId: HouseholdId, date: Date): Promise<CookingEvent[]> {
+    // Calculate start and end of day in UTC
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const day = date.getUTCDate();
+
+    const startOfDay = new Date(Date.UTC(year, month, day));
+    const endOfDay = new Date(Date.UTC(year, month, day + 1));
+
+    const { data, error } = await this.supabase
+      .from('cooking_events')
+      .select('*')
+      .eq('household_id', householdId)
+      .gte('cooked_at', startOfDay.toISOString())
+      .lt('cooked_at', endOfDay.toISOString())
+      .order('cooked_at', { ascending: true });
+
+    if (error) {
+      BaseService.handleSupabaseError(error, 'CookingEventService.getEventsForDate', {
+        householdId,
+        date,
+      });
+    }
+
+    return BaseService.hydrateDatesArray(data ?? [], ['cooked_at']) as unknown as CookingEvent[];
   }
 }

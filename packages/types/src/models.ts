@@ -1,10 +1,26 @@
 // Domain models
 
 // Import recipe metadata enum types from schemas to avoid duplication
-import type { CuisineType, MealType, RecipeStatus } from './schemas/recipe';
+import type { MealSlot } from './schemas/calendar';
+import type {
+  CuisineType,
+  MealType,
+  RecipeStatus,
+  CookingMethod,
+  DietaryCategory,
+  DishCategory,
+} from './schemas/recipe';
 
 // Re-export to maintain backward compatibility
-export type { CuisineType, MealType, RecipeStatus };
+export type {
+  CuisineType,
+  MealType,
+  RecipeStatus,
+  CookingMethod,
+  DietaryCategory,
+  DishCategory,
+  MealSlot,
+};
 
 // Branded ID types
 export type RecipeId = string & { __brand: 'RecipeId' };
@@ -22,6 +38,7 @@ export type CalendarEntryId = string & { __brand: 'CalendarEntryId' };
 export type CalendarEntryCommentId = string & { __brand: 'CalendarEntryCommentId' };
 export type MealRequestId = string & { __brand: 'MealRequestId' };
 export type CookingEventId = string & { __brand: 'CookingEventId' };
+export type QueueEntryId = string & { __brand: 'QueueEntryId' };
 
 // Recipe domain models
 export interface Recipe {
@@ -43,6 +60,9 @@ export interface Recipe {
   key_ingredients: string[];
   priority: number | null;
   status: RecipeStatus;
+  cooking_method: CookingMethod | null;
+  dietary_categories: DietaryCategory[] | null;
+  dish_category: DishCategory | null;
 }
 
 // Recipe with its current version data (for detail view)
@@ -153,8 +173,11 @@ export interface AiTagSuggestionWithTag extends AiTagSuggestion {
   tag: Tag;
 }
 
-// Meal slot type (shared by calendar_entries and meal_requests)
-export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+// Tag with usage count (from get_household_tags function)
+export interface TagWithUsageCount {
+  tag_name: string;
+  usage_count: number;
+}
 
 // Calendar entry status lifecycle
 export type CalendarEntryStatus = 'planned' | 'confirmed' | 'completed' | 'cancelled';

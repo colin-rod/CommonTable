@@ -19,3 +19,16 @@ export type CreateCalendarEntryCommentInput = z.infer<typeof CreateCalendarEntry
  * Calendar entry comment ID schema
  */
 export const CalendarEntryCommentIdSchema = z.string().uuid('Invalid comment ID');
+
+// =============================================================================
+// Meal Slot Schema
+// =============================================================================
+
+/**
+ * Meal slot schema
+ * Valid values: 'breakfast', 'lunch', 'dinner', 'snack'
+ * Used for calendar entries and meal requests
+ */
+export const MealSlotSchema = z.enum(['breakfast', 'lunch', 'dinner', 'snack']);
+
+export type MealSlot = z.infer<typeof MealSlotSchema>;

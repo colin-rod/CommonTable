@@ -6,8 +6,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useAuth } from './useAuth';
 import { useRecipeSearch } from './useRecipeSearch';
 
-import { createClient } from '@/lib/supabase/client';
-
 // Mock Supabase client
 vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn(() => ({})),
@@ -53,6 +51,9 @@ describe('useRecipeSearch Hook', () => {
       key_ingredients: [],
       priority: null,
       status: 'suggested',
+      cooking_method: null,
+      dietary_categories: null,
+      dish_category: null,
       rank: 0.95,
     },
     {
@@ -74,6 +75,9 @@ describe('useRecipeSearch Hook', () => {
       key_ingredients: [],
       priority: null,
       status: 'suggested',
+      cooking_method: null,
+      dietary_categories: null,
+      dish_category: null,
       rank: 0.87,
     },
   ];
@@ -340,6 +344,9 @@ describe('useRecipeSearch Hook', () => {
           key_ingredients: [],
           priority: null,
           status: 'suggested',
+          cooking_method: null,
+          dietary_categories: null,
+          dish_category: null,
           rank: 0.98,
         },
       ];

@@ -3,9 +3,15 @@ import type {
   AiTagSuggestionId,
   AiTagSuggestionWithTag,
   RecipeVersionId,
+  Database,
+  TagId,
+  HouseholdId,
+  UserId,
 } from '@commontable/types';
-import { AppError, NotFoundError } from '@commontable/types';
+import { NotFoundError } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
+
+import { BaseService } from './BaseService';
 
 /**
  * Service for managing AI tag suggestions
@@ -13,8 +19,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * Handles accepting/rejecting AI-generated tag suggestions for recipes.
  * Suggestions are created by the batch processing system and presented to users for review.
  */
-export class AiTagSuggestionService {
-  constructor(private readonly supabase: SupabaseClient) {}
+export class AiTagSuggestionService extends BaseService {
+  constructor(supabase: SupabaseClient<Database>) {
+    super(supabase);
+  }
 
   /**
    * Get pending suggestions for a recipe version
@@ -26,22 +34,37 @@ export class AiTagSuggestionService {
    * @throws {AppError} If database query fails
    */
   async getPendingByRecipeVersion(versionId: RecipeVersionId): Promise<AiTagSuggestionWithTag[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('ai_tag_suggestions')
-        .select('*, tag:tags(*)')
-        .eq('recipe_version_id', versionId)
-        .is('user_accepted', null);
+    const { data, error } = await this.supabase
+      .from('ai_tag_suggestions')
+      .select('*, tag:tags(*)')
+      .eq('recipe_version_id', versionId)
+      .is('user_accepted', null);
 
-      if (error) throw error;
-
-      return (data as AiTagSuggestionWithTag[]) ?? [];
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('AiTagSuggestionService.getPendingByRecipeVersion failed:', error);
-      throw new AppError('Failed to fetch pending suggestions', 'FETCH_ERROR', 500, { versionId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'AiTagSuggestionService.getPendingByRecipeVersion', {
+        versionId,
+      });
     }
+
+    if (!data) return [];
+
+    // Transform database response to branded types
+    return data.map((item) => ({
+      ...item,
+      id: item.id as AiTagSuggestionId,
+      recipe_version_id: item.recipe_version_id as RecipeVersionId,
+      tag_id: item.tag_id as unknown as TagId,
+      created_at: new Date(item.created_at),
+      accepted_at: item.accepted_at ? new Date(item.accepted_at) : null,
+      tag: {
+        ...item.tag,
+        id: item.tag.id as unknown as TagId,
+        household_id: item.tag.household_id as unknown as HouseholdId,
+        created_by: item.tag.created_by as unknown as UserId,
+        created_at: new Date(item.tag.created_at),
+        updated_at: new Date(item.tag.updated_at),
+      },
+    }));
   }
 
   /**
@@ -56,29 +79,31 @@ export class AiTagSuggestionService {
    * @throws {AppError} If database update fails
    */
   async accept(suggestionId: AiTagSuggestionId): Promise<AiTagSuggestion> {
-    try {
-      const { data, error } = await this.supabase
-        .from('ai_tag_suggestions')
-        .update({
-          user_accepted: true,
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', suggestionId)
-        .select()
-        .single();
+    const { data, error } = await this.supabase
+      .from('ai_tag_suggestions')
+      .update({
+        user_accepted: true,
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('id', suggestionId)
+      .select()
+      .single();
 
-      if (error) throw error;
-      if (!data) throw new NotFoundError('AI tag suggestion', suggestionId);
-
-      return data as AiTagSuggestion;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('AiTagSuggestionService.accept failed:', error);
-      throw new AppError('Failed to accept suggestion', 'UPDATE_ERROR', 500, {
+    if (error) {
+      BaseService.handleSupabaseError(error, 'AiTagSuggestionService.accept', {
         suggestionId,
       });
     }
+    if (!data) throw new NotFoundError('AI tag suggestion', suggestionId);
+
+    return {
+      ...data,
+      id: data.id as AiTagSuggestionId,
+      recipe_version_id: data.recipe_version_id as RecipeVersionId,
+      tag_id: data.tag_id as unknown as TagId,
+      created_at: new Date(data.created_at),
+      accepted_at: data.accepted_at ? new Date(data.accepted_at) : null,
+    };
   }
 
   /**
@@ -93,45 +118,45 @@ export class AiTagSuggestionService {
    * @throws {AppError} If database update fails
    */
   async reject(suggestionId: AiTagSuggestionId): Promise<AiTagSuggestion> {
-    try {
-      // First, update the suggestion to mark as rejected
-      const { data, error } = await this.supabase
-        .from('ai_tag_suggestions')
-        .update({
-          user_accepted: false,
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', suggestionId)
-        .select()
-        .single();
+    // First, update the suggestion to mark as rejected
+    const { data, error } = await this.supabase
+      .from('ai_tag_suggestions')
+      .update({
+        user_accepted: false,
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('id', suggestionId)
+      .select()
+      .single();
 
-      if (error) throw error;
-      if (!data) throw new NotFoundError('AI tag suggestion', suggestionId);
-
-      const suggestion = data as AiTagSuggestion;
-
-      // Remove the tag from recipe_version_tags
-      const { error: deleteError } = await this.supabase
-        .from('recipe_version_tags')
-        .delete()
-        .eq('recipe_version_id', suggestion.recipe_version_id)
-        .eq('tag_id', suggestion.tag_id);
-
-      if (deleteError) {
-        console.error('Failed to remove tag from recipe:', deleteError);
-        // Don't throw - suggestion was marked as rejected successfully
-        // Tag removal is a best-effort operation
-      }
-
-      return suggestion;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('AiTagSuggestionService.reject failed:', error);
-      throw new AppError('Failed to reject suggestion', 'UPDATE_ERROR', 500, {
-        suggestionId,
-      });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'AiTagSuggestionService.reject', { suggestionId });
     }
+    if (!data) throw new NotFoundError('AI tag suggestion', suggestionId);
+
+    const suggestion: AiTagSuggestion = {
+      ...data,
+      id: data.id as AiTagSuggestionId,
+      recipe_version_id: data.recipe_version_id as RecipeVersionId,
+      tag_id: data.tag_id as unknown as TagId,
+      created_at: new Date(data.created_at),
+      accepted_at: data.accepted_at ? new Date(data.accepted_at) : null,
+    };
+
+    // Remove the tag from recipe_version_tags
+    const { error: deleteError } = await this.supabase
+      .from('recipe_version_tags')
+      .delete()
+      .eq('recipe_version_id', suggestion.recipe_version_id)
+      .eq('tag_id', suggestion.tag_id);
+
+    if (deleteError) {
+      console.error('Failed to remove tag from recipe:', deleteError);
+      // Don't throw - suggestion was marked as rejected successfully
+      // Tag removal is a best-effort operation
+    }
+
+    return suggestion;
   }
 
   /**
@@ -144,22 +169,17 @@ export class AiTagSuggestionService {
    * @throws {AppError} If database update fails
    */
   async acceptAllForRecipeVersion(versionId: RecipeVersionId): Promise<void> {
-    try {
-      const { error } = await this.supabase
-        .from('ai_tag_suggestions')
-        .update({
-          user_accepted: true,
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('recipe_version_id', versionId)
-        .is('user_accepted', null);
+    const { error } = await this.supabase
+      .from('ai_tag_suggestions')
+      .update({
+        user_accepted: true,
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('recipe_version_id', versionId)
+      .is('user_accepted', null);
 
-      if (error) throw error;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('AiTagSuggestionService.acceptAllForRecipeVersion failed:', error);
-      throw new AppError('Failed to accept all suggestions', 'UPDATE_ERROR', 500, {
+    if (error) {
+      BaseService.handleSupabaseError(error, 'AiTagSuggestionService.acceptAllForRecipeVersion', {
         versionId,
       });
     }

@@ -1,6 +1,14 @@
 'use client';
 
-import { Container, Typography, Stack, CircularProgress, Snackbar, Alert } from '@mui/material';
+import {
+  Typography,
+  Stack,
+  CircularProgress,
+  Snackbar,
+  Alert,
+  Box,
+  Container,
+} from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -93,11 +101,9 @@ export default function ProfilePage() {
   // Show loading state
   if (isLoading) {
     return (
-      <Container maxWidth="md">
-        <Stack spacing={3} alignItems="center" sx={{ mt: 4 }}>
-          <CircularProgress />
-        </Stack>
-      </Container>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 

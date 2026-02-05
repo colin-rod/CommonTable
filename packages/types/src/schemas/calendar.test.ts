@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 
-import { CreateCalendarEntryCommentSchema, CalendarEntryCommentIdSchema } from './calendar';
+import {
+  CreateCalendarEntryCommentSchema,
+  CalendarEntryCommentIdSchema,
+  MealSlotSchema,
+} from './calendar';
 
 describe('CreateCalendarEntryCommentSchema', () => {
   describe('valid inputs', () => {
@@ -127,6 +131,60 @@ describe('CalendarEntryCommentIdSchema', () => {
 
     it('should reject non-string values', () => {
       expect(() => CalendarEntryCommentIdSchema.parse(123 as any)).toThrow();
+    });
+  });
+});
+
+describe('MealSlotSchema', () => {
+  describe('valid inputs', () => {
+    it('should accept "breakfast"', () => {
+      const result = MealSlotSchema.parse('breakfast');
+      expect(result).toBe('breakfast');
+    });
+
+    it('should accept "lunch"', () => {
+      const result = MealSlotSchema.parse('lunch');
+      expect(result).toBe('lunch');
+    });
+
+    it('should accept "dinner"', () => {
+      const result = MealSlotSchema.parse('dinner');
+      expect(result).toBe('dinner');
+    });
+
+    it('should accept "snack"', () => {
+      const result = MealSlotSchema.parse('snack');
+      expect(result).toBe('snack');
+    });
+  });
+
+  describe('validation errors', () => {
+    it('should reject invalid meal slot "brunch"', () => {
+      expect(() => MealSlotSchema.parse('brunch')).toThrow();
+    });
+
+    it('should reject invalid meal slot "dessert"', () => {
+      expect(() => MealSlotSchema.parse('dessert')).toThrow();
+    });
+
+    it('should reject empty string', () => {
+      expect(() => MealSlotSchema.parse('')).toThrow();
+    });
+
+    it('should reject null', () => {
+      expect(() => MealSlotSchema.parse(null)).toThrow();
+    });
+
+    it('should reject undefined', () => {
+      expect(() => MealSlotSchema.parse(undefined)).toThrow();
+    });
+
+    it('should reject number', () => {
+      expect(() => MealSlotSchema.parse(123 as any)).toThrow();
+    });
+
+    it('should reject object', () => {
+      expect(() => MealSlotSchema.parse({ meal: 'breakfast' } as any)).toThrow();
     });
   });
 });

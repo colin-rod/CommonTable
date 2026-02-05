@@ -16,7 +16,6 @@ import {
   StarBorder as StarBorderIcon,
 } from '@mui/icons-material';
 import {
-  Container,
   Stack,
   Typography,
   Button,
@@ -279,138 +278,123 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <Container maxWidth="md" sx={{ py: 6 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
-      </Container>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (error || !recipe) {
     return (
-      <Container maxWidth="md" sx={{ py: 6 }}>
-        <Stack spacing={3}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBack}
-            sx={{ alignSelf: 'flex-start' }}
-          >
-            Back to recipes
-          </Button>
-          <Typography variant="body1" color="error">
-            {error?.message || 'Recipe not found'}
-          </Typography>
-        </Stack>
-      </Container>
+      <Stack spacing={3}>
+        <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ alignSelf: 'flex-start' }}>
+          Back to recipes
+        </Button>
+        <Typography variant="body1" color="error">
+          {error?.message || 'Recipe not found'}
+        </Typography>
+      </Stack>
     );
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Stack spacing={3}>
-        {/* Back navigation */}
-        <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ alignSelf: 'flex-start' }}>
-          Back to recipes
-        </Button>
+    <Stack spacing={3}>
+      {/* Back navigation */}
+      <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ alignSelf: 'flex-start' }}>
+        Back to recipes
+      </Button>
 
-        {/* Header with title and actions */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="h5">{recipe.title}</Typography>
-            <IconButton
-              onClick={handleFavoriteClick}
-              aria-label={recipe.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
-            >
-              {recipe.is_favorite ? <StarIcon color="primary" /> : <StarBorderIcon />}
-            </IconButton>
-          </Box>
-
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<EditIcon />}
-              onClick={handleEdit}
-            >
-              Edit
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<ForkIcon />}
-              onClick={handleForkClick}
-            >
-              Fork
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<DeleteIcon />}
-              onClick={handleDeleteClick}
-            >
-              Delete
-            </Button>
-          </Stack>
+      {/* Header with title and actions */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="h5">{recipe.title}</Typography>
+          <IconButton
+            onClick={handleFavoriteClick}
+            aria-label={recipe.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            {recipe.is_favorite ? <StarIcon color="primary" /> : <StarBorderIcon />}
+          </IconButton>
         </Box>
 
-        {/* Recipe content */}
-        <RecipeDetailView
-          recipe={recipe}
-          primaryImage={primaryImage}
-          getImageUrl={(image) => recipeImageService.getSignedUrl(image.storage_path)}
-        />
-
-        {/* AI Suggested Tags */}
-        {!aiSuggestionsLoading && aiSuggestions.length > 0 && recipe.current_version_id && (
-          <AiSuggestedTagsList
-            suggestions={aiSuggestions}
-            recipeVersionId={recipe.current_version_id}
-            onAccept={handleAcceptSuggestion}
-            onReject={handleRejectSuggestion}
-            onAcceptAll={handleAcceptAllSuggestions}
-          />
-        )}
-
-        {/* Cooking History */}
-        <Box>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Cooking History
-          </Typography>
-          {cookingEventsLoading ? (
-            <CircularProgress size={24} />
-          ) : (
-            <CookingHistoryList events={cookingEvents} />
-          )}
-        </Box>
-
-        {/* Primary action */}
-        <Box sx={{ pt: 2 }}>
-          <Button variant="contained" color="primary" onClick={handleLogMeal} fullWidth>
-            Log Meal
+        <Stack direction="row" spacing={1}>
+          <Button variant="outlined" color="primary" startIcon={<EditIcon />} onClick={handleEdit}>
+            Edit
           </Button>
-        </Box>
-
-        {/* Version history link */}
-        <Box>
           <Button
             variant="outlined"
             color="primary"
-            size="small"
-            onClick={() => router.push(`/recipes/${recipeId}/versions`)}
+            startIcon={<ForkIcon />}
+            onClick={handleForkClick}
           >
-            View version history
+            Fork
           </Button>
-        </Box>
-      </Stack>
+          <Button
+            variant="outlined"
+            color="primary"
+            startIcon={<DeleteIcon />}
+            onClick={handleDeleteClick}
+          >
+            Delete
+          </Button>
+        </Stack>
+      </Box>
+
+      {/* Recipe content */}
+      <RecipeDetailView
+        recipe={recipe}
+        primaryImage={primaryImage}
+        getImageUrl={(image) => recipeImageService.getSignedUrl(image.storage_path)}
+      />
+
+      {/* AI Suggested Tags */}
+      {!aiSuggestionsLoading && aiSuggestions.length > 0 && recipe.current_version_id && (
+        <AiSuggestedTagsList
+          suggestions={aiSuggestions}
+          recipeVersionId={recipe.current_version_id}
+          onAccept={handleAcceptSuggestion}
+          onReject={handleRejectSuggestion}
+          onAcceptAll={handleAcceptAllSuggestions}
+        />
+      )}
+
+      {/* Cooking History */}
+      <Box>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Cooking History
+        </Typography>
+        {cookingEventsLoading ? (
+          <CircularProgress size={24} />
+        ) : (
+          <CookingHistoryList events={cookingEvents} />
+        )}
+      </Box>
+
+      {/* Primary action */}
+      <Box sx={{ pt: 2 }}>
+        <Button variant="contained" color="primary" onClick={handleLogMeal} fullWidth>
+          Log Meal
+        </Button>
+      </Box>
+
+      {/* Version history link */}
+      <Box>
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          onClick={() => router.push(`/recipes/${recipeId}/versions`)}
+        >
+          View version history
+        </Button>
+      </Box>
 
       {/* Delete confirmation dialog */}
       <DeleteRecipeDialog
@@ -448,6 +432,6 @@ export default function RecipeDetailPage() {
         onClose={handleSnackbarClose}
         message={snackbar.message}
       />
-    </Container>
+    </Stack>
   );
 }

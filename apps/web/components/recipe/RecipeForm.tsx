@@ -6,9 +6,12 @@ import {
   CuisineTypeSchema,
   MealTypeSchema,
   RecipeStatusSchema,
+  CookingMethodSchema,
+  DietaryCategorySchema,
+  DishCategorySchema,
 } from '@commontable/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Stack, Typography, Button, Alert, Divider } from '@mui/material';
+import { Stack, Typography, Button, Alert, Divider, Box, Paper } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -64,6 +67,9 @@ const RecipeFormSchema = z.object({
     .default([]),
   priority: z.number().int().min(1).max(5).nullable().optional(),
   status: RecipeStatusSchema.default('suggested'),
+  cooking_method: CookingMethodSchema.nullable().optional(),
+  dietary_categories: z.array(DietaryCategorySchema).default([]),
+  dish_category: DishCategorySchema.nullable().optional(),
 });
 
 export interface RecipeFormProps {
@@ -80,10 +86,14 @@ export interface RecipeFormProps {
  * Main recipe form component for creating and editing recipes.
  * Integrates metadata fields, ingredient editor, and step editor.
  *
+ * Layout:
+ * - Top section: Compact metadata grid
+ * - Bottom section: Two-column layout for ingredients (left) and steps (right)
+ *
  * Follows Material Design 3 strict compliance:
  * - One primary button per form
- * - Stack spacing={3} for sections
- * - Dividers between sections
+ * - Paper containers with elevation={1} for content sections
+ * - Responsive: columns stack on mobile
  */
 export function RecipeForm({
   mode,
@@ -124,7 +134,7 @@ export function RecipeForm({
         </Alert>
       )}
 
-      {/* Metadata Fields Section */}
+      {/* Metadata Fields Section (Grid Layout) */}
       <RecipeMetadataFields
         control={control}
         errors={errors}
@@ -134,13 +144,24 @@ export function RecipeForm({
 
       <Divider />
 
-      {/* Ingredient Editor Section */}
-      <IngredientEditor control={control} errors={errors} disabled={loading} />
+      {/* Two-Column Content Section: Ingredients & Steps */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          gap: 3,
+        }}
+      >
+        {/* Ingredients Column */}
+        <Paper elevation={1} sx={{ flex: 1, p: 2 }}>
+          <IngredientEditor control={control} errors={errors} disabled={loading} />
+        </Paper>
 
-      <Divider />
-
-      {/* Step Editor Section */}
-      <StepEditor control={control} errors={errors} disabled={loading} />
+        {/* Steps Column */}
+        <Paper elevation={1} sx={{ flex: 1, p: 2 }}>
+          <StepEditor control={control} errors={errors} disabled={loading} />
+        </Paper>
+      </Box>
 
       {/* Action Buttons */}
       <Stack direction="row" spacing={2} justifyContent="flex-end">

@@ -3,7 +3,6 @@ import {
   UpdateTagInputSchema,
   AddTagToVersionInputSchema,
   RemoveTagFromVersionInputSchema,
-  ValidationError,
   NotFoundError,
   ConflictError,
   AppError,
@@ -19,13 +18,8 @@ import type {
   UserId,
   Tag,
   RecipeVersionTag,
+  TagWithUsageCount,
 } from '@commontable/types';
-
-// Temporary: Define TagWithUsageCount locally until types package exports correctly
-interface TagWithUsageCount {
-  tag_name: string;
-  usage_count: number;
-}
 
 import { BaseService } from './BaseService';
 
@@ -43,40 +37,32 @@ export class TagService extends BaseService {
    * Create a new tag
    *
    * @param input - Tag creation input (name will be normalized)
+   * @param userId - User ID creating the tag
    * @returns Created tag
    * @throws {ValidationError} If input validation fails
    * @throws {AppError} If database operation fails
    */
-  async create(input: CreateTagInput): Promise<Tag> {
-    try {
-      const validated = CreateTagInputSchema.parse(input);
+  async create(input: CreateTagInput, userId: UserId): Promise<Tag> {
+    const validated = BaseService.validateInput(CreateTagInputSchema, input, 'Invalid tag data');
 
-      const { data, error } = await this.supabase
-        .from('tags')
-        .insert({
-          household_id: await this.getCurrentHouseholdId(),
-          name: validated.name, // Already normalized by schema
-          created_by: await this.getCurrentUserId(),
-        })
-        .select()
-        .single();
+    const householdId = await this.getCurrentHouseholdId();
 
-      if (error) throw error;
-      if (!data) throw new AppError('Failed to create tag', 'CREATE_ERROR', 500);
+    const { data, error } = await this.supabase
+      .from('tags')
+      .insert({
+        household_id: householdId,
+        name: validated.name, // Already normalized by schema
+        created_by: userId,
+      })
+      .select()
+      .single();
 
-      return data as unknown as Tag;
-    } catch (error) {
-      // Zod validation errors should be wrapped in ValidationError
-      if (error && typeof error === 'object' && 'issues' in error) {
-        const issues = error as { issues: Array<{ message: string }> };
-        throw new ValidationError(issues.issues[0]?.message || 'Validation failed', { error });
-      }
-
-      if (error instanceof AppError) throw error;
-
-      console.error('TagService.create failed:', error);
-      throw new AppError('Failed to create tag', 'CREATE_ERROR', 500, { input });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.create', { input });
     }
+    if (!data) throw new AppError('Failed to create tag', 'CREATE_ERROR', 500);
+
+    return data as unknown as Tag;
   }
 
   /**
@@ -88,19 +74,14 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getById(id: TagId): Promise<Tag> {
-    try {
-      const { data, error } = await this.supabase.from('tags').select('*').eq('id', id).single();
+    const { data, error } = await this.supabase.from('tags').select('*').eq('id', id).single();
 
-      if (error) throw error;
-      if (!data) throw new NotFoundError('Tag', id);
-
-      return data as unknown as Tag;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('TagService.getById failed:', error);
-      throw new AppError('Failed to fetch tag', 'FETCH_ERROR', 500, { id });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.getById', { id });
     }
+    if (!data) throw new NotFoundError('Tag', id);
+
+    return data as unknown as Tag;
   }
 
   /**
@@ -111,20 +92,17 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getByHousehold(householdId: HouseholdId): Promise<Tag[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('tags')
-        .select('*')
-        .eq('household_id', householdId)
-        .order('name', { ascending: true });
+    const { data, error } = await this.supabase
+      .from('tags')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('name', { ascending: true });
 
-      if (error) throw error;
-
-      return (data as unknown as Tag[]) || [];
-    } catch (error) {
-      console.error('TagService.getByHousehold failed:', error);
-      throw new AppError('Failed to fetch household tags', 'FETCH_ERROR', 500, { householdId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.getByHousehold', { householdId });
     }
+
+    return (data as unknown as Tag[]) || [];
   }
 
   /**
@@ -138,27 +116,21 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async update(id: TagId, input: UpdateTagInput): Promise<Tag> {
-    try {
-      const validated = UpdateTagInputSchema.parse(input);
+    const validated = BaseService.validateInput(UpdateTagInputSchema, input, 'Invalid tag update');
 
-      const { data, error } = await this.supabase
-        .from('tags')
-        .update({ name: validated.name })
-        .eq('id', id)
-        .select()
-        .single();
+    const { data, error } = await this.supabase
+      .from('tags')
+      .update({ name: validated.name })
+      .eq('id', id)
+      .select()
+      .single();
 
-      if (error) throw error;
-      if (!data) throw new NotFoundError('Tag', id);
-
-      return data as unknown as Tag;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      if (error instanceof ValidationError) throw error;
-
-      console.error('TagService.update failed:', error);
-      throw new AppError('Failed to update tag', 'UPDATE_ERROR', 500, { id, input });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.update', { id, input });
     }
+    if (!data) throw new NotFoundError('Tag', id);
+
+    return data as unknown as Tag;
   }
 
   /**
@@ -170,25 +142,20 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async delete(id: TagId): Promise<void> {
-    try {
-      // Check if tag is used
-      const { count } = await this.supabase
-        .from('recipe_version_tags')
-        .select('*', { count: 'exact', head: true })
-        .eq('tag_id', id);
+    // Check if tag is used
+    const { count } = await this.supabase
+      .from('recipe_version_tags')
+      .select('*', { count: 'exact', head: true })
+      .eq('tag_id', id);
 
-      if (count && count > 0) {
-        throw new ConflictError(`Cannot delete tag: used by ${count} recipe(s)`, { id, count });
-      }
+    if (count && count > 0) {
+      throw new ConflictError(`Cannot delete tag: used by ${count} recipe(s)`, { id, count });
+    }
 
-      const { error } = await this.supabase.from('tags').delete().eq('id', id);
+    const { error } = await this.supabase.from('tags').delete().eq('id', id);
 
-      if (error) throw error;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-
-      console.error('TagService.delete failed:', error);
-      throw new AppError('Failed to delete tag', 'DELETE_ERROR', 500, { id });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.delete', { id });
     }
   }
 
@@ -204,90 +171,61 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getOrCreateTag(name: string, householdId: HouseholdId, userId: UserId): Promise<Tag> {
-    try {
-      const validated = CreateTagInputSchema.parse({ name });
+    const validated = BaseService.validateInput(CreateTagInputSchema, { name }, 'Invalid tag name');
 
-      const { data: tagId, error } = await this.supabase.rpc('get_or_create_tag', {
-        p_household_id: householdId,
-        p_tag_name: validated.name,
-        p_created_by: userId,
-      });
+    const { data: tagId, error } = await this.supabase.rpc('get_or_create_tag', {
+      p_household_id: householdId,
+      p_tag_name: validated.name,
+      p_created_by: userId,
+    });
 
-      if (error) throw error;
-      if (!tagId) throw new AppError('Failed to get or create tag', 'CREATE_ERROR', 500);
-
-      return this.getById(tagId as TagId);
-    } catch (error) {
-      // Zod validation errors should be wrapped in ValidationError
-      if (error && typeof error === 'object' && 'issues' in error) {
-        const issues = error as { issues: Array<{ message: string }> };
-        throw new ValidationError(issues.issues[0]?.message || 'Validation failed', { error });
-      }
-
-      if (error instanceof AppError) throw error;
-
-      console.error('TagService.getOrCreateTag failed:', error);
-      throw new AppError('Failed to get or create tag', 'CREATE_ERROR', 500, { name });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.getOrCreateTag', { name });
     }
+    if (!tagId) throw new AppError('Failed to get or create tag', 'CREATE_ERROR', 500);
+
+    return this.getById(tagId as TagId);
   }
 
   /**
    * Associate tag with recipe version
    *
    * @param input - Association input
+   * @param userId - User ID creating the association
    * @returns Created association
    * @throws {ValidationError} If input validation fails
    * @throws {AppError} If database operation fails
    */
-  async addTagToVersion(input: AddTagToVersionInput): Promise<RecipeVersionTag> {
-    try {
-      const validated = AddTagToVersionInputSchema.parse(input);
+  async addTagToVersion(input: AddTagToVersionInput, userId: UserId): Promise<RecipeVersionTag> {
+    const validated = BaseService.validateInput(
+      AddTagToVersionInputSchema,
+      input,
+      'Invalid tag association',
+    );
 
-      // Get or create tag
-      const tag = await this.getOrCreateTag(
-        validated.tag_name,
-        await this.getCurrentHouseholdId(),
-        await this.getCurrentUserId(),
-      );
+    const householdId = await this.getCurrentHouseholdId();
 
-      // Create association
-      const { data, error } = await this.supabase
-        .from('recipe_version_tags')
-        .insert({
-          recipe_version_id: validated.recipe_version_id,
-          tag_id: tag.id,
-          created_by: await this.getCurrentUserId(),
-        })
-        .select()
-        .single();
+    // Get or create tag
+    const tag = await this.getOrCreateTag(validated.tag_name, householdId, userId);
 
-      if (error) {
-        // Handle duplicate constraint
-        if (error.code === '23505') {
-          throw new ConflictError('Tag already associated with this version', {
-            recipe_version_id: validated.recipe_version_id,
-            tag_id: tag.id,
-          });
-        }
-        throw error;
-      }
+    // Create association
+    const { data, error } = await this.supabase
+      .from('recipe_version_tags')
+      .insert({
+        recipe_version_id: validated.recipe_version_id,
+        tag_id: tag.id,
+        created_by: userId,
+      })
+      .select()
+      .single();
 
-      if (!data) throw new AppError('Failed to add tag to version', 'CREATE_ERROR', 500);
-
-      return data as unknown as RecipeVersionTag;
-    } catch (error) {
-      // Zod validation errors
-      if (error && typeof error === 'object' && 'issues' in error) {
-        const issues = error as { issues: Array<{ message: string }> };
-        throw new ValidationError(issues.issues[0]?.message || 'Validation failed', { error });
-      }
-
-      // Already wrapped errors - re-throw as-is
-      if (error instanceof AppError) throw error;
-
-      console.error('TagService.addTagToVersion failed:', error);
-      throw new AppError('Failed to add tag to version', 'CREATE_ERROR', 500, { input });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.addTagToVersion', { input });
     }
+
+    if (!data) throw new AppError('Failed to add tag to version', 'CREATE_ERROR', 500);
+
+    return data as unknown as RecipeVersionTag;
   }
 
   /**
@@ -298,22 +236,20 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async removeTagFromVersion(input: RemoveTagFromVersionInput): Promise<void> {
-    try {
-      const validated = RemoveTagFromVersionInputSchema.parse(input);
+    const validated = BaseService.validateInput(
+      RemoveTagFromVersionInputSchema,
+      input,
+      'Invalid tag removal',
+    );
 
-      const { error } = await this.supabase
-        .from('recipe_version_tags')
-        .delete()
-        .eq('recipe_version_id', validated.recipe_version_id)
-        .eq('tag_id', validated.tag_id);
+    const { error } = await this.supabase
+      .from('recipe_version_tags')
+      .delete()
+      .eq('recipe_version_id', validated.recipe_version_id)
+      .eq('tag_id', validated.tag_id);
 
-      if (error) throw error;
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      if (error instanceof ValidationError) throw error;
-
-      console.error('TagService.removeTagFromVersion failed:', error);
-      throw new AppError('Failed to remove tag from version', 'DELETE_ERROR', 500, { input });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.removeTagFromVersion', { input });
     }
   }
 
@@ -325,24 +261,21 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getVersionTags(versionId: RecipeVersionId): Promise<Tag[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('recipe_version_tags')
-        .select('tag_id, tags(*)')
-        .eq('recipe_version_id', versionId);
+    const { data, error } = await this.supabase
+      .from('recipe_version_tags')
+      .select('tag_id, tags(*)')
+      .eq('recipe_version_id', versionId);
 
-      if (error) throw error;
-
-      const tags = (data || [])
-        .map((row) => row.tags)
-        .filter((tag) => tag !== null)
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-      return tags as unknown as Tag[];
-    } catch (error) {
-      console.error('TagService.getVersionTags failed:', error);
-      throw new AppError('Failed to fetch version tags', 'FETCH_ERROR', 500, { versionId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.getVersionTags', { versionId });
     }
+
+    const tags = (data || [])
+      .map((row) => row.tags)
+      .filter((tag) => tag !== null)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return tags as unknown as Tag[];
   }
 
   /**
@@ -354,18 +287,15 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async getHouseholdTags(householdId: HouseholdId): Promise<TagWithUsageCount[]> {
-    try {
-      const { data, error } = await this.supabase.rpc('get_household_tags', {
-        p_household_id: householdId,
-      });
+    const { data, error } = await this.supabase.rpc('get_household_tags', {
+      p_household_id: householdId,
+    });
 
-      if (error) throw error;
-
-      return (data as TagWithUsageCount[]) || [];
-    } catch (error) {
-      console.error('TagService.getHouseholdTags failed:', error);
-      throw new AppError('Failed to fetch household tags', 'FETCH_ERROR', 500, { householdId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.getHouseholdTags', { householdId });
     }
+
+    return (data as TagWithUsageCount[]) || [];
   }
 
   /**
@@ -377,38 +307,33 @@ export class TagService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async searchTags(query: string, householdId: HouseholdId): Promise<Tag[]> {
-    try {
-      const { data, error } = await this.supabase
-        .from('tags')
-        .select('*')
-        .eq('household_id', householdId)
-        .ilike('name', `%${query}%`)
-        .order('name', { ascending: true });
+    const { data, error } = await this.supabase
+      .from('tags')
+      .select('*')
+      .eq('household_id', householdId)
+      .ilike('name', `%${query}%`)
+      .order('name', { ascending: true });
 
-      if (error) throw error;
-
-      return (data as unknown as Tag[]) || [];
-    } catch (error) {
-      console.error('TagService.searchTags failed:', error);
-      throw new AppError('Failed to search tags', 'FETCH_ERROR', 500, { query, householdId });
+    if (error) {
+      BaseService.handleSupabaseError(error, 'TagService.searchTags', { query, householdId });
     }
+
+    return (data as unknown as Tag[]) || [];
   }
 
   /**
-   * Helper: Get current household ID from context
-   * TODO: Replace with actual auth context
+   * Helper: Get current household ID from authenticated context via RLS function
+   *
+   * @returns Current user's household ID
+   * @throws {AppError} If user is not authenticated or has no household
    */
   private async getCurrentHouseholdId(): Promise<HouseholdId> {
-    // Placeholder - will be replaced with actual auth context
-    return 'household-placeholder' as HouseholdId;
-  }
+    const { data, error } = await this.supabase.rpc('get_user_household_id');
 
-  /**
-   * Helper: Get current user ID from context
-   * TODO: Replace with actual auth context
-   */
-  private async getCurrentUserId(): Promise<UserId> {
-    // Placeholder - will be replaced with actual auth context
-    return 'user-placeholder' as UserId;
+    if (error || !data) {
+      throw new AppError('Failed to get current household ID', 'AUTH_ERROR', 401);
+    }
+
+    return data as HouseholdId;
   }
 }

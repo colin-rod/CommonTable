@@ -3,64 +3,65 @@
 import AddIcon from '@mui/icons-material/Add';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
+import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 
 /**
- * QuickActions component
- * Displays 3 core action buttons: Add Recipe (primary), Plan Meals, and Browse (secondary)
+ * QuickActionsDropdown component
+ * Dropdown menu with 3 core actions: Add Recipe, Plan Meals, and Browse Recipes
  *
- * Removed buttons (now accessible via sidebar navigation):
- * - Import Recipe → moved to Recipes page
- * - Recipe Suggestions → moved to Discovery page
- * - AI Tag Review → moved to Tags navigation item in sidebar
- * - Meal Requests → accessible via Requests navigation item in sidebar
+ * Used in the navbar AppBar as a dropdown menu
  */
-export function QuickActions() {
+interface QuickActionsDropdownProps {
+  anchorEl: HTMLElement | null;
+  open: boolean;
+  onClose: () => void;
+}
+
+export function QuickActionsDropdown({ anchorEl, open, onClose }: QuickActionsDropdownProps) {
   const router = useRouter();
 
+  const handleNavigate = (path: Route) => {
+    onClose();
+    router.push(path);
+  };
+
   return (
-    <Stack spacing={2}>
-      <Typography variant="h6">Quick Actions</Typography>
+    <Menu
+      id="quick-actions-menu"
+      anchorEl={anchorEl}
+      open={open}
+      onClose={onClose}
+      anchorOrigin={{
+        vertical: 'bottom',
+        horizontal: 'right',
+      }}
+      transformOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+    >
+      <MenuItem onClick={() => handleNavigate('/recipes/new' as Route)}>
+        <ListItemIcon>
+          <AddIcon />
+        </ListItemIcon>
+        <ListItemText>Add Recipe</ListItemText>
+      </MenuItem>
 
-      {/* Primary action - centered */}
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => router.push('/recipes/new')}
-        >
-          Add Recipe
-        </Button>
-      </Box>
+      <MenuItem onClick={() => handleNavigate('/calendar' as Route)}>
+        <ListItemIcon>
+          <CalendarTodayIcon />
+        </ListItemIcon>
+        <ListItemText>Plan This Week's Meals</ListItemText>
+      </MenuItem>
 
-      {/* Secondary actions - 2-column grid */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-          gap: 2,
-        }}
-      >
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<CalendarTodayIcon />}
-          onClick={() => router.push('/calendar')}
-        >
-          Plan This Week's Meals
-        </Button>
-
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<RestaurantIcon />}
-          onClick={() => router.push('/recipes')}
-        >
-          Browse All Recipes
-        </Button>
-      </Box>
-    </Stack>
+      <MenuItem onClick={() => handleNavigate('/recipes' as Route)}>
+        <ListItemIcon>
+          <RestaurantIcon />
+        </ListItemIcon>
+        <ListItemText>Browse All Recipes</ListItemText>
+      </MenuItem>
+    </Menu>
   );
 }

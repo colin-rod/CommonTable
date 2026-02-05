@@ -175,6 +175,7 @@ Only the following components may be used:
 - `Container`
 - `Box`
 - `Stack`
+- `Grid`
 - `Divider`
 
 ### Surfaces

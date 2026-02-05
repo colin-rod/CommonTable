@@ -43,6 +43,9 @@ const mockShortlistItem1: ShortlistItem = {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
   },
   addedBy: {
     id: mockUserId,
@@ -72,6 +75,9 @@ const mockShortlistItem2: ShortlistItem = {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
   },
   addedBy: {
     id: mockUserId,

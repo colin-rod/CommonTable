@@ -128,7 +128,7 @@ describe('AiTagSuggestionService', () => {
       } as any);
 
       await expect(service.getPendingByRecipeVersion(versionId)).rejects.toThrow(
-        'Failed to fetch pending suggestions',
+        'AiTagSuggestionService.getPendingByRecipeVersion failed',
       );
     });
   });
@@ -215,7 +215,9 @@ describe('AiTagSuggestionService', () => {
         single: mockSingle,
       } as any);
 
-      await expect(service.accept(suggestionId)).rejects.toThrow('Failed to accept suggestion');
+      await expect(service.accept(suggestionId)).rejects.toThrow(
+        'AiTagSuggestionService.accept failed',
+      );
     });
   });
 
@@ -346,7 +348,7 @@ describe('AiTagSuggestionService', () => {
       } as any);
 
       await expect(service.acceptAllForRecipeVersion(versionId)).rejects.toThrow(
-        'Failed to accept all suggestions',
+        'AiTagSuggestionService.acceptAllForRecipeVersion failed',
       );
     });
   });

@@ -1,7 +1,6 @@
 'use client';
 
-import type { CreateMealRequestInput } from '@commontable/api-client';
-import type { MealSlot, Recipe } from '@commontable/types';
+import type { CreateMealRequestInput, MealSlot, Recipe } from '@commontable/types';
 import {
   Dialog,
   DialogTitle,

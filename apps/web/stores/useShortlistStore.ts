@@ -74,6 +74,9 @@ export const useShortlistStore = create<ShortlistStore>((set, get) => ({
         key_ingredients: [],
         priority: null,
         status: 'suggested',
+        cooking_method: null,
+        dietary_categories: null,
+        dish_category: null,
       },
       addedBy: {
         id: userId,

@@ -192,4 +192,71 @@ describe('RecipeForm', () => {
     const titleInput = screen.getByLabelText(/recipe title/i) as HTMLInputElement;
     expect(titleInput).toBeDisabled();
   });
+
+  describe('two-column layout', () => {
+    it('renders ingredients section in a Paper container', () => {
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // IngredientEditor has its own "Ingredients" heading
+      const ingredientsHeading = screen.getByRole('heading', { name: /^ingredients$/i });
+      expect(ingredientsHeading).toBeInTheDocument();
+
+      // Ingredients section should be within a Paper container
+      const ingredientsPaper = ingredientsHeading.closest('.MuiPaper-root');
+      expect(ingredientsPaper).toBeInTheDocument();
+    });
+
+    it('renders steps section in a Paper container', () => {
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // StepEditor has its own "Steps" heading
+      const stepsHeading = screen.getByRole('heading', { name: /^steps$/i });
+      expect(stepsHeading).toBeInTheDocument();
+
+      // Steps section should be within a Paper container
+      const stepsPaper = stepsHeading.closest('.MuiPaper-root');
+      expect(stepsPaper).toBeInTheDocument();
+    });
+
+    it('places ingredients and steps in separate containers side by side', () => {
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      const ingredientsHeading = screen.getByRole('heading', { name: /^ingredients$/i });
+      const stepsHeading = screen.getByRole('heading', { name: /^steps$/i });
+
+      const ingredientsPaper = ingredientsHeading.closest('.MuiPaper-root');
+      const stepsPaper = stepsHeading.closest('.MuiPaper-root');
+
+      // They should be in different Paper containers
+      expect(ingredientsPaper).not.toBe(stepsPaper);
+
+      // Their parent should use flex layout for side-by-side positioning
+      const ingredientsParent = ingredientsPaper?.parentElement;
+      expect(ingredientsParent).toHaveStyle({ display: 'flex' });
+    });
+  });
 });

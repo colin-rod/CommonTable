@@ -49,30 +49,45 @@ serve(async (req) => {
   }
 
   try {
-    // Validate authentication
+    // Validate authentication token exists
     const token = getAuthToken(req);
 
-    // Verify token with Supabase Auth
+    // Create Supabase client (Edge Runtime automatically handles JWT from Authorization header)
+    // Note: SUPABASE_URL is auto-injected by Supabase runtime
+    // ANON_KEY is our custom secret (can't use SUPABASE_ prefix via CLI)
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const supabaseAnonKey = Deno.env.get('ANON_KEY');
+    const supabaseApiKey = supabaseAnonKey;
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !supabaseApiKey) {
       throw new EdgeFunctionError('Missing Supabase configuration', 500, 'CONFIG_ERROR');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey, {
+    const supabase = createClient(supabaseUrl, supabaseApiKey, {
       global: {
         headers: { Authorization: `Bearer ${token}` },
       },
     });
 
+    // Get authenticated user from context (Edge Runtime populates user from JWT)
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser(token);
 
+    if (authError) {
+      console.error('Token validation failed:', {
+        message: authError.message,
+        code: authError.code,
+        status: authError.status,
+        supabaseUrl: supabaseUrl, // Log to verify correct instance
+      });
+    }
+
     if (authError || !user) {
-      throw new UnauthorizedError('Invalid or expired token');
+      throw new UnauthorizedError(
+        `Invalid or expired token: ${authError?.message || 'No user found'}`,
+      );
     }
 
     // Validate request body

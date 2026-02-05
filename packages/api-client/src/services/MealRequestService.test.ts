@@ -1,9 +1,15 @@
-import { NotFoundError, ValidationError, AppError } from '@commontable/types';
-import type { MealRequest, MealRequestId } from '@commontable/types';
+import {
+  NotFoundError,
+  ValidationError,
+  AppError,
+  type CreateMealRequestInput,
+  type MealRequest,
+  type MealRequestId,
+} from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import { MealRequestService, type CreateMealRequestInput } from './MealRequestService';
+import { MealRequestService } from './MealRequestService';
 
 // Mock Supabase client
 const createMockSupabaseClient = () => {
@@ -358,6 +364,131 @@ describe('MealRequestService', () => {
     it('should throw ValidationError for non-integer priority', async () => {
       await expect(service.updatePriority('request-1' as MealRequestId, 10.5)).rejects.toThrow(
         ValidationError,
+      );
+    });
+  });
+
+  describe('addToShortlist', () => {
+    it('should add meal request to shortlist and update status to planned', async () => {
+      const mockRequest: MealRequest = {
+        id: 'request-1' as MealRequestId,
+        household_id: 'household-1' as any,
+        recipe_id: 'recipe-1' as any,
+        requested_by: 'user-1' as any,
+        requested_date: new Date('2026-01-25'),
+        requested_meal_slot: 'dinner',
+        notes: 'Test request',
+        status: 'open',
+        priority: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      const mockUpdatedRequest: MealRequest = {
+        ...mockRequest,
+        status: 'planned',
+      };
+
+      const mockShortlistEntry = {
+        id: 'shortlist-1',
+        household_id: 'household-1',
+        recipe_id: 'recipe-1',
+        added_by_user_id: 'user-1',
+        added_at: new Date().toISOString(),
+      };
+
+      const fromSpy = vi.spyOn(mockSupabase, 'from');
+
+      // Mock getById call (meal_requests)
+      fromSpy.mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: mockRequest,
+              error: null,
+            }),
+          }),
+        }),
+      } as any);
+
+      // Mock insert into recipe_shortlists
+      fromSpy.mockReturnValueOnce({
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: mockShortlistEntry,
+              error: null,
+            }),
+          }),
+        }),
+      } as any);
+
+      // Mock updateStatus call (update meal_requests)
+      fromSpy.mockReturnValueOnce({
+        update: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: mockUpdatedRequest,
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      } as any);
+
+      const result = await service.addToShortlist('request-1' as MealRequestId);
+
+      expect(result.mealRequest.status).toBe('planned');
+      expect(result.shortlistEntry.recipe_id).toBe('recipe-1');
+      expect(result.shortlistEntry.meal_request_id).toBe('request-1');
+    });
+
+    it('should throw ValidationError when meal request has no recipe_id', async () => {
+      const mockRequest: MealRequest = {
+        id: 'request-1' as MealRequestId,
+        household_id: 'household-1' as any,
+        recipe_id: null,
+        requested_by: 'user-1' as any,
+        requested_date: new Date('2026-01-25'),
+        requested_meal_slot: 'dinner',
+        notes: 'Test request',
+        status: 'open',
+        priority: 0,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      vi.spyOn(mockSupabase, 'from').mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: mockRequest,
+              error: null,
+            }),
+          }),
+        }),
+      } as any);
+
+      await expect(service.addToShortlist('request-1' as MealRequestId)).rejects.toThrow(
+        ValidationError,
+      );
+    });
+
+    it('should throw NotFoundError when meal request does not exist', async () => {
+      vi.spyOn(mockSupabase, 'from').mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: null,
+              error: null,
+            }),
+          }),
+        }),
+      } as any);
+
+      await expect(service.addToShortlist('nonexistent' as MealRequestId)).rejects.toThrow(
+        NotFoundError,
       );
     });
   });

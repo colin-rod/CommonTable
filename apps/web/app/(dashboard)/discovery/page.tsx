@@ -1,6 +1,6 @@
 'use client';
 
-import { Container, Stack } from '@mui/material';
+import { Stack, Container } from '@mui/material';
 import { useState } from 'react';
 
 import { ShortlistDrawer } from '@/components/recipe/ShortlistDrawer';
@@ -34,7 +34,7 @@ export default function DiscoveryPage() {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
+    <Container maxWidth="md">
       <Stack spacing={3}>
         {/* Main Content: Recipe Discovery Panel (includes title) */}
         <WhatCanICookPanel />

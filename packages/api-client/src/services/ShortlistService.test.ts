@@ -293,36 +293,178 @@ describe('ShortlistService', () => {
         },
       ];
 
-      const mockBuilder = {
+      const mockProfiles = [
+        {
+          id: 'user-456',
+          display_name: 'Test User',
+        },
+      ];
+
+      // Mock recipe_shortlists query
+      const mockShortlistBuilder = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: mockData, error: null }),
       };
 
-      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+      // Mock profiles query
+      const mockProfilesBuilder = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({ data: mockProfiles, error: null }),
+      };
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(mockShortlistBuilder as any)
+        .mockReturnValueOnce(mockProfilesBuilder as any);
 
       const result = await service.getAll(validHouseholdId);
 
       expect(result).toHaveLength(1);
       expect(result[0]?.recipe.title).toBe('Pasta Carbonara');
-      expect(result[0]?.addedBy.name).toBe('User');
+      expect(result[0]?.addedBy.name).toBe('Test User');
       expect(result[0]?.addedBy.id).toBe('user-456');
       expect(result[0]?.addedAt).toBeInstanceOf(Date);
       expect(mockSupabase.from).toHaveBeenCalledWith('recipe_shortlists');
-      expect(mockBuilder.select).toHaveBeenCalledWith('*, recipes(*)');
-      expect(mockBuilder.eq).toHaveBeenCalledWith('household_id', validHouseholdId);
+      expect(mockSupabase.from).toHaveBeenCalledWith('profiles');
+      expect(mockShortlistBuilder.select).toHaveBeenCalledWith('*, recipes(*)');
+      expect(mockProfilesBuilder.in).toHaveBeenCalledWith('id', ['user-456']);
     });
 
     it('should return empty array if no recipes shortlisted', async () => {
-      const mockBuilder = {
+      const mockShortlistBuilder = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
       };
 
-      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+      vi.mocked(mockSupabase.from).mockReturnValue(mockShortlistBuilder as any);
 
       const result = await service.getAll(validHouseholdId);
 
       expect(result).toEqual([]);
+    });
+
+    it('should use fallback name when profile is missing', async () => {
+      const mockData = [
+        {
+          id: 'shortlist-1',
+          recipe_id: 'recipe-123',
+          added_by_user_id: 'missing-user-id',
+          added_at: '2026-01-28T10:00:00Z',
+          recipes: {
+            id: 'recipe-123',
+            title: 'Pasta Carbonara',
+            household_id: validHouseholdId,
+            description: 'Classic Italian pasta',
+            current_version_id: 'version-1',
+            rolling_score: null,
+            tags: ['pasta', 'italian'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: 'missing-user-id',
+            created_at: '2026-01-20T10:00:00Z',
+            updated_at: '2026-01-20T10:00:00Z',
+          },
+        },
+      ];
+
+      // Mock recipe_shortlists query
+      const mockShortlistBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+      };
+
+      // Mock profiles query returning empty (profile not found)
+      const mockProfilesBuilder = {
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(mockShortlistBuilder as any)
+        .mockReturnValueOnce(mockProfilesBuilder as any);
+
+      const result = await service.getAll(validHouseholdId);
+
+      expect(result[0]?.addedBy.name).toBe('Unknown member');
+    });
+
+    it('should fetch multiple profiles in single batch query', async () => {
+      const mockData = [
+        {
+          id: 'shortlist-1',
+          recipe_id: 'recipe-123',
+          added_by_user_id: 'user-1',
+          added_at: '2026-01-28T10:00:00Z',
+          recipes: {
+            id: 'recipe-123',
+            title: 'Pasta Carbonara',
+            household_id: validHouseholdId,
+            description: 'Classic Italian pasta',
+            current_version_id: 'version-1',
+            rolling_score: null,
+            tags: ['pasta', 'italian'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: 'user-1',
+            created_at: '2026-01-20T10:00:00Z',
+            updated_at: '2026-01-20T10:00:00Z',
+          },
+        },
+        {
+          id: 'shortlist-2',
+          recipe_id: 'recipe-456',
+          added_by_user_id: 'user-2',
+          added_at: '2026-01-29T10:00:00Z',
+          recipes: {
+            id: 'recipe-456',
+            title: 'Margherita Pizza',
+            household_id: validHouseholdId,
+            description: 'Classic Italian pizza',
+            current_version_id: 'version-2',
+            rolling_score: null,
+            tags: ['pizza', 'italian'],
+            is_favorite: false,
+            last_cooked_at: null,
+            created_by: 'user-2',
+            created_at: '2026-01-21T10:00:00Z',
+            updated_at: '2026-01-21T10:00:00Z',
+          },
+        },
+      ];
+
+      const mockProfiles = [
+        { id: 'user-1', display_name: 'Alice' },
+        { id: 'user-2', display_name: 'Bob' },
+      ];
+
+      // Mock recipe_shortlists query
+      const mockShortlistBuilder = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: mockData, error: null }),
+      };
+
+      // Mock profiles query
+      const profilesInSpy = vi.fn().mockResolvedValue({ data: mockProfiles, error: null });
+      const mockProfilesBuilder = {
+        select: vi.fn().mockReturnThis(),
+        in: profilesInSpy,
+      };
+
+      vi.mocked(mockSupabase.from)
+        .mockReturnValueOnce(mockShortlistBuilder as any)
+        .mockReturnValueOnce(mockProfilesBuilder as any);
+
+      const result = await service.getAll(validHouseholdId);
+
+      // Verify single batch query was made with both user IDs
+      expect(profilesInSpy).toHaveBeenCalledWith('id', ['user-1', 'user-2']);
+
+      // Verify names mapped correctly
+      expect(result[0]?.addedBy.name).toBe('Alice');
+      expect(result[1]?.addedBy.name).toBe('Bob');
     });
 
     it('should throw AppError if database operation fails', async () => {
@@ -331,12 +473,13 @@ describe('ShortlistService', () => {
         message: 'Database connection failed',
       };
 
-      const mockBuilder = {
+      const mockShortlistBuilder = {
         select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: null, error: dbError }),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: null, error: dbError }),
       };
 
-      vi.mocked(mockSupabase.from).mockReturnValue(mockBuilder as any);
+      vi.mocked(mockSupabase.from).mockReturnValue(mockShortlistBuilder as any);
 
       await expect(service.getAll(validHouseholdId)).rejects.toThrow(AppError);
       await expect(service.getAll(validHouseholdId)).rejects.toThrow(

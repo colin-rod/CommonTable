@@ -83,10 +83,14 @@ describe('recipe server actions', () => {
     key_ingredients: ['pasta', 'eggs', 'bacon'],
     priority: 3,
     status: 'suggested',
+    cooking_method: null,
+    dietary_categories: null,
+    dish_category: null,
   };
 
   const mockUser = { id: 'auth-user-1', email: 'test@example.com' };
-  const mockProfile = { id: 'profile-1', auth_user_id: 'auth-user-1' };
+  // Different profile.id to simulate new user (created after migration)
+  const mockProfile = { id: 'profile-456', auth_user_id: 'auth-user-1' };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -119,6 +123,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);
@@ -126,7 +133,7 @@ describe('recipe server actions', () => {
       expect(result).toEqual({ success: true, data: mockRecipe });
       expect(mockRecipeService.create).toHaveBeenCalledWith({
         ...input,
-        user_id: mockProfile.id,
+        user_id: mockUser.id, // Now uses auth.users.id
       });
       expect(recipeServiceClients.length).toBeGreaterThan(0);
     });
@@ -148,6 +155,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);
@@ -159,16 +169,18 @@ describe('recipe server actions', () => {
       expect(mockRecipeService.create).not.toHaveBeenCalled();
     });
 
-    it('should return error when profile is not found', async () => {
+    it('should use auth.users.id as user_id, not profiles.id', async () => {
       mockAuth.getUser.mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
 
       mockProfilesTable.single.mockResolvedValue({
-        data: null,
+        data: mockProfile,
         error: null,
       });
+
+      mockRecipeService.create.mockResolvedValue(mockRecipe);
 
       const input = {
         household_id: 'household-1' as any,
@@ -181,15 +193,19 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
-      const result = await createRecipe(input);
+      await createRecipe(input);
 
-      expect(result).toEqual({
-        success: false,
-        error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' },
+      // CRITICAL: This should fail with current code (passes mockProfile.id = 'profile-456')
+      // After fix: This should pass (passes mockUser.id = 'auth-user-1')
+      expect(mockRecipeService.create).toHaveBeenCalledWith({
+        ...input,
+        user_id: mockUser.id, // Must be auth.users.id, NOT profile.id
       });
-      expect(mockRecipeService.create).not.toHaveBeenCalled();
     });
 
     it('should handle AppError from service', async () => {
@@ -217,6 +233,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);
@@ -252,6 +271,9 @@ describe('recipe server actions', () => {
         cuisine: undefined,
         meal_type: undefined,
         priority: undefined,
+        cooking_method: undefined,
+        dietary_categories: [],
+        dish_category: undefined,
       };
 
       const result = await createRecipe(input);
@@ -312,7 +334,7 @@ describe('recipe server actions', () => {
       expect(result).toEqual({ success: true, data: updatedRecipe });
       expect(mockRecipeService.update).toHaveBeenCalledWith('recipe-1', {
         ...input,
-        user_id: mockProfile.id,
+        user_id: mockUser.id, // Now uses auth.users.id
       });
     });
 
@@ -335,28 +357,32 @@ describe('recipe server actions', () => {
       expect(mockRecipeService.update).not.toHaveBeenCalled();
     });
 
-    it('should return error when profile is not found', async () => {
+    it('should use auth.users.id as user_id, not profiles.id', async () => {
       mockAuth.getUser.mockResolvedValue({
         data: { user: mockUser },
         error: null,
       });
 
       mockProfilesTable.single.mockResolvedValue({
-        data: null,
+        data: mockProfile,
         error: null,
       });
+
+      const updatedRecipe = { ...mockRecipe, title: 'Updated Pasta' };
+      mockRecipeService.update.mockResolvedValue(updatedRecipe);
 
       const input = {
         title: 'Updated Pasta',
       };
 
-      const result = await updateRecipe('recipe-1' as RecipeId, input);
+      await updateRecipe('recipe-1' as RecipeId, input);
 
-      expect(result).toEqual({
-        success: false,
-        error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' },
+      // CRITICAL: This should fail with current code (passes mockProfile.id)
+      // After fix: This should pass (passes mockUser.id)
+      expect(mockRecipeService.update).toHaveBeenCalledWith('recipe-1', {
+        ...input,
+        user_id: mockUser.id, // Must be auth.users.id, NOT profile.id
       });
-      expect(mockRecipeService.update).not.toHaveBeenCalled();
     });
 
     it('should handle errors from service', async () => {
@@ -474,7 +500,7 @@ describe('recipe server actions', () => {
       const result = await forkRecipe(input);
 
       expect(result).toEqual({ success: true, data: forkedRecipe });
-      expect(mockRecipeService.fork).toHaveBeenCalledWith(input, mockProfile.id);
+      expect(mockRecipeService.fork).toHaveBeenCalledWith(input, mockUser.id); // Now uses auth.users.id
     });
 
     it('should return error when user is not authenticated', async () => {
@@ -495,6 +521,50 @@ describe('recipe server actions', () => {
         error: { message: 'Not authenticated', code: 'UNAUTHORIZED' },
       });
       expect(mockRecipeService.fork).not.toHaveBeenCalled();
+    });
+
+    it('should use auth.users.id as user_id, not profiles.id', async () => {
+      mockAuth.getUser.mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      });
+
+      mockProfilesTable.single.mockResolvedValue({
+        data: mockProfile,
+        error: null,
+      });
+
+      const forkedRecipe: RecipeWithVersion = {
+        ...mockRecipe,
+        id: 'recipe-2' as RecipeId,
+        title: 'Forked Pasta',
+        current_version: {
+          id: 'version-2' as any,
+          recipe_id: 'recipe-2' as RecipeId,
+          version_number: 1,
+          ingredients_json: [],
+          steps_json: [],
+          servings: 4,
+          prep_time_minutes: null,
+          cook_time_minutes: null,
+          notes: null,
+          created_by: 'profile-1' as any,
+          created_at: new Date(),
+        },
+      };
+
+      mockRecipeService.fork.mockResolvedValue(forkedRecipe);
+
+      const input = {
+        parentRecipeId: 'recipe-1' as RecipeId,
+        newTitle: 'Forked Pasta',
+      };
+
+      await forkRecipe(input);
+
+      // CRITICAL: This should fail with current code (passes mockProfile.id)
+      // After fix: This should pass (passes mockUser.id)
+      expect(mockRecipeService.fork).toHaveBeenCalledWith(input, mockUser.id);
     });
 
     it('should handle errors from service', async () => {

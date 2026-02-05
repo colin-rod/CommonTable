@@ -7,7 +7,7 @@ export const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1976d2', // Material Blue
+      main: '#4D7C0F', // Olive
     },
     background: {
       default: '#fafafa', // Warm neutral, not pure white

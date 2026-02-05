@@ -9,6 +9,7 @@ export * from './services/HouseholdService';
 export * from './services/MealRequestService';
 export * from './services/RecipeService';
 export * from './services/RecipeImageService';
+export * from './services/RecipeQueueService';
 export * from './services/RecipeSuggestionService';
 export * from './services/TagService';
 export * from './services/AiTagSuggestionService';
