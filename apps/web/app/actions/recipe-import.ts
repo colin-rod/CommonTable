@@ -220,24 +220,10 @@ export async function createImportedRecipe(
       };
     }
 
-    // Get user's profile ID (used as user_id in recipes)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return {
-        success: false,
-        error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' },
-      };
-    }
-
-    // Create recipe
+    // Create recipe (use auth.users.id directly)
     const recipe = await service.create({
       ...input,
-      user_id: profile.id,
+      user_id: user.id,
     });
 
     // If cover image provided, move from temp to permanent storage (non-critical)
@@ -247,7 +233,7 @@ export async function createImportedRecipe(
           coverImageStoragePath,
           recipe.id,
           recipe.household_id,
-          profile.id,
+          user.id,
           supabase,
         );
       } catch (imageError) {
@@ -270,7 +256,7 @@ export async function createImportedRecipe(
  * @param tempStoragePath - Path to image in temp storage (imports/{user_id}/...)
  * @param recipeId - Recipe ID
  * @param householdId - Household ID
- * @param userId - User profile ID (created_by)
+ * @param userId - Auth user ID (created_by) from auth.users.id
  * @param supabase - Supabase client
  */
 async function moveImageToPermanentStorage(

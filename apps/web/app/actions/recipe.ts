@@ -57,20 +57,9 @@ export async function createRecipe(
       return { success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } };
     }
 
-    // Get user's profile ID (used as user_id in recipes)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return { success: false, error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' } };
-    }
-
     const recipe = await service.create({
       ...input,
-      user_id: profile.id,
+      user_id: user.id,
     });
 
     revalidatePath('/recipes');
@@ -147,19 +136,9 @@ export async function updateRecipe(
       return { success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } };
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return { success: false, error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' } };
-    }
-
     const recipe = await service.update(id, {
       ...input,
-      user_id: profile.id,
+      user_id: user.id,
     });
 
     revalidatePath(`/recipes/${id}`);
@@ -383,21 +362,10 @@ export async function restoreRecipeVersion(
       return { success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } };
     }
 
-    // Get user's profile ID
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return { success: false, error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' } };
-    }
-
     const recipe = await service.revertToVersion(
       recipeId,
       versionNumber,
-      profile.id as unknown as UserId,
+      user.id as unknown as UserId,
     );
 
     // Revalidate recipe detail and version history pages
@@ -433,18 +401,7 @@ export async function forkRecipe(input: ForkRecipeInput): Promise<ActionResult<R
       return { success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } };
     }
 
-    // Get user's profile ID
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('auth_user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return { success: false, error: { message: 'Profile not found', code: 'PROFILE_NOT_FOUND' } };
-    }
-
-    const forkedRecipe = await service.fork(input, profile.id as unknown as UserId);
+    const forkedRecipe = await service.fork(input, user.id as unknown as UserId);
 
     // Revalidate recipes list to include the new forked recipe
     revalidatePath('/recipes');
