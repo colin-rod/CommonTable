@@ -1,5 +1,5 @@
 import type { RecipeWithVersion, RecipeImage } from '@commontable/types';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -347,6 +347,34 @@ describe('RecipeDetailView Component', () => {
         const image = container.querySelector('img');
         expect(image).not.toBeInTheDocument();
       });
+    });
+  });
+
+  describe('Two-column panel layout', () => {
+    it('should render Ingredients inside a Paper panel', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+      const panel = screen.getByTestId('ingredients-panel');
+      expect(panel).toBeInTheDocument();
+      expect(within(panel).getByText('Ingredients')).toBeInTheDocument();
+    });
+
+    it('should render Steps inside a Paper panel', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+      const panel = screen.getByTestId('steps-panel');
+      expect(panel).toBeInTheDocument();
+      expect(within(panel).getByText('Steps')).toBeInTheDocument();
+    });
+
+    it('should render IngredientList inside ingredients panel', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+      const panel = screen.getByTestId('ingredients-panel');
+      expect(within(panel).getByTestId('ingredient-list')).toBeInTheDocument();
+    });
+
+    it('should render StepList inside steps panel', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+      const panel = screen.getByTestId('steps-panel');
+      expect(within(panel).getByTestId('step-list')).toBeInTheDocument();
     });
   });
 
