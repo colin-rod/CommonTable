@@ -206,6 +206,10 @@ describe('recipe-import server actions', () => {
         title: 'Test Recipe',
         ingredients_json: [],
         steps_json: [],
+        tags: [],
+        status: 'suggested',
+        key_ingredients: [],
+        dietary_categories: [],
       });
 
       // Assert: Service should be called with auth.users.id, NOT profiles.id

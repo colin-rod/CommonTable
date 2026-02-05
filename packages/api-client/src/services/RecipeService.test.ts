@@ -1260,6 +1260,8 @@ describe('RecipeService', () => {
         created_by: validUserId,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
+        key_ingredients: [],
+        dietary_categories: [],
       };
 
       const updatedRecipe: MockRecipe = {
@@ -1296,6 +1298,8 @@ describe('RecipeService', () => {
         created_by: validUserId,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
+        key_ingredients: [],
+        dietary_categories: [],
       };
 
       const updatedRecipe: MockRecipe = {

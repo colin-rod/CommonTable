@@ -48,6 +48,19 @@ export class RecipeService extends BaseService {
   }
 
   /**
+   * Normalize recipe data to ensure array fields are never null
+   * Database may return null for array columns, but our types expect arrays
+   */
+  private normalizeRecipe<T extends Record<string, unknown>>(data: T): T {
+    return {
+      ...data,
+      tags: (data.tags as string[] | null) ?? [],
+      key_ingredients: (data.key_ingredients as string[] | null) ?? [],
+      dietary_categories: (data.dietary_categories as string[] | null) ?? [],
+    };
+  }
+
+  /**
    * Create a new recipe with its initial version
    *
    * Uses database function create_recipe_with_version for atomic transaction:
@@ -143,7 +156,7 @@ export class RecipeService extends BaseService {
     }
     if (!data) throw new NotFoundError('Recipe', id);
 
-    return data as unknown as Recipe;
+    return this.normalizeRecipe(data) as unknown as Recipe;
   }
 
   /**
@@ -164,7 +177,7 @@ export class RecipeService extends BaseService {
       BaseService.handleSupabaseError(error, 'RecipeService.getByHousehold', { householdId });
     }
 
-    return (data ?? []) as unknown as Recipe[];
+    return (data ?? []).map((recipe) => this.normalizeRecipe(recipe)) as unknown as Recipe[];
   }
 
   /**
@@ -303,7 +316,9 @@ export class RecipeService extends BaseService {
       BaseService.handleSupabaseError(error, 'RecipeService.search');
     }
 
-    return (data ?? []) as unknown as RecipeSearchResult[];
+    return (data ?? []).map((recipe) =>
+      this.normalizeRecipe(recipe),
+    ) as unknown as RecipeSearchResult[];
   }
 
   /**
