@@ -6,31 +6,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.1';
   };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       ai_tag_suggestions: {
@@ -730,6 +705,7 @@ export type Database = {
           priority: number | null;
           rolling_score: number | null;
           search_vector: unknown;
+          source_url: string | null;
           status: Database['public']['Enums']['recipe_status'];
           title: string;
           updated_at: string;
@@ -752,6 +728,7 @@ export type Database = {
           priority?: number | null;
           rolling_score?: number | null;
           search_vector?: unknown;
+          source_url?: string | null;
           status?: Database['public']['Enums']['recipe_status'];
           title: string;
           updated_at?: string;
@@ -774,6 +751,7 @@ export type Database = {
           priority?: number | null;
           rolling_score?: number | null;
           search_vector?: unknown;
+          source_url?: string | null;
           status?: Database['public']['Enums']['recipe_status'];
           title?: string;
           updated_at?: string;
@@ -864,6 +842,7 @@ export type Database = {
           p_prep_time_minutes: number;
           p_priority?: number;
           p_servings: number;
+          p_source_url?: string;
           p_status?: Database['public']['Enums']['recipe_status'];
           p_steps_json: Json;
           p_title: string;
@@ -1168,9 +1147,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       cooking_method: [

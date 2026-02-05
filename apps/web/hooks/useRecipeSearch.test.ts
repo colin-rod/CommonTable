@@ -54,6 +54,7 @@ describe('useRecipeSearch Hook', () => {
       cooking_method: null,
       dietary_categories: null,
       dish_category: null,
+      source_url: null,
       rank: 0.95,
     },
     {
@@ -78,6 +79,7 @@ describe('useRecipeSearch Hook', () => {
       cooking_method: null,
       dietary_categories: null,
       dish_category: null,
+      source_url: null,
       rank: 0.87,
     },
   ];
@@ -347,6 +349,7 @@ describe('useRecipeSearch Hook', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
           rank: 0.98,
         },
       ];

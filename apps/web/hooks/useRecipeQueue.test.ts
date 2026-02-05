@@ -38,6 +38,7 @@ describe('useRecipeQueue Hook', () => {
     cooking_method: 'stovetop',
     dietary_categories: ['vegetarian'],
     dish_category: 'main',
+    source_url: null,
   };
 
   const mockRecipe2: Recipe = {
@@ -61,6 +62,7 @@ describe('useRecipeQueue Hook', () => {
     cooking_method: 'no_cook',
     dietary_categories: [],
     dish_category: 'salad',
+    source_url: null,
   };
 
   const mockQueueEntry1: QueueEntry = {
@@ -250,6 +252,7 @@ describe('useRecipeQueue Hook', () => {
         cooking_method: null,
         dietary_categories: null,
         dish_category: null,
+        source_url: null,
       };
 
       mockQueueService.list.mockResolvedValue([mockQueueEntry1]);

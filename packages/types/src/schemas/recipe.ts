@@ -208,13 +208,16 @@ export const CreateRecipeInputSchema = z.object({
   priority: z.number().int().min(1).max(5).optional(),
   status: RecipeStatusSchema.default('suggested'),
 
-  // NEW: Additional metadata for queue lanes
+  // Additional metadata for queue lanes
   cooking_method: CookingMethodSchema.optional(),
   dietary_categories: z
     .array(DietaryCategorySchema)
     .max(10, 'Maximum 10 dietary categories allowed')
     .default([]),
   dish_category: DishCategorySchema.optional(),
+
+  // Source URL for imported recipes (null for manually created)
+  source_url: z.string().url('Invalid URL format').max(2000, 'URL too long').optional(),
 
   user_id: z.string().uuid('Invalid user ID'),
 });

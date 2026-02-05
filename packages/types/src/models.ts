@@ -54,7 +54,7 @@ export interface Recipe {
   created_by: UserId;
   created_at: Date;
   updated_at: Date;
-  // New metadata fields
+  // Metadata fields
   cuisine: CuisineType | null;
   meal_type: MealType | null;
   key_ingredients: string[];
@@ -63,6 +63,8 @@ export interface Recipe {
   cooking_method: CookingMethod | null;
   dietary_categories: DietaryCategory[] | null;
   dish_category: DishCategory | null;
+  // Import source (null for manually created recipes)
+  source_url: string | null;
 }
 
 // Recipe with its current version data (for detail view)

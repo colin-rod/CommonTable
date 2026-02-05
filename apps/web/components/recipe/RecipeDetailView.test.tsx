@@ -79,6 +79,7 @@ describe('RecipeDetailView Component', () => {
     cooking_method: null,
     dietary_categories: null,
     dish_category: null,
+    source_url: null,
     current_version: {
       id: 'version-1' as any,
       recipe_id: 'recipe-123' as any,
@@ -116,6 +117,41 @@ describe('RecipeDetailView Component', () => {
       render(<RecipeDetailView recipe={recipeWithoutDescription} />);
 
       expect(screen.queryByText(/classic italian/i)).not.toBeInTheDocument();
+    });
+
+    it('should render source URL link for imported recipes', () => {
+      const importedRecipe = {
+        ...mockRecipe,
+        source_url: 'https://www.allrecipes.com/recipe/12345/pasta-carbonara',
+      };
+      render(<RecipeDetailView recipe={importedRecipe} />);
+
+      const link = screen.getByRole('link', { name: /allrecipes\.com/i });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute(
+        'href',
+        'https://www.allrecipes.com/recipe/12345/pasta-carbonara',
+      );
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(screen.getByText(/imported from/i)).toBeInTheDocument();
+    });
+
+    it('should not render source URL link when source_url is null', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+
+      expect(screen.queryByText(/imported from/i)).not.toBeInTheDocument();
+    });
+
+    it('should handle invalid source URL gracefully', () => {
+      const recipeWithInvalidUrl = {
+        ...mockRecipe,
+        source_url: 'not-a-valid-url',
+      };
+      render(<RecipeDetailView recipe={recipeWithInvalidUrl} />);
+
+      // Should fall back to displaying the raw URL
+      expect(screen.getByText('not-a-valid-url')).toBeInTheDocument();
     });
 
     it('should render RecipeMetadata component', () => {

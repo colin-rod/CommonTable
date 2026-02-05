@@ -27,6 +27,7 @@ function createTestRecipe(overrides: Partial<Recipe>): Recipe {
     cooking_method: null,
     dietary_categories: null,
     dish_category: null,
+    source_url: null,
     ...overrides,
   };
 }
@@ -581,6 +582,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
         }),
         createTestRecipe({
           id: 'recipe-2' as RecipeId,
@@ -589,6 +591,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
         }),
         createTestRecipe({
           id: 'recipe-3' as RecipeId,
@@ -597,6 +600,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
         }),
       ];
 
@@ -735,6 +739,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
           priority: 1,
         }),
         createTestRecipe({
@@ -746,6 +751,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
           priority: 1,
         }),
         createTestRecipe({
@@ -757,6 +763,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
           priority: 3,
         }),
       ];
@@ -779,6 +786,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
           tags: ['pasta', 'quick'],
           is_favorite: true,
         }),
@@ -790,6 +798,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
           tags: ['pasta'],
           is_favorite: true,
         }),
@@ -801,6 +810,7 @@ describe('useRecipeFilters', () => {
           cooking_method: null,
           dietary_categories: null,
           dish_category: null,
+          source_url: null,
           tags: ['pasta', 'quick'],
           is_favorite: false,
         }),

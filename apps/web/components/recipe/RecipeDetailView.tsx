@@ -2,7 +2,7 @@
 
 import type { RecipeWithVersion, RecipeImage, UnitSystem } from '@commontable/types';
 import { scaleIngredients } from '@commontable/types';
-import { Stack, Typography, Divider, Box, Skeleton, Paper } from '@mui/material';
+import { Stack, Typography, Divider, Box, Skeleton, Paper, Link } from '@mui/material';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 
 import { IngredientList } from './IngredientList';
@@ -112,6 +112,27 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
       {recipe.description && (
         <Typography variant="body1" color="text.secondary">
           {recipe.description}
+        </Typography>
+      )}
+
+      {/* Source URL - for imported recipes */}
+      {recipe.source_url && (
+        <Typography variant="body2" color="text.secondary">
+          Imported from{' '}
+          <Link
+            href={recipe.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="hover"
+          >
+            {(() => {
+              try {
+                return new URL(recipe.source_url).hostname;
+              } catch {
+                return recipe.source_url;
+              }
+            })()}
+          </Link>
         </Typography>
       )}
 

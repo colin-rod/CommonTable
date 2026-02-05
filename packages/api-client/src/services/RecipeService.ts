@@ -103,10 +103,12 @@ export class RecipeService extends BaseService {
         p_key_ingredients: validated.key_ingredients ?? undefined,
         p_priority: validated.priority ?? undefined,
         p_status: validated.status ?? 'suggested',
-        // NEW metadata fields for queue lanes
+        // Metadata fields for queue lanes
         p_cooking_method: validated.cooking_method ?? undefined,
         p_dietary_categories: validated.dietary_categories ?? undefined,
         p_dish_category: validated.dish_category ?? undefined,
+        // Source URL for imported recipes
+        p_source_url: validated.source_url ?? undefined,
       },
     );
 

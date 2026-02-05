@@ -86,6 +86,7 @@ describe('recipe server actions', () => {
     cooking_method: null,
     dietary_categories: null,
     dish_category: null,
+    source_url: null,
   };
 
   const mockUser = { id: 'auth-user-1', email: 'test@example.com' };

@@ -68,7 +68,7 @@ export const useShortlistStore = create<ShortlistStore>((set, get) => ({
         created_by: userId,
         created_at: new Date(),
         updated_at: new Date(),
-        // New metadata fields (placeholder values)
+        // Metadata fields (placeholder values)
         cuisine: null,
         meal_type: null,
         key_ingredients: [],
@@ -77,6 +77,7 @@ export const useShortlistStore = create<ShortlistStore>((set, get) => ({
         cooking_method: null,
         dietary_categories: null,
         dish_category: null,
+        source_url: null,
       },
       addedBy: {
         id: userId,

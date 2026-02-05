@@ -40,6 +40,7 @@ describe('useRecipe Hook', () => {
     cooking_method: null,
     dietary_categories: null,
     dish_category: null,
+    source_url: null,
     current_version: {
       id: 'version-123' as any,
       recipe_id: mockRecipeId,

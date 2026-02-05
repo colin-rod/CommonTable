@@ -54,6 +54,7 @@ describe('useRecipes Hook', () => {
       cooking_method: null,
       dietary_categories: null,
       dish_category: null,
+      source_url: null,
     },
     {
       id: 'recipe-2' as RecipeId,
@@ -77,6 +78,7 @@ describe('useRecipes Hook', () => {
       cooking_method: null,
       dietary_categories: null,
       dish_category: null,
+      source_url: null,
     },
   ];
 

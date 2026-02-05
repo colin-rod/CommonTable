@@ -26,6 +26,7 @@ export function createMockRecipe(overrides?: Partial<Recipe>): Recipe {
     cooking_method: null,
     dietary_categories: null,
     dish_category: null,
+    source_url: null,
     ...overrides,
   };
 }

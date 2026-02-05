@@ -83,7 +83,6 @@ export function createTestRecipe(
     title: string;
     current_version_id: string;
     source_url: string | null;
-    source_name: string | null;
     tags: string[];
     last_cooked_at: string | null;
     created_by: string;
@@ -101,7 +100,6 @@ export function createTestRecipe(
     title: 'Test Recipe',
     current_version_id: versionId,
     source_url: null,
-    source_name: null,
     tags: [],
     last_cooked_at: null,
     created_by: randomUUID(),

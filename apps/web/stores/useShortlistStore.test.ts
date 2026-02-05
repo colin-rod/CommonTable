@@ -46,6 +46,7 @@ const mockShortlistItem1: ShortlistItem = {
     cooking_method: null,
     dietary_categories: null,
     dish_category: null,
+    source_url: null,
   },
   addedBy: {
     id: mockUserId,
@@ -78,6 +79,7 @@ const mockShortlistItem2: ShortlistItem = {
     cooking_method: null,
     dietary_categories: null,
     dish_category: null,
+    source_url: null,
   },
   addedBy: {
     id: mockUserId,
