@@ -78,8 +78,8 @@ import type { Recipe, RecipeId } from '@commontable/api-client';
 This package requires these environment variables:
 
 - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
-- `SUPABASE_SERVICE_ROLE_KEY` - (Optional) Service role key for server-side operations
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` - Your Supabase publishable key
+- `SUPABASE_SECRET_KEY` - (Optional) Secret key for server-side operations
 - `NODE_ENV` - Environment (defaults to 'development')
 
 See [apps/web/.env.example](../../apps/web/.env.example) for example configuration.

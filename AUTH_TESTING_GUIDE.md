@@ -45,10 +45,10 @@ This applies all migrations including:
 Create `/Users/colinrodrigues/CommonTable/apps/web/.env.local`:
 
 ```env
-# Get these from: npx supabase status
+# Get these from: npx supabase status or Supabase Dashboard
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key-from-supabase-status>
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key-from-supabase-status>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable-key-from-dashboard>
+SUPABASE_SECRET_KEY=<secret-key-from-dashboard>
 ```
 
 ### 5. Start Development Server
