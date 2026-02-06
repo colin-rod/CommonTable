@@ -60,15 +60,6 @@ export function useRecipeQueue(laneType?: LaneType): UseRecipeQueueReturn {
             case 'cuisine':
               laneKey = entry.recipe.cuisine || 'uncategorized';
               break;
-            case 'cooking_method':
-              laneKey = entry.recipe.cooking_method || 'uncategorized';
-              break;
-            case 'dietary':
-              laneKey = entry.recipe.dietary_categories?.[0] || 'uncategorized';
-              break;
-            case 'dish_category':
-              laneKey = entry.recipe.dish_category || 'uncategorized';
-              break;
             default:
               laneKey = 'uncategorized';
           }
@@ -90,11 +81,8 @@ export function useRecipeQueue(laneType?: LaneType): UseRecipeQueueReturn {
         setEntries(entriesWithRecipes);
       } else {
         // Load all entries without grouping
-        console.log('[DEBUG] Loading queue entries...');
         const queueEntries = await queueService.list({ status: 'queued' });
-        console.log('[DEBUG] Queue entries loaded:', queueEntries.length, queueEntries);
 
-        console.log('[DEBUG] Hydrating recipes...');
         const results = await Promise.allSettled(
           queueEntries.map((entry) => recipeService.getById(entry.recipe_id as RecipeId)),
         );
@@ -105,19 +93,16 @@ export function useRecipeQueue(laneType?: LaneType): UseRecipeQueueReturn {
             if (!entry) return null;
 
             if (result.status === 'fulfilled') {
-              console.log('[DEBUG] Recipe loaded:', result.value.id, result.value.title);
               return { ...entry, recipe: result.value };
             }
 
             console.error(
-              `[DEBUG] Failed to load recipe ${entry.recipe_id} for queue entry ${entry.id}:`,
+              `Failed to load recipe ${entry.recipe_id} for queue entry ${entry.id}:`,
               result.reason,
             );
             return null;
           })
           .filter((entry): entry is QueueEntryWithRecipe => entry !== null);
-
-        console.log('[DEBUG] All recipes hydrated:', entriesWithRecipes.length);
 
         setEntries(entriesWithRecipes);
         setLanes({});

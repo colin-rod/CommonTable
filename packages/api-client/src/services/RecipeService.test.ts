@@ -38,9 +38,6 @@ interface MockRecipe {
   meal_type?: string | null;
   key_ingredients?: string[] | null;
   priority?: number | null;
-  cooking_method?: string | null;
-  dietary_categories?: string[] | null;
-  dish_category?: string | null;
 }
 
 interface MockRecipeVersion {
@@ -153,9 +150,6 @@ describe('RecipeService', () => {
         // New metadata fields (required)
         status: 'suggested' as const,
         key_ingredients: [],
-        cooking_method: undefined,
-        dietary_categories: [],
-        dish_category: undefined,
       };
 
       const mockRecipe: MockRecipe = {
@@ -202,17 +196,13 @@ describe('RecipeService', () => {
         p_key_ingredients: [],
         p_priority: undefined,
         p_status: 'suggested',
-        // NEW metadata fields for queue lanes (defaults when not provided)
-        p_cooking_method: undefined,
-        p_dietary_categories: [], // Default empty array from schema
-        p_dish_category: undefined,
       });
 
       expect(result.id).toBe(validRecipeId);
       expect(result.title).toBe(input.title);
     });
 
-    it('should create recipe with new metadata fields for queue lanes', async () => {
+    it('should create recipe with metadata fields', async () => {
       const input = {
         household_id: validHouseholdId,
         title: 'Vegetarian Stir Fry',
@@ -226,10 +216,6 @@ describe('RecipeService', () => {
         user_id: validUserId,
         status: 'suggested' as const,
         key_ingredients: ['vegetables'],
-        // NEW metadata fields for queue lanes
-        cooking_method: 'quick' as const,
-        dietary_categories: ['vegetarian' as const, 'vegan' as const],
-        dish_category: 'main' as const,
         cuisine: 'asian' as const,
         meal_type: 'main_dish' as const,
       };
@@ -279,10 +265,7 @@ describe('RecipeService', () => {
         p_key_ingredients: ['vegetables'],
         p_priority: undefined,
         p_status: 'suggested',
-        // NEW metadata fields for queue lanes
-        p_cooking_method: 'quick',
-        p_dietary_categories: ['vegetarian', 'vegan'],
-        p_dish_category: 'main',
+        p_source_url: undefined,
       });
 
       expect(result.id).toBe(validRecipeId);
@@ -1261,7 +1244,6 @@ describe('RecipeService', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         key_ingredients: [],
-        dietary_categories: [],
       };
 
       const updatedRecipe: MockRecipe = {
@@ -1299,7 +1281,6 @@ describe('RecipeService', () => {
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         key_ingredients: [],
-        dietary_categories: [],
       };
 
       const updatedRecipe: MockRecipe = {
@@ -1350,9 +1331,6 @@ describe('RecipeService', () => {
         is_favorite: false,
         last_cooked_at: null,
         status: 'suggested',
-        cooking_method: undefined,
-        dietary_categories: [],
-        dish_category: undefined,
         cuisine: null,
         meal_type: null,
         key_ingredients: null,

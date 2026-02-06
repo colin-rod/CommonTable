@@ -258,15 +258,6 @@ export class RecipeQueueService extends BaseService {
         case 'cuisine':
           laneKey = recipe.cuisine || 'uncategorized';
           break;
-        case 'cooking_method':
-          laneKey = recipe.cooking_method || 'uncategorized';
-          break;
-        case 'dietary':
-          laneKey = recipe.dietary_categories?.[0] || 'uncategorized';
-          break;
-        case 'dish_category':
-          laneKey = recipe.dish_category || 'uncategorized';
-          break;
         default:
           laneKey = 'uncategorized';
       }

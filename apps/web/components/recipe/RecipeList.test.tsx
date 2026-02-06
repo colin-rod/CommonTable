@@ -35,9 +35,6 @@ describe('RecipeList Component', () => {
       key_ingredients: ['pasta', 'eggs', 'cheese'],
       priority: 1,
       status: 'suggested',
-      cooking_method: null,
-      dietary_categories: null,
-      dish_category: null,
       source_url: null,
     },
     {
@@ -59,9 +56,6 @@ describe('RecipeList Component', () => {
       key_ingredients: ['chicken', 'curry', 'coconut milk'],
       priority: 2,
       status: 'to_cook',
-      cooking_method: null,
-      dietary_categories: null,
-      dish_category: null,
       source_url: null,
     },
   ];

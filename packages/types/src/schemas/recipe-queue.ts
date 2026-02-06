@@ -13,15 +13,9 @@ export const QueueStatusSchema = z.enum(['queued', 'cooking', 'cooked']);
 export type QueueStatus = z.infer<typeof QueueStatusSchema>;
 
 /**
- * Lane type enum (5 types for organizing queue)
+ * Lane type enum (2 types for organizing queue)
  */
-export const LaneTypeSchema = z.enum([
-  'meal_type',
-  'cuisine',
-  'cooking_method',
-  'dietary',
-  'dish_category',
-]);
+export const LaneTypeSchema = z.enum(['meal_type', 'cuisine']);
 
 export type LaneType = z.infer<typeof LaneTypeSchema>;
 
@@ -122,21 +116,6 @@ export const LANE_TYPES: Record<LaneType, LaneConfig> = {
     type: 'cuisine',
     label: 'Cuisine',
     description: 'Group by Italian, Mexican, Asian, etc.',
-  },
-  cooking_method: {
-    type: 'cooking_method',
-    label: 'Cooking Method',
-    description: 'Group by quick, slow cook, bake, grill, etc.',
-  },
-  dietary: {
-    type: 'dietary',
-    label: 'Dietary',
-    description: 'Group by vegetarian, vegan, gluten-free, etc.',
-  },
-  dish_category: {
-    type: 'dish_category',
-    label: 'Main/Side',
-    description: 'Group by main, side, appetizer, soup, etc.',
   },
 };
 

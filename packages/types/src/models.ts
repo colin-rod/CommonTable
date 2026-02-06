@@ -2,25 +2,10 @@
 
 // Import recipe metadata enum types from schemas to avoid duplication
 import type { MealSlot } from './schemas/calendar';
-import type {
-  CuisineType,
-  MealType,
-  RecipeStatus,
-  CookingMethod,
-  DietaryCategory,
-  DishCategory,
-} from './schemas/recipe';
+import type { CuisineType, MealType, RecipeStatus } from './schemas/recipe';
 
 // Re-export to maintain backward compatibility
-export type {
-  CuisineType,
-  MealType,
-  RecipeStatus,
-  CookingMethod,
-  DietaryCategory,
-  DishCategory,
-  MealSlot,
-};
+export type { CuisineType, MealType, RecipeStatus, MealSlot };
 
 // Branded ID types
 export type RecipeId = string & { __brand: 'RecipeId' };
@@ -60,9 +45,6 @@ export interface Recipe {
   key_ingredients: string[];
   priority: number | null;
   status: RecipeStatus;
-  cooking_method: CookingMethod | null;
-  dietary_categories: DietaryCategory[] | null;
-  dish_category: DishCategory | null;
   // Import source (null for manually created recipes)
   source_url: string | null;
 }

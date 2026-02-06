@@ -14,14 +14,6 @@ import {
   LANE_TYPES,
   MarkAsCookedSchema,
   type QueueStatus,
-  type LaneType,
-  type CreateQueueEntryInput,
-  type UpdateQueueEntryInput,
-  type UpdateQueuePositionInput,
-  type UpdateQueueStatusInput,
-  type QueueFilter,
-  type LaneConfig,
-  type MarkAsCookedInput,
 } from './recipe-queue';
 
 describe('QueueStatusSchema', () => {
@@ -586,27 +578,6 @@ describe('LANE_TYPES', () => {
     expect(config.type).toBe('cuisine');
     expect(config.label).toBe('Cuisine');
     expect(config.description).toBe('Group by Italian, Mexican, Asian, etc.');
-  });
-
-  it('should have cooking_method config', () => {
-    const config = LANE_TYPES.cooking_method;
-    expect(config.type).toBe('cooking_method');
-    expect(config.label).toBe('Cooking Method');
-    expect(config.description).toBe('Group by quick, slow cook, bake, grill, etc.');
-  });
-
-  it('should have dietary config', () => {
-    const config = LANE_TYPES.dietary;
-    expect(config.type).toBe('dietary');
-    expect(config.label).toBe('Dietary');
-    expect(config.description).toBe('Group by vegetarian, vegan, gluten-free, etc.');
-  });
-
-  it('should have dish_category config', () => {
-    const config = LANE_TYPES.dish_category;
-    expect(config.type).toBe('dish_category');
-    expect(config.label).toBe('Main/Side');
-    expect(config.description).toBe('Group by main, side, appetizer, soup, etc.');
   });
 });
 

@@ -35,9 +35,6 @@ describe('useMealPlan Hook', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
-    cooking_method: 'stovetop',
-    dietary_categories: ['vegetarian'],
-    dish_category: 'main',
     source_url: null,
   };
 
@@ -59,9 +56,6 @@ describe('useMealPlan Hook', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
-    cooking_method: 'no_cook',
-    dietary_categories: [],
-    dish_category: 'salad',
     source_url: null,
   };
 

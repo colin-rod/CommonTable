@@ -35,9 +35,6 @@ describe('useRecipeQueue Hook', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
-    cooking_method: 'stovetop',
-    dietary_categories: ['vegetarian'],
-    dish_category: 'main',
     source_url: null,
   };
 
@@ -59,9 +56,6 @@ describe('useRecipeQueue Hook', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
-    cooking_method: 'no_cook',
-    dietary_categories: [],
-    dish_category: 'salad',
     source_url: null,
   };
 
@@ -261,62 +255,11 @@ describe('useRecipeQueue Hook', () => {
       expect(result.current.lanes).toHaveProperty('american');
     });
 
-    it('should group by cooking_method', async () => {
-      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
-      mockRecipeService.getById
-        .mockResolvedValueOnce(mockRecipe1)
-        .mockResolvedValueOnce(mockRecipe2);
-
-      const { result } = renderHook(() => useRecipeQueue('cooking_method'));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.lanes).toHaveProperty('stovetop');
-      expect(result.current.lanes).toHaveProperty('no_cook');
-    });
-
-    it('should group by dietary', async () => {
-      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
-      mockRecipeService.getById
-        .mockResolvedValueOnce(mockRecipe1)
-        .mockResolvedValueOnce(mockRecipe2);
-
-      const { result } = renderHook(() => useRecipeQueue('dietary'));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.lanes).toHaveProperty('vegetarian');
-      expect(result.current.lanes).toHaveProperty('uncategorized');
-    });
-
-    it('should group by dish_category', async () => {
-      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
-      mockRecipeService.getById
-        .mockResolvedValueOnce(mockRecipe1)
-        .mockResolvedValueOnce(mockRecipe2);
-
-      const { result } = renderHook(() => useRecipeQueue('dish_category'));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.lanes).toHaveProperty('main');
-      expect(result.current.lanes).toHaveProperty('salad');
-    });
-
     it('should handle recipes without categorization', async () => {
       const uncategorizedRecipe: Recipe = {
         ...mockRecipe1,
         meal_type: null,
         cuisine: null,
-        cooking_method: null,
-        dietary_categories: null,
-        dish_category: null,
         source_url: null,
       };
 

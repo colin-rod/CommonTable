@@ -7,9 +7,6 @@ import {
   CuisineTypeSchema,
   MealTypeSchema,
   RecipeStatusSchema,
-  CookingMethodSchema,
-  DietaryCategorySchema,
-  DishCategorySchema,
 } from '@commontable/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -84,9 +81,6 @@ const RecipeFormSchema = z.object({
     .default([]),
   priority: z.number().int().min(1).max(5).nullable().optional(),
   status: RecipeStatusSchema.default('suggested'),
-  cooking_method: CookingMethodSchema.nullable().optional(),
-  dietary_categories: z.array(DietaryCategorySchema).default([]),
-  dish_category: DishCategorySchema.nullable().optional(),
 });
 
 export interface RecipeFormProps {

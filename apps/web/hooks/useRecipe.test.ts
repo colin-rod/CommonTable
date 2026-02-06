@@ -37,9 +37,6 @@ describe('useRecipe Hook', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
-    cooking_method: null,
-    dietary_categories: null,
-    dish_category: null,
     source_url: null,
     current_version: {
       id: 'version-123' as any,
