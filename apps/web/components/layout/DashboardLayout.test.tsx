@@ -6,10 +6,12 @@ import { DashboardLayout } from './DashboardLayout';
 import { useAuth } from '@/hooks/useAuth';
 import type { UseAuthReturn } from '@/hooks/useAuth';
 import { useMealPlan } from '@/hooks/useMealPlan';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
-// Mock useAuth hook
+// Mock hooks
 vi.mock('@/hooks/useAuth');
 vi.mock('@/hooks/useMealPlan');
+vi.mock('@/hooks/useOnboarding');
 
 // Mock next/navigation
 vi.mock('next/navigation', () => {
@@ -74,6 +76,13 @@ describe('DashboardLayout', () => {
       refresh: vi.fn(),
       hasRecipe: () => false,
     });
+    vi.mocked(useOnboarding).mockReturnValue({
+      showWelcome: false, // CRITICAL: prevent WelcomeDialog from showing
+      isOnboardingComplete: true,
+      completeOnboarding: vi.fn(),
+      skipOnboarding: vi.fn(),
+      resetOnboarding: vi.fn(),
+    });
   });
 
   describe('Navigation', () => {
@@ -122,7 +131,10 @@ describe('DashboardLayout', () => {
         </DashboardLayout>,
       );
 
-      expect(screen.getByRole('button', { name: /meal plan/i })).toBeInTheDocument();
+      // Find the FAB specifically (it has MuiFab-root class)
+      const buttons = screen.getAllByRole('button', { name: 'Meal Plan' });
+      const fab = buttons.find((button) => button.classList.contains('MuiFab-root'));
+      expect(fab).toBeInTheDocument();
     });
 
     it('should open meal plan drawer when FAB is clicked', async () => {
@@ -134,7 +146,10 @@ describe('DashboardLayout', () => {
 
       expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
 
-      const fab = screen.getByRole('button', { name: /meal plan/i });
+      // Find the FAB specifically (it has MuiFab-root class)
+      const buttons = screen.getAllByRole('button', { name: 'Meal Plan' });
+      const fab = buttons.find((button) => button.classList.contains('MuiFab-root'));
+      if (!fab) throw new Error('FAB not found');
       fireEvent.click(fab);
 
       await waitFor(() => {
