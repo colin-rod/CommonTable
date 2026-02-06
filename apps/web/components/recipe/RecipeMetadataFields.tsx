@@ -18,7 +18,7 @@ import {
   FormHelperText,
   Typography,
 } from '@mui/material';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type Ref } from 'react';
 import { type Control, Controller, type FieldErrors, useWatch } from 'react-hook-form';
 
 import { TagAutocomplete } from './TagAutocomplete';
@@ -60,6 +60,7 @@ export interface RecipeMetadataFieldsProps {
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
   availableTags: string[];
+  titleInputRef?: Ref<HTMLInputElement>;
 }
 
 /**
@@ -198,6 +199,7 @@ export function RecipeMetadataFields({
   errors,
   disabled = false,
   availableTags,
+  titleInputRef,
 }: RecipeMetadataFieldsProps) {
   // Watch the description and notes values to determine initial visibility
   const descriptionValue = useWatch({ control, name: 'description' });
@@ -247,6 +249,7 @@ export function RecipeMetadataFields({
           render={({ field }) => (
             <TextField
               {...field}
+              inputRef={titleInputRef}
               label="Recipe Title"
               required
               fullWidth
