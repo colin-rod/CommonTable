@@ -56,21 +56,6 @@ describe('LaneTypeSchema', () => {
       const result = LaneTypeSchema.parse('cuisine');
       expect(result).toBe('cuisine');
     });
-
-    it('should accept "cooking_method"', () => {
-      const result = LaneTypeSchema.parse('cooking_method');
-      expect(result).toBe('cooking_method');
-    });
-
-    it('should accept "dietary"', () => {
-      const result = LaneTypeSchema.parse('dietary');
-      expect(result).toBe('dietary');
-    });
-
-    it('should accept "dish_category"', () => {
-      const result = LaneTypeSchema.parse('dish_category');
-      expect(result).toBe('dish_category');
-    });
   });
 
   describe('invalid values', () => {
@@ -556,14 +541,11 @@ describe('LaneConfigSchema', () => {
 });
 
 describe('LANE_TYPES', () => {
-  it('should define all 5 lane types', () => {
+  it('should define all 2 lane types', () => {
     const laneTypes = Object.keys(LANE_TYPES);
-    expect(laneTypes).toHaveLength(5);
+    expect(laneTypes).toHaveLength(2);
     expect(laneTypes).toContain('meal_type');
     expect(laneTypes).toContain('cuisine');
-    expect(laneTypes).toContain('cooking_method');
-    expect(laneTypes).toContain('dietary');
-    expect(laneTypes).toContain('dish_category');
   });
 
   it('should have meal_type config', () => {
