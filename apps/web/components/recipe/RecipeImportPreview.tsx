@@ -12,7 +12,11 @@ import {
   Paper,
   Box,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -241,12 +245,38 @@ export function RecipeImportPreview({
         <Divider />
 
         {/* Ingredient Editor Section */}
-        <IngredientEditor control={control} errors={errors} disabled={loading} />
-
-        <Divider />
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="h3" variant="h6">
+              Ingredients
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <IngredientEditor
+              control={control}
+              errors={errors}
+              disabled={loading}
+              showHeader={false}
+            />
+          </AccordionDetails>
+        </Accordion>
 
         {/* Step Editor Section */}
-        <StepEditor control={control} errors={errors} disabled={loading} />
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="h3" variant="h6">
+              Steps
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <StepEditor
+              control={control}
+              errors={errors}
+              disabled={loading}
+              showHeader={false}
+            />
+          </AccordionDetails>
+        </Accordion>
 
         {/* Action Buttons */}
         <Stack direction="row" spacing={2} justifyContent="flex-end">

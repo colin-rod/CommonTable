@@ -11,7 +11,18 @@ import {
   DishCategorySchema,
 } from '@commontable/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Stack, Typography, Button, Alert, Divider, Box, Paper } from '@mui/material';
+import {
+  Stack,
+  Typography,
+  Button,
+  Alert,
+  Divider,
+  Box,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -153,14 +164,33 @@ export function RecipeForm({
         }}
       >
         {/* Ingredients Column */}
-        <Paper elevation={1} sx={{ flex: 1, p: 2 }}>
-          <IngredientEditor control={control} errors={errors} disabled={loading} />
-        </Paper>
+        <Accordion defaultExpanded sx={{ flex: 1 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="h3" variant="h6">
+              Ingredients
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <IngredientEditor
+              control={control}
+              errors={errors}
+              disabled={loading}
+              showHeader={false}
+            />
+          </AccordionDetails>
+        </Accordion>
 
         {/* Steps Column */}
-        <Paper elevation={1} sx={{ flex: 1, p: 2 }}>
-          <StepEditor control={control} errors={errors} disabled={loading} />
-        </Paper>
+        <Accordion defaultExpanded sx={{ flex: 1 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="h3" variant="h6">
+              Steps
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <StepEditor control={control} errors={errors} disabled={loading} showHeader={false} />
+          </AccordionDetails>
+        </Accordion>
       </Box>
 
       {/* Action Buttons */}
