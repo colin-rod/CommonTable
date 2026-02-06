@@ -1,16 +1,17 @@
 'use client';
 
 import { RecipeService } from '@commontable/api-client';
-import type { SortOption, CuisineType, MealType, RecipeStatus } from '@commontable/types';
+import type { SortOption, CuisineType, MealType, RecipeStatus, RecipeId } from '@commontable/types';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Stack, Typography, Button, Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useState, useMemo, useEffect } from 'react';
 
-import { RecipeList } from '@/components/recipe/RecipeList';
+import { RecipeGrid } from '@/components/recipe/RecipeGrid';
 import { RecipeSearchBar } from '@/components/recipe/RecipeSearchBar';
 import { RecipeFilterBar } from '@/components/recipes/RecipeFilterBar';
 import { useAuth } from '@/hooks/useAuth';
+import { useMealPlan } from '@/hooks/useMealPlan';
 import { useRecipeFilters } from '@/hooks/useRecipeFilters';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useRecipeSearch } from '@/hooks/useRecipeSearch';
@@ -48,7 +49,7 @@ export default function RecipesPage() {
   const [status, setStatus] = useState<RecipeStatus | null>(null);
   const [priority, setPriority] = useState<number | null>(null);
 
-  const { recipes, loading: recipesLoading, error, toggleFavorite } = useRecipes();
+  const { recipes, loading: recipesLoading, error } = useRecipes();
   const { results: searchResults, loading: searchLoading } = useRecipeSearch(searchQuery);
 
   const supabase = useMemo(() => createClient(), []);
@@ -81,6 +82,20 @@ export default function RecipesPage() {
   const filteredRecipes = useRecipeFilters(baseRecipes, selectedTags, showFavoritesOnly, sortBy);
 
   const isLoading = searchQuery.trim() ? searchLoading : recipesLoading;
+
+  const { addToMealPlan, hasRecipe } = useMealPlan();
+
+  const handleAddToMealPlan = async (recipeId: RecipeId) => {
+    try {
+      await addToMealPlan(recipeId as string);
+    } catch (err) {
+      console.error('Failed to add to meal plan:', err);
+    }
+  };
+
+  const mealPlanRecipeIds = useMemo(() => {
+    return filteredRecipes.filter((recipe) => hasRecipe(recipe.id as string)).map((recipe) => recipe.id);
+  }, [filteredRecipes, hasRecipe]);
 
   const handleAddRecipe = () => {
     router.push('/recipes/new');
@@ -146,8 +161,13 @@ export default function RecipesPage() {
         onPriorityChange={setPriority}
       />
 
-      {/* Recipe List */}
-      <RecipeList recipes={filteredRecipes} loading={isLoading} onToggleFavorite={toggleFavorite} />
+      {/* Recipe Grid */}
+      <RecipeGrid
+        recipes={filteredRecipes}
+        loading={isLoading}
+        onAddToMealPlan={handleAddToMealPlan}
+        mealPlanRecipeIds={mealPlanRecipeIds}
+      />
     </Stack>
   );
 }
