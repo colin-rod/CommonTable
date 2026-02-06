@@ -5,9 +5,11 @@ import { DashboardLayout } from './DashboardLayout';
 
 import { useAuth } from '@/hooks/useAuth';
 import type { UseAuthReturn } from '@/hooks/useAuth';
+import { useMealPlan } from '@/hooks/useMealPlan';
 
 // Mock useAuth hook
 vi.mock('@/hooks/useAuth');
+vi.mock('@/hooks/useMealPlan');
 
 // Mock next/navigation
 vi.mock('next/navigation', () => {
@@ -59,6 +61,16 @@ describe('DashboardLayout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useAuth).mockReturnValue(mockAuthReturn);
+    vi.mocked(useMealPlan).mockReturnValue({
+      entries: [],
+      loading: false,
+      error: null,
+      count: 0,
+      addToMealPlan: vi.fn(),
+      removeFromMealPlan: vi.fn(),
+      markAsCooked: vi.fn(),
+      hasRecipe: () => false,
+    });
   });
 
   describe('Navigation', () => {
@@ -98,6 +110,33 @@ describe('DashboardLayout', () => {
       );
 
       expect(screen.getByText('Test Content')).toBeInTheDocument();
+    });
+
+    it('should render meal plan FAB', () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      expect(screen.getByRole('button', { name: /meal plan/i })).toBeInTheDocument();
+    });
+
+    it('should open meal plan drawer when FAB is clicked', async () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
+
+      const fab = screen.getByRole('button', { name: /meal plan/i });
+      fireEvent.click(fab);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
+      });
     });
 
     it('should render badge on Tags when pending count > 0', async () => {

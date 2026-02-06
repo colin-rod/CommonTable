@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -81,58 +80,6 @@ describe('DiscoveryPage', () => {
       expect(screen.getByRole('heading', { name: /what can i cook/i })).toBeInTheDocument();
     });
 
-    it('should render MealPlanFAB', () => {
-      render(<DiscoveryPage />);
-
-      // MealPlanFAB should be visible
-      const fab = screen.getByRole('button', { name: /meal plan/i });
-      expect(fab).toBeInTheDocument();
-    });
-
-    it('should not render MealPlanDrawer initially', () => {
-      render(<DiscoveryPage />);
-
-      // Drawer should be closed initially
-      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
-    });
-  });
-
-  describe('Meal Plan Drawer Interaction', () => {
-    it('should open drawer when FAB is clicked', async () => {
-      const user = userEvent.setup();
-
-      render(<DiscoveryPage />);
-
-      // Initially drawer is closed
-      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
-
-      // Click FAB to open drawer
-      const fab = screen.getByRole('button', { name: /meal plan/i });
-      await user.click(fab);
-
-      // Drawer should now be visible
-      expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
-    });
-
-    it('should close drawer when close button is clicked', async () => {
-      const user = userEvent.setup();
-
-      render(<DiscoveryPage />);
-
-      // Open drawer
-      const fab = screen.getByRole('button', { name: /meal plan/i });
-      await user.click(fab);
-
-      // Drawer is visible
-      expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
-
-      // Close drawer
-      const closeButton = screen.getByRole('button', { name: /close/i });
-      await user.click(closeButton);
-
-      // Drawer should be closed
-      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
-    });
   });
 
   describe('Material Design Compliance', () => {
@@ -167,49 +114,14 @@ describe('DiscoveryPage', () => {
       const title = screen.getByRole('heading', { name: /what can i cook/i });
       expect(title).toBeInTheDocument();
     });
-
-    it('should have accessible FAB', () => {
-      render(<DiscoveryPage />);
-
-      const fab = screen.getByRole('button', { name: /meal plan/i });
-      expect(fab).toHaveAttribute('aria-label');
-    });
   });
 
   describe('Component Integration', () => {
-    it('should render all three components together', () => {
+    it('should render the recipe discovery panel', () => {
       render(<DiscoveryPage />);
 
       // WhatCanICookPanel (check for its title)
       expect(screen.getByRole('heading', { name: /what can i cook/i })).toBeInTheDocument();
-
-      // MealPlanFAB
-      expect(screen.getByRole('button', { name: /meal plan/i })).toBeInTheDocument();
-
-      // MealPlanDrawer (closed initially)
-      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
-    });
-
-    it('should maintain drawer state across interactions', async () => {
-      const user = userEvent.setup();
-
-      render(<DiscoveryPage />);
-
-      // Open and close drawer multiple times
-      const fab = screen.getByRole('button', { name: /meal plan/i });
-
-      // Open
-      await user.click(fab);
-      expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
-
-      // Close
-      const closeButton = screen.getByRole('button', { name: /close/i });
-      await user.click(closeButton);
-      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
-
-      // Open again
-      await user.click(fab);
-      expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
     });
   });
 });
