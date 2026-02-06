@@ -157,6 +157,14 @@ export interface AiTagSuggestionWithTag extends AiTagSuggestion {
   tag: Tag;
 }
 
+// Recipe with pending AI suggestions (for review page)
+export interface RecipeWithPendingSuggestions {
+  recipe_id: RecipeId;
+  recipe_title: string;
+  recipe_version_id: RecipeVersionId;
+  suggestions: AiTagSuggestionWithTag[];
+}
+
 // Tag with usage count (from get_household_tags function)
 export interface TagWithUsageCount {
   tag_name: string;
