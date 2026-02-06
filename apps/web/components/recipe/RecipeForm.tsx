@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable no-undef */
 import {
   IngredientInputSchema,
   StepInputSchema,
@@ -27,14 +28,8 @@ import {
   AccordionDetails,
   Chip,
 } from '@mui/material';
-import { useForm, useWatch } from 'react-hook-form';
 import { useEffect, useMemo, useRef, useState, type RefObject, type SyntheticEvent } from 'react';
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import { IngredientEditor } from './IngredientEditor';
@@ -243,7 +238,7 @@ export function RecipeForm({
   }, [expandedSection]);
 
   const handleSectionChange =
-    (section: 'details' | 'ingredients' | 'steps', summaryRef: RefObject<HTMLDivElement>) =>
+    (section: 'details' | 'ingredients' | 'steps', summaryRef: RefObject<HTMLDivElement | null>) =>
     (_event: SyntheticEvent, isExpanded: boolean) => {
       setExpandedSection(isExpanded ? section : null);
       if (!isExpanded) {
@@ -431,12 +426,6 @@ export function RecipeForm({
                 variant="outlined"
               />
             </Stack>
-        {/* Ingredients Column */}
-        <Accordion defaultExpanded sx={{ flex: 1 }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography component="h3" variant="h6">
-              Ingredients
-            </Typography>
           </AccordionSummary>
           <AccordionDetails>
             <IngredientEditor
@@ -444,7 +433,6 @@ export function RecipeForm({
               errors={errors}
               disabled={loading}
               addButtonRef={ingredientAddButtonRef}
-              showHeader={false}
             />
           </AccordionDetails>
         </Accordion>
@@ -480,21 +468,18 @@ export function RecipeForm({
               disabled={loading}
               addButtonRef={stepAddButtonRef}
             />
-        {/* Steps Column */}
-        <Accordion defaultExpanded sx={{ flex: 1 }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Typography component="h3" variant="h6">
-              Steps
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <StepEditor control={control} errors={errors} disabled={loading} showHeader={false} />
           </AccordionDetails>
         </Accordion>
       </Box>
 
       {/* Action Buttons */}
-      <Box display="flex" flexWrap="wrap" alignItems="center" gap={2} justifyContent="space-between">
+      <Box
+        display="flex"
+        flexWrap="wrap"
+        alignItems="center"
+        gap={2}
+        justifyContent="space-between"
+      >
         {draftStorageKey && (
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Button variant="outlined" onClick={handleSaveDraft} disabled={loading}>

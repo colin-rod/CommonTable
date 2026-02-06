@@ -5,8 +5,8 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Stack, Typography, TextField, IconButton, Button, Box } from '@mui/material';
-import { type Control, Controller, type FieldErrors, useFieldArray } from 'react-hook-form';
 import type { Ref } from 'react';
+import { type Control, Controller, type FieldErrors, useFieldArray } from 'react-hook-form';
 
 import type { RecipeFormValues } from './RecipeMetadataFields';
 

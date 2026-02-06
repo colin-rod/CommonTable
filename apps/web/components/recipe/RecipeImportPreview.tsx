@@ -3,6 +3,7 @@
 import type { CreateRecipeInput } from '@commontable/api-client';
 import { IngredientInputSchema, StepInputSchema } from '@commontable/types';
 import { zodResolver } from '@hookform/resolvers/zod';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Stack,
   Typography,
@@ -16,7 +17,6 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -269,12 +269,7 @@ export function RecipeImportPreview({
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <StepEditor
-              control={control}
-              errors={errors}
-              disabled={loading}
-              showHeader={false}
-            />
+            <StepEditor control={control} errors={errors} disabled={loading} showHeader={false} />
           </AccordionDetails>
         </Accordion>
 
