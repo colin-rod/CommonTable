@@ -2,7 +2,7 @@
 
 import type { UpdateCookingEventInput } from '@commontable/api-client';
 import type { CookingEvent, CookingEventId } from '@commontable/types';
-import { Stack, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 
 import { CookingHistoryItem } from './CookingHistoryItem';
 
@@ -36,10 +36,16 @@ export function CookingHistoryList({ events }: CookingHistoryListProps) {
   };
 
   return (
-    <Stack spacing={2}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: 2,
+      }}
+    >
       {events.map((event) => (
         <CookingHistoryItem key={event.id} event={event} onUpdate={handleUpdate} />
       ))}
-    </Stack>
+    </Box>
   );
 }
