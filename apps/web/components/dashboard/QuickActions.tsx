@@ -49,11 +49,11 @@ export function QuickActionsDropdown({ anchorEl, open, onClose }: QuickActionsDr
         <ListItemText>Add Recipe</ListItemText>
       </MenuItem>
 
-      <MenuItem onClick={() => handleNavigate('/calendar' as Route)}>
+      <MenuItem onClick={() => handleNavigate('/meal-plan' as Route)}>
         <ListItemIcon>
           <CalendarTodayIcon />
         </ListItemIcon>
-        <ListItemText>Plan This Week's Meals</ListItemText>
+        <ListItemText>Open Meal Plan</ListItemText>
       </MenuItem>
 
       <MenuItem onClick={() => handleNavigate('/recipes' as Route)}>
