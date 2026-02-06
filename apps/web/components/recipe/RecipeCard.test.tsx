@@ -50,19 +50,19 @@ const mockRecipeNeverCooked: Recipe = {
 describe('RecipeCard', () => {
   describe('Basic Rendering', () => {
     it('should render recipe title', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
       expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
     });
 
     it('should render recipe rating when available', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
       expect(screen.getByText(/4.5/)).toBeInTheDocument();
     });
 
     it('should render first 3 tags', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
       expect(screen.getByText(/pasta/)).toBeInTheDocument();
       expect(screen.getByText(/italian/)).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe('RecipeCard', () => {
     });
 
     it('should render last cooked date', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
       // Should show relative date like "8 days ago"
       expect(screen.getByText(/days ago/)).toBeInTheDocument();
@@ -80,8 +80,8 @@ describe('RecipeCard', () => {
       render(
         <RecipeCard
           recipe={mockRecipeNeverCooked}
-          onAddToShortlist={vi.fn()}
-          isInShortlist={false}
+          onAddToMealPlan={vi.fn()}
+          isInMealPlan={false}
         />,
       );
 
@@ -89,7 +89,7 @@ describe('RecipeCard', () => {
     });
 
     it('should render placeholder image when no image provided', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
       const img = screen.getByRole('img', { name: /pasta carbonara/i });
       expect(img).toBeInTheDocument();
@@ -102,8 +102,8 @@ describe('RecipeCard', () => {
         <RecipeCard
           recipe={mockRecipe}
           imageUrl="https://example.com/pasta.jpg"
-          onAddToShortlist={vi.fn()}
-          isInShortlist={false}
+          onAddToMealPlan={vi.fn()}
+          isInMealPlan={false}
         />,
       );
 
@@ -112,49 +112,45 @@ describe('RecipeCard', () => {
     });
   });
 
-  describe('Shortlist Button', () => {
-    it('should render "Add to Shortlist" button when not in shortlist', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+  describe('Meal Plan Button', () => {
+    it('should render "Add to Meal Plan" button when not in meal plan', () => {
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
-      expect(screen.getByRole('button', { name: /add to shortlist/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /add to meal plan/i })).toBeInTheDocument();
     });
 
-    it('should render "Added" button when in shortlist', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={true} />);
+    it('should render "Added" button when in meal plan', () => {
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={true} />);
 
       expect(screen.getByRole('button', { name: /added/i })).toBeInTheDocument();
     });
 
-    it('should call onAddToShortlist when button clicked', async () => {
+    it('should call onAddToMealPlan when button clicked', async () => {
       const user = userEvent.setup();
-      const onAddToShortlist = vi.fn();
+      const onAddToMealPlan = vi.fn();
 
       render(
-        <RecipeCard
-          recipe={mockRecipe}
-          onAddToShortlist={onAddToShortlist}
-          isInShortlist={false}
-        />,
+        <RecipeCard recipe={mockRecipe} onAddToMealPlan={onAddToMealPlan} isInMealPlan={false} />,
       );
 
-      const button = screen.getByRole('button', { name: /add to shortlist/i });
+      const button = screen.getByRole('button', { name: /add to meal plan/i });
       await user.click(button);
 
-      expect(onAddToShortlist).toHaveBeenCalledWith(mockRecipe.id);
+      expect(onAddToMealPlan).toHaveBeenCalledWith(mockRecipe.id);
     });
 
-    it('should not call onAddToShortlist when already in shortlist', async () => {
+    it('should not call onAddToMealPlan when already in meal plan', async () => {
       const user = userEvent.setup({ pointerEventsCheck: 0 }); // Skip pointer-events check for disabled button
-      const onAddToShortlist = vi.fn();
+      const onAddToMealPlan = vi.fn();
 
       render(
-        <RecipeCard recipe={mockRecipe} onAddToShortlist={onAddToShortlist} isInShortlist={true} />,
+        <RecipeCard recipe={mockRecipe} onAddToMealPlan={onAddToMealPlan} isInMealPlan={true} />,
       );
 
       const button = screen.getByRole('button', { name: /added/i });
       await user.click(button);
 
-      expect(onAddToShortlist).not.toHaveBeenCalled();
+      expect(onAddToMealPlan).not.toHaveBeenCalled();
     });
   });
 
@@ -163,7 +159,7 @@ describe('RecipeCard', () => {
       const user = userEvent.setup();
       mockPush.mockClear(); // Clear previous calls
 
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
       // Click anywhere on the card except the button
       const card = screen.getByRole('article');
@@ -172,13 +168,13 @@ describe('RecipeCard', () => {
       expect(mockPush).toHaveBeenCalledWith('/recipes/recipe-123');
     });
 
-    it('should not navigate when shortlist button clicked', async () => {
+    it('should not navigate when meal plan button clicked', async () => {
       const user = userEvent.setup();
       mockPush.mockClear(); // Clear previous calls
 
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
-      const button = screen.getByRole('button', { name: /add to shortlist/i });
+      const button = screen.getByRole('button', { name: /add to meal plan/i });
       await user.click(button);
 
       expect(mockPush).not.toHaveBeenCalled();
@@ -187,21 +183,21 @@ describe('RecipeCard', () => {
 
   describe('Accessibility', () => {
     it('should have accessible image alt text', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
       const img = screen.getByRole('img', { name: /pasta carbonara/i });
       expect(img).toHaveAttribute('alt', expect.stringContaining('Pasta Carbonara'));
     });
 
     it('should have accessible button labels', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
-      const button = screen.getByRole('button', { name: /add to shortlist/i });
+      const button = screen.getByRole('button', { name: /add to meal plan/i });
       expect(button).toBeInTheDocument();
     });
 
     it('should use semantic HTML for card structure', () => {
-      render(<RecipeCard recipe={mockRecipe} onAddToShortlist={vi.fn()} isInShortlist={false} />);
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
 
       expect(screen.getByRole('article')).toBeInTheDocument();
     });

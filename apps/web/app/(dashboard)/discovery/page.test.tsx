@@ -10,16 +10,10 @@ vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
 }));
 
-// Mock useAuth hook
-const mockUseAuth = vi.fn();
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => mockUseAuth(),
-}));
-
-// Mock useShortlistStore
-const mockUseShortlistStore = vi.fn();
-vi.mock('@/stores/useShortlistStore', () => ({
-  useShortlistStore: () => mockUseShortlistStore(),
+// Mock useMealPlan hook
+const mockUseMealPlan = vi.fn();
+vi.mock('@/hooks/useMealPlan', () => ({
+  useMealPlan: () => mockUseMealPlan(),
 }));
 
 // Mock useRecipes hook
@@ -50,19 +44,16 @@ describe('DiscoveryPage', () => {
       prefetch: vi.fn(),
     } as any);
 
-    // Mock auth with household
-    mockUseAuth.mockReturnValue({
-      user: { id: 'user-123' },
-      household: { id: 'household-456', name: 'Test Household' },
-      loading: false,
-    });
-
-    // Mock empty shortlist
-    mockUseShortlistStore.mockReturnValue({
-      items: [],
+    // Mock empty meal plan
+    mockUseMealPlan.mockReturnValue({
+      entries: [],
       loading: false,
       error: null,
-      getCount: () => 0,
+      count: 0,
+      addToMealPlan: vi.fn(),
+      removeFromMealPlan: vi.fn(),
+      markAsCooked: vi.fn(),
+      hasRecipe: () => false,
     });
 
     // Mock empty recipes
@@ -90,37 +81,37 @@ describe('DiscoveryPage', () => {
       expect(screen.getByRole('heading', { name: /what can i cook/i })).toBeInTheDocument();
     });
 
-    it('should render ShortlistFAB', () => {
+    it('should render MealPlanFAB', () => {
       render(<DiscoveryPage />);
 
-      // ShortlistFAB should be visible
-      const fab = screen.getByRole('button', { name: /shortlist/i });
+      // MealPlanFAB should be visible
+      const fab = screen.getByRole('button', { name: /meal plan/i });
       expect(fab).toBeInTheDocument();
     });
 
-    it('should not render ShortlistDrawer initially', () => {
+    it('should not render MealPlanDrawer initially', () => {
       render(<DiscoveryPage />);
 
       // Drawer should be closed initially
-      expect(screen.queryByRole('heading', { name: /^shortlist/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
     });
   });
 
-  describe('Shortlist Drawer Interaction', () => {
+  describe('Meal Plan Drawer Interaction', () => {
     it('should open drawer when FAB is clicked', async () => {
       const user = userEvent.setup();
 
       render(<DiscoveryPage />);
 
       // Initially drawer is closed
-      expect(screen.queryByRole('heading', { name: /^shortlist/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
 
       // Click FAB to open drawer
-      const fab = screen.getByRole('button', { name: /shortlist/i });
+      const fab = screen.getByRole('button', { name: /meal plan/i });
       await user.click(fab);
 
       // Drawer should now be visible
-      expect(screen.getByRole('heading', { name: /^shortlist/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
     });
 
     it('should close drawer when close button is clicked', async () => {
@@ -129,18 +120,18 @@ describe('DiscoveryPage', () => {
       render(<DiscoveryPage />);
 
       // Open drawer
-      const fab = screen.getByRole('button', { name: /shortlist/i });
+      const fab = screen.getByRole('button', { name: /meal plan/i });
       await user.click(fab);
 
       // Drawer is visible
-      expect(screen.getByRole('heading', { name: /^shortlist/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
 
       // Close drawer
       const closeButton = screen.getByRole('button', { name: /close/i });
       await user.click(closeButton);
 
       // Drawer should be closed
-      expect(screen.queryByRole('heading', { name: /^shortlist/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
     });
   });
 
@@ -180,7 +171,7 @@ describe('DiscoveryPage', () => {
     it('should have accessible FAB', () => {
       render(<DiscoveryPage />);
 
-      const fab = screen.getByRole('button', { name: /shortlist/i });
+      const fab = screen.getByRole('button', { name: /meal plan/i });
       expect(fab).toHaveAttribute('aria-label');
     });
   });
@@ -192,11 +183,11 @@ describe('DiscoveryPage', () => {
       // WhatCanICookPanel (check for its title)
       expect(screen.getByRole('heading', { name: /what can i cook/i })).toBeInTheDocument();
 
-      // ShortlistFAB
-      expect(screen.getByRole('button', { name: /shortlist/i })).toBeInTheDocument();
+      // MealPlanFAB
+      expect(screen.getByRole('button', { name: /meal plan/i })).toBeInTheDocument();
 
-      // ShortlistDrawer (closed initially)
-      expect(screen.queryByRole('heading', { name: /^shortlist/i })).not.toBeInTheDocument();
+      // MealPlanDrawer (closed initially)
+      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
     });
 
     it('should maintain drawer state across interactions', async () => {
@@ -205,20 +196,20 @@ describe('DiscoveryPage', () => {
       render(<DiscoveryPage />);
 
       // Open and close drawer multiple times
-      const fab = screen.getByRole('button', { name: /shortlist/i });
+      const fab = screen.getByRole('button', { name: /meal plan/i });
 
       // Open
       await user.click(fab);
-      expect(screen.getByRole('heading', { name: /^shortlist/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
 
       // Close
       const closeButton = screen.getByRole('button', { name: /close/i });
       await user.click(closeButton);
-      expect(screen.queryByRole('heading', { name: /^shortlist/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
 
       // Open again
       await user.click(fab);
-      expect(screen.getByRole('heading', { name: /^shortlist/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
     });
   });
 });

@@ -3,15 +3,14 @@
 import { Restaurant as RestaurantIcon } from '@mui/icons-material';
 import { Badge, Box, Fab } from '@mui/material';
 
-import { useShortlistStore } from '@/stores/useShortlistStore';
+import { useMealPlan } from '@/hooks/useMealPlan';
 
-interface ShortlistFABProps {
+interface MealPlanFABProps {
   onClick: () => void;
 }
 
-export function ShortlistFAB({ onClick }: ShortlistFABProps) {
-  const { getCount } = useShortlistStore();
-  const count = getCount();
+export function MealPlanFAB({ onClick }: MealPlanFABProps) {
+  const { count } = useMealPlan();
 
   return (
     <Box
@@ -26,7 +25,7 @@ export function ShortlistFAB({ onClick }: ShortlistFABProps) {
         <Fab
           color="primary"
           onClick={onClick}
-          aria-label={count > 0 ? `Shortlist (${count} items)` : 'Shortlist'}
+          aria-label={count > 0 ? `Meal Plan (${count} items)` : 'Meal Plan'}
         >
           <RestaurantIcon />
         </Fab>

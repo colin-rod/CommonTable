@@ -1,8 +1,8 @@
 -- =============================================================================
 -- Migration: Create recipe_queue Table
 -- Description: Creates a new recipe_queue table for the queue-based meal planning system
---              Separate from meal_requests (request/approval flow) and recipe_shortlists (shortlist drawer)
---              Queue feeds from shortlist and represents recipes ready to be cooked
+--              Separate from meal_requests (request/approval flow)
+--              Represents the household's meal plan - recipes ready to be cooked
 -- Author: Claude Code
 -- Date: 2026-02-03
 -- =============================================================================
@@ -117,7 +117,7 @@ CREATE TRIGGER recipe_queue_updated_at_trigger
 -- =============================================================================
 
 COMMENT ON TABLE recipe_queue IS
-  'Household recipe queue with drag-and-drop ordering. Fed from recipe_shortlists.';
+  'Household meal plan with drag-and-drop ordering. Recipes users want to cook.';
 
 COMMENT ON COLUMN recipe_queue.position IS
   'Ordering position within queue (0 = first, higher numbers = lower priority)';
@@ -126,7 +126,7 @@ COMMENT ON COLUMN recipe_queue.status IS
   'Queue lifecycle: queued (in queue) → cooking (being prepared) → cooked (logged to history)';
 
 COMMENT ON COLUMN recipe_queue.added_by IS
-  'User who added recipe to queue (from shortlist drawer)';
+  'User who added recipe to meal plan';
 
 COMMENT ON COLUMN recipe_queue.notes IS
   'Optional notes for this queue entry (e.g., "Need to buy chicken")';

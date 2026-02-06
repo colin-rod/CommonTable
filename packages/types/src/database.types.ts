@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.1';
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       ai_tag_suggestions: {
@@ -551,45 +576,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'recipe_queue_recipe_id_fkey';
-            columns: ['recipe_id'];
-            isOneToOne: false;
-            referencedRelation: 'recipes';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      recipe_shortlists: {
-        Row: {
-          added_at: string;
-          added_by_user_id: string;
-          household_id: string;
-          id: string;
-          recipe_id: string;
-        };
-        Insert: {
-          added_at?: string;
-          added_by_user_id: string;
-          household_id: string;
-          id?: string;
-          recipe_id: string;
-        };
-        Update: {
-          added_at?: string;
-          added_by_user_id?: string;
-          household_id?: string;
-          id?: string;
-          recipe_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'recipe_shortlists_household_id_fkey';
-            columns: ['household_id'];
-            isOneToOne: false;
-            referencedRelation: 'households';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'recipe_shortlists_recipe_id_fkey';
             columns: ['recipe_id'];
             isOneToOne: false;
             referencedRelation: 'recipes';
@@ -1147,6 +1133,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       cooking_method: [
