@@ -396,19 +396,12 @@ export function RecipeForm({
       <Divider />
 
       {/* Two-Column Content Section: Ingredients & Steps */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          gap: 3,
-        }}
-      >
+      <Stack spacing={3}>
         <Accordion
           id="recipe-ingredients-section"
           expanded={expandedSection === 'ingredients'}
           onChange={handleSectionChange('ingredients', ingredientsSummaryRef)}
           elevation={1}
-          sx={{ flex: 1 }}
         >
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
@@ -442,7 +435,6 @@ export function RecipeForm({
           expanded={expandedSection === 'steps'}
           onChange={handleSectionChange('steps', stepsSummaryRef)}
           elevation={1}
-          sx={{ flex: 1 }}
         >
           <AccordionSummary
             expandIcon={<ExpandMoreIcon />}
@@ -470,7 +462,7 @@ export function RecipeForm({
             />
           </AccordionDetails>
         </Accordion>
-      </Box>
+      </Stack>
 
       {/* Action Buttons */}
       <Box
