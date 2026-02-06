@@ -187,7 +187,7 @@ describe('useRecipeQueue Hook', () => {
 
       // Should log error for failed recipe
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[DEBUG] Failed to load recipe'),
+        expect.stringContaining('Failed to load recipe'),
         expect.any(Error),
       );
 
