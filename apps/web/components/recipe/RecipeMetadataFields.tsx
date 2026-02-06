@@ -51,6 +51,7 @@ export interface RecipeMetadataFieldsProps {
   disabled?: boolean;
   availableTags: string[];
   titleInputRef?: Ref<HTMLInputElement>;
+  showTitle?: boolean;
 }
 
 /**
@@ -138,6 +139,7 @@ export function RecipeMetadataFields({
   disabled = false,
   availableTags,
   titleInputRef,
+  showTitle = true,
 }: RecipeMetadataFieldsProps) {
   // Watch the description and notes values to determine initial visibility
   const descriptionValue = useWatch({ control, name: 'description' });
@@ -179,25 +181,26 @@ export function RecipeMetadataFields({
 
   return (
     <Grid container spacing={2}>
-      {/* Row 1: Title (full width) */}
-      <Grid item xs={12}>
-        <Controller
-          name="title"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              inputRef={titleInputRef}
-              label="Recipe Title"
-              required
-              fullWidth
-              disabled={disabled}
-              error={!!errors.title}
-              helperText={errors.title?.message}
-            />
-          )}
-        />
-      </Grid>
+      {showTitle && (
+        <Grid item xs={12}>
+          <Controller
+            name="title"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                inputRef={titleInputRef}
+                label="Recipe Title"
+                required
+                fullWidth
+                disabled={disabled}
+                error={!!errors.title}
+                helperText={errors.title?.message}
+              />
+            )}
+          />
+        </Grid>
+      )}
 
       {/* Row 2: Description (conditional) */}
       <Grid item xs={12}>

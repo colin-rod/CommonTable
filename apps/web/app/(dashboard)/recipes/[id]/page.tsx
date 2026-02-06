@@ -41,6 +41,7 @@ import { AiSuggestedTagsList } from '@/components/recipe/AiSuggestedTagsList';
 import { DeleteRecipeDialog } from '@/components/recipe/DeleteRecipeDialog';
 import { ForkRecipeDialog } from '@/components/recipe/ForkRecipeDialog';
 import { RecipeDetailView } from '@/components/recipe/RecipeDetailView';
+import { useMealPlan } from '@/hooks/useMealPlan';
 import { useRecipe } from '@/hooks/useRecipe';
 import { createClient } from '@/lib/supabase/client';
 
@@ -66,7 +67,9 @@ export default function RecipeDetailPage() {
   const params = useParams();
   const recipeId = params.id as RecipeId;
 
+  const { addToMealPlan, hasRecipe } = useMealPlan();
   const { recipe, primaryImage, loading, error, toggleFavorite, refresh } = useRecipe(recipeId);
+  const isInMealPlan = hasRecipe(recipeId);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -195,6 +198,14 @@ export default function RecipeDetailPage() {
   const handleLogMeal = () => {
     setLogMealDialogOpen(true);
   };
+
+  const handleAddToMealPlan = useCallback(async () => {
+    try {
+      await addToMealPlan(recipeId);
+    } catch {
+      setSnackbar({ open: true, message: 'Failed to add to meal plan' });
+    }
+  }, [addToMealPlan, recipeId]);
 
   const handleLogMealClose = async () => {
     setLogMealDialogOpen(false);
@@ -377,15 +388,21 @@ export default function RecipeDetailPage() {
         <Typography variant="h6" sx={{ mb: 2 }}>
           Cooking History
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleLogMeal}
-          fullWidth
-          sx={{ mb: 2 }}
-        >
-          Log Meal
-        </Button>
+        <Stack spacing={1} sx={{ mb: 2 }}>
+          <Button variant="contained" color="primary" onClick={handleLogMeal} fullWidth>
+            Log Meal
+          </Button>
+          <Button
+            variant={isInMealPlan ? 'outlined' : 'contained'}
+            color="primary"
+            onClick={handleAddToMealPlan}
+            fullWidth
+            disabled={isInMealPlan}
+            aria-label={isInMealPlan ? 'Added to meal plan' : 'Add to meal plan'}
+          >
+            {isInMealPlan ? 'Added' : 'Add to Meal Plan'}
+          </Button>
+        </Stack>
         {cookingEventsLoading ? (
           <CircularProgress size={24} />
         ) : (
