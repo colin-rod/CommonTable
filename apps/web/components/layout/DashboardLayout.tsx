@@ -33,9 +33,9 @@ import type { ReactElement, ReactNode, MouseEvent } from 'react';
 import { useState } from 'react';
 
 import { QuickActionsDropdown } from '@/components/dashboard/QuickActions';
-import { WelcomeDialog } from '@/components/onboarding/WelcomeDialog';
 import { MealPlanDrawer } from '@/components/meal-plan/MealPlanDrawer';
 import { MealPlanFAB } from '@/components/meal-plan/MealPlanFAB';
+import { WelcomeDialog } from '@/components/onboarding/WelcomeDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
