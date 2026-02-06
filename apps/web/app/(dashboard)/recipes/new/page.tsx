@@ -122,6 +122,7 @@ export default function CreateRecipePage() {
             error={
               error || new Error('No household found. Please join or create a household first.')
             }
+            draftStorageKey="recipe:draft:new"
           />
         </Box>
       </Container>
@@ -139,6 +140,7 @@ export default function CreateRecipePage() {
           onCancel={handleCancel}
           loading={loading}
           error={error}
+          draftStorageKey="recipe:draft:new"
         />
       </Box>
     </Container>

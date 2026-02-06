@@ -6,6 +6,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Stack, Typography, TextField, IconButton, Button, Box } from '@mui/material';
 import { type Control, Controller, type FieldErrors, useFieldArray } from 'react-hook-form';
+import type { Ref } from 'react';
 
 import type { RecipeFormValues } from './RecipeMetadataFields';
 
@@ -13,6 +14,8 @@ export interface StepEditorProps {
   control: Control<RecipeFormValues>;
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
+  addButtonRef?: Ref<HTMLButtonElement>;
+  showHeader?: boolean;
 }
 
 /**
@@ -30,7 +33,13 @@ export interface StepEditorProps {
  * - IconButton for row actions
  * - Outlined button for add action
  */
-export function StepEditor({ control, errors, disabled = false }: StepEditorProps) {
+export function StepEditor({
+  control,
+  errors,
+  disabled = false,
+  addButtonRef,
+  showHeader = true,
+}: StepEditorProps) {
   const { fields, append, remove, move } = useFieldArray({
     control,
     name: 'steps',
@@ -56,7 +65,11 @@ export function StepEditor({ control, errors, disabled = false }: StepEditorProp
   return (
     <Stack spacing={2}>
       {/* Section Header */}
-      <Typography variant="h6">Steps</Typography>
+      {showHeader && (
+        <Typography component="h3" variant="h6">
+          Steps
+        </Typography>
+      )}
 
       {/* Step Rows */}
       {fields.map((field, index) => (
@@ -76,7 +89,7 @@ export function StepEditor({ control, errors, disabled = false }: StepEditorProp
                   fullWidth
                   disabled={disabled}
                   error={!!errors.steps?.[index]?.text}
-                  helperText={errors.steps?.[index]?.text?.message}
+                  helperText={errors.steps?.[index]?.text?.message || 'Required'}
                 />
               )}
             />
@@ -139,6 +152,7 @@ export function StepEditor({ control, errors, disabled = false }: StepEditorProp
           startIcon={<AddIcon />}
           onClick={handleAddStep}
           disabled={disabled}
+          ref={addButtonRef}
         >
           Add Step
         </Button>
