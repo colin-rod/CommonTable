@@ -108,6 +108,19 @@ describe('useRecipeQueue Hook', () => {
   });
 
   describe('loadQueue without laneType', () => {
+    it('should filter queue entries by status="queued"', async () => {
+      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
+      mockRecipeService.getById
+        .mockResolvedValueOnce(mockRecipe1)
+        .mockResolvedValueOnce(mockRecipe2);
+
+      renderHook(() => useRecipeQueue());
+
+      await waitFor(() => {
+        expect(mockQueueService.list).toHaveBeenCalledWith({ status: 'queued' });
+      });
+    });
+
     it('should load all queue entries when no laneType specified', async () => {
       mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
       mockRecipeService.getById
@@ -157,6 +170,58 @@ describe('useRecipeQueue Hook', () => {
       expect(result.current.error).toBeTruthy();
       // Hook preserves original error if it's an Error instance
       expect(result.current.error?.message).toBe('Failed to fetch queue');
+    });
+
+    it('should gracefully handle recipe hydration failure for one entry', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
+      mockRecipeService.getById
+        .mockResolvedValueOnce(mockRecipe1)
+        .mockRejectedValueOnce(new Error('Recipe not found'));
+
+      const { result } = renderHook(() => useRecipeQueue());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should load the first recipe successfully and skip the second
+      expect(result.current.entries).toHaveLength(1);
+      expect(result.current.entries[0]?.recipe).toEqual(mockRecipe1);
+      expect(result.current.error).toBeNull();
+
+      // Should log error for failed recipe
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[DEBUG] Failed to load recipe'),
+        expect.any(Error),
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should continue loading when all recipes fail to hydrate', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
+      mockRecipeService.getById
+        .mockRejectedValueOnce(new Error('Recipe 1 not found'))
+        .mockRejectedValueOnce(new Error('Recipe 2 not found'));
+
+      const { result } = renderHook(() => useRecipeQueue());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should return empty array but NO error state
+      expect(result.current.entries).toEqual([]);
+      expect(result.current.error).toBeNull();
+
+      // Should log errors for both failed recipes
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
+
+      consoleErrorSpy.mockRestore();
     });
   });
 
