@@ -277,18 +277,3 @@ export interface RecipeSuggestion {
   badge: SuggestionBadge; // Badge to display ('Favorite', 'Top Rated', etc.)
   matchingTags: string[]; // Tags that matched the suggestion context
 }
-
-// Shortlist domain models
-
-/**
- * Shortlist item with recipe and user attribution
- */
-export interface ShortlistItem {
-  id: string;
-  recipe: Recipe;
-  addedBy: {
-    id: UserId;
-    name: string;
-  };
-  addedAt: Date;
-}

@@ -61,8 +61,8 @@ const navItems: NavItem[] = [
     icon: <RestaurantIcon />,
   },
   {
-    label: 'Queue',
-    href: '/queue' as Route,
+    label: 'Meal Plan',
+    href: '/meal-plan' as Route,
     icon: <ListAltIcon />,
   },
   {

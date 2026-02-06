@@ -368,8 +368,8 @@ describe('MealRequestService', () => {
     });
   });
 
-  describe('addToShortlist', () => {
-    it('should add meal request to shortlist and update status to planned', async () => {
+  describe('addToMealPlan', () => {
+    it('should add meal request to meal plan and update status to planned', async () => {
       const mockRequest: MealRequest = {
         id: 'request-1' as MealRequestId,
         household_id: 'household-1' as any,
@@ -389,12 +389,16 @@ describe('MealRequestService', () => {
         status: 'planned',
       };
 
-      const mockShortlistEntry = {
-        id: 'shortlist-1',
+      const mockQueueEntry = {
+        id: 'queue-1',
         household_id: 'household-1',
         recipe_id: 'recipe-1',
-        added_by_user_id: 'user-1',
-        added_at: new Date().toISOString(),
+        added_by: 'user-1',
+        position: 0,
+        status: 'queued',
+        notes: 'Test request',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       const fromSpy = vi.spyOn(mockSupabase, 'from');
@@ -411,12 +415,20 @@ describe('MealRequestService', () => {
         }),
       } as any);
 
-      // Mock insert into recipe_shortlists
+      // Mock count for position calculation
+      fromSpy.mockReturnValueOnce({
+        select: vi.fn().mockResolvedValue({
+          count: 0,
+          error: null,
+        }),
+      } as any);
+
+      // Mock insert into recipe_queue
       fromSpy.mockReturnValueOnce({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
             single: vi.fn().mockResolvedValue({
-              data: mockShortlistEntry,
+              data: mockQueueEntry,
               error: null,
             }),
           }),
@@ -437,11 +449,11 @@ describe('MealRequestService', () => {
         }),
       } as any);
 
-      const result = await service.addToShortlist('request-1' as MealRequestId);
+      const result = await service.addToMealPlan('request-1' as MealRequestId);
 
       expect(result.mealRequest.status).toBe('planned');
-      expect(result.shortlistEntry.recipe_id).toBe('recipe-1');
-      expect(result.shortlistEntry.meal_request_id).toBe('request-1');
+      expect(result.queueEntry.recipe_id).toBe('recipe-1');
+      expect(result.queueEntry.meal_request_id).toBe('request-1');
     });
 
     it('should throw ValidationError when meal request has no recipe_id', async () => {
@@ -470,7 +482,7 @@ describe('MealRequestService', () => {
         }),
       } as any);
 
-      await expect(service.addToShortlist('request-1' as MealRequestId)).rejects.toThrow(
+      await expect(service.addToMealPlan('request-1' as MealRequestId)).rejects.toThrow(
         ValidationError,
       );
     });
@@ -487,7 +499,7 @@ describe('MealRequestService', () => {
         }),
       } as any);
 
-      await expect(service.addToShortlist('nonexistent' as MealRequestId)).rejects.toThrow(
+      await expect(service.addToMealPlan('nonexistent' as MealRequestId)).rejects.toThrow(
         NotFoundError,
       );
     });

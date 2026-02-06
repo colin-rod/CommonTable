@@ -31,7 +31,7 @@ export type LaneType = z.infer<typeof LaneTypeSchema>;
 
 /**
  * Create queue entry input schema
- * Used when adding a recipe to the queue from shortlist
+ * Used when adding a recipe to the meal plan
  */
 export const CreateQueueEntrySchema = z.object({
   recipe_id: z.string().uuid('Invalid recipe ID'),
