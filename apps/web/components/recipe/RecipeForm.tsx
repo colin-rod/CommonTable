@@ -24,9 +24,10 @@ import {
   AccordionSummary,
   AccordionDetails,
   Chip,
+  TextField,
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState, type RefObject, type SyntheticEvent } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import { IngredientEditor } from './IngredientEditor';
@@ -353,6 +354,25 @@ export function RecipeForm({
         </Alert>
       )}
 
+      <Box sx={{ mb: 2 }}>
+        <Controller
+          name="title"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              inputRef={titleInputRef}
+              label="Recipe Title"
+              required
+              fullWidth
+              disabled={loading}
+              error={!!errors.title}
+              helperText={errors.title?.message}
+            />
+          )}
+        />
+      </Box>
+
       <Accordion
         id="recipe-details-section"
         expanded={expandedSection === 'details'}
@@ -383,6 +403,7 @@ export function RecipeForm({
             disabled={loading}
             availableTags={availableTags}
             titleInputRef={titleInputRef}
+            showTitle={false}
           />
         </AccordionDetails>
       </Accordion>
