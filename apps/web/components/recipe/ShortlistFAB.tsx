@@ -22,7 +22,15 @@ export function ShortlistFAB({ onClick }: ShortlistFABProps) {
         zIndex: 1000,
       }}
     >
-      <Badge badgeContent={count} color="error" max={9} invisible={count === 0} overlap="circular">
+      <Badge
+        badgeContent={count}
+        color="error"
+        max={9}
+        invisible={count === 0}
+        overlap="circular"
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        sx={{ '& .MuiBadge-badge': { top: 6, right: 6 } }}
+      >
         <Fab
           color="primary"
           onClick={onClick}
