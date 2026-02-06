@@ -15,6 +15,7 @@ export interface IngredientEditorProps {
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
   addButtonRef?: Ref<HTMLButtonElement>;
+  showHeader?: boolean;
 }
 
 /**
@@ -36,6 +37,7 @@ export function IngredientEditor({
   errors,
   disabled = false,
   addButtonRef,
+  showHeader = true,
 }: IngredientEditorProps) {
   const { fields, append, remove, move } = useFieldArray({
     control,
@@ -61,7 +63,11 @@ export function IngredientEditor({
   return (
     <Stack spacing={2}>
       {/* Section Header */}
-      <Typography variant="h6">Ingredients</Typography>
+      {showHeader && (
+        <Typography component="h3" variant="h6">
+          Ingredients
+        </Typography>
+      )}
 
       {/* Ingredient Rows */}
       {fields.map((field, index) => (
@@ -79,7 +85,7 @@ export function IngredientEditor({
                   fullWidth
                   disabled={disabled}
                   error={!!errors.ingredients?.[index]?.name}
-                  helperText={errors.ingredients?.[index]?.name?.message}
+                  helperText={errors.ingredients?.[index]?.name?.message || 'Required'}
                   sx={{ flex: 2 }}
                 />
               )}

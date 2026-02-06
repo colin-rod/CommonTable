@@ -90,14 +90,34 @@ export function useRecipeQueue(laneType?: LaneType): UseRecipeQueueReturn {
         setEntries(entriesWithRecipes);
       } else {
         // Load all entries without grouping
-        const queueEntries = await queueService.list();
+        console.log('[DEBUG] Loading queue entries...');
+        const queueEntries = await queueService.list({ status: 'queued' });
+        console.log('[DEBUG] Queue entries loaded:', queueEntries.length, queueEntries);
 
-        const entriesWithRecipes = await Promise.all(
-          queueEntries.map(async (entry) => {
-            const recipe = await recipeService.getById(entry.recipe_id as RecipeId);
-            return { ...entry, recipe };
-          }),
+        console.log('[DEBUG] Hydrating recipes...');
+        const results = await Promise.allSettled(
+          queueEntries.map((entry) => recipeService.getById(entry.recipe_id as RecipeId)),
         );
+
+        const entriesWithRecipes = results
+          .map((result, index) => {
+            const entry = queueEntries[index];
+            if (!entry) return null;
+
+            if (result.status === 'fulfilled') {
+              console.log('[DEBUG] Recipe loaded:', result.value.id, result.value.title);
+              return { ...entry, recipe: result.value };
+            }
+
+            console.error(
+              `[DEBUG] Failed to load recipe ${entry.recipe_id} for queue entry ${entry.id}:`,
+              result.reason,
+            );
+            return null;
+          })
+          .filter((entry): entry is QueueEntryWithRecipe => entry !== null);
+
+        console.log('[DEBUG] All recipes hydrated:', entriesWithRecipes.length);
 
         setEntries(entriesWithRecipes);
         setLanes({});

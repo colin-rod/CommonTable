@@ -29,6 +29,12 @@ import {
 } from '@mui/material';
 import { useForm, useWatch } from 'react-hook-form';
 import { useEffect, useMemo, useRef, useState, type RefObject, type SyntheticEvent } from 'react';
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { IngredientEditor } from './IngredientEditor';
@@ -425,6 +431,12 @@ export function RecipeForm({
                 variant="outlined"
               />
             </Stack>
+        {/* Ingredients Column */}
+        <Accordion defaultExpanded sx={{ flex: 1 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="h3" variant="h6">
+              Ingredients
+            </Typography>
           </AccordionSummary>
           <AccordionDetails>
             <IngredientEditor
@@ -432,6 +444,7 @@ export function RecipeForm({
               errors={errors}
               disabled={loading}
               addButtonRef={ingredientAddButtonRef}
+              showHeader={false}
             />
           </AccordionDetails>
         </Accordion>
@@ -467,6 +480,15 @@ export function RecipeForm({
               disabled={loading}
               addButtonRef={stepAddButtonRef}
             />
+        {/* Steps Column */}
+        <Accordion defaultExpanded sx={{ flex: 1 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="h3" variant="h6">
+              Steps
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <StepEditor control={control} errors={errors} disabled={loading} showHeader={false} />
           </AccordionDetails>
         </Accordion>
       </Box>
