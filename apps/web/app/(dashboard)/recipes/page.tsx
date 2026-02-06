@@ -51,6 +51,7 @@ export default function RecipesPage() {
 
   const { recipes, loading: recipesLoading, error } = useRecipes();
   const { results: searchResults, loading: searchLoading } = useRecipeSearch(searchQuery);
+  const { addToMealPlan, hasRecipe } = useMealPlan();
 
   const supabase = useMemo(() => createClient(), []);
   const recipeService = useMemo(() => new RecipeService(supabase), [supabase]);
@@ -104,6 +105,20 @@ export default function RecipesPage() {
   const handleImportRecipe = () => {
     router.push('/recipes/import');
   };
+
+  const handleAddToMealPlan = async (recipeId: RecipeId) => {
+    try {
+      await addToMealPlan(recipeId as string);
+    } catch (err) {
+      console.error('Failed to add to meal plan:', err);
+    }
+  };
+
+  const mealPlanRecipeIds = useMemo(() => {
+    return filteredRecipes
+      .filter((recipe) => hasRecipe(recipe.id as string))
+      .map((recipe) => recipe.id);
+  }, [filteredRecipes, hasRecipe]);
 
   if (error) {
     return (
