@@ -19,13 +19,11 @@ import { useMemo, useState } from 'react';
 
 import { RecipeGrid } from './RecipeGrid';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useMealPlan } from '@/hooks/useMealPlan';
 import { useRecipeFilters } from '@/hooks/useRecipeFilters';
 import { useRecipes } from '@/hooks/useRecipes';
-import { useShortlistStore } from '@/stores/useShortlistStore';
 
 export function WhatCanICookPanel() {
-  const { user } = useAuth();
   const { recipes, loading, error } = useRecipes();
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -43,16 +41,20 @@ export function WhatCanICookPanel() {
   // Apply filters
   const filteredRecipes = useRecipeFilters(recipes, selectedTags, showFavoritesOnly, sortBy);
 
-  const { add: addToShortlist, hasRecipe } = useShortlistStore();
+  const { addToMealPlan, hasRecipe } = useMealPlan();
 
-  const handleAddToShortlist = async (recipeId: RecipeId) => {
-    if (!user?.profile) {
-      console.error('Cannot add to shortlist: user not authenticated');
-      return;
+  const handleAddToMealPlan = async (recipeId: RecipeId) => {
+    try {
+      await addToMealPlan(recipeId as string);
+    } catch (err) {
+      console.error('Failed to add to meal plan:', err);
     }
-
-    await addToShortlist(recipeId, user.id);
   };
+
+  // Get recipe IDs that are in the meal plan
+  const mealPlanRecipeIds = useMemo(() => {
+    return recipes.filter((r) => hasRecipe(r.id as string)).map((r) => r.id);
+  }, [recipes, hasRecipe]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -153,8 +155,8 @@ export function WhatCanICookPanel() {
       {/* Recipe Grid */}
       <RecipeGrid
         recipes={filteredRecipes}
-        onAddToShortlist={handleAddToShortlist}
-        shortlistedRecipeIds={recipes.filter((r) => hasRecipe(r.id)).map((r) => r.id)}
+        onAddToMealPlan={handleAddToMealPlan}
+        mealPlanRecipeIds={mealPlanRecipeIds}
       />
     </Stack>
   );

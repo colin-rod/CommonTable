@@ -339,6 +339,13 @@ export default function RecipeDetailPage() {
           <Button
             variant="outlined"
             color="primary"
+            onClick={() => router.push(`/recipes/${recipeId}/versions`)}
+          >
+            View version history
+          </Button>
+          <Button
+            variant="outlined"
+            color="primary"
             startIcon={<DeleteIcon />}
             onClick={handleDeleteClick}
           >
@@ -381,18 +388,6 @@ export default function RecipeDetailPage() {
       <Box sx={{ pt: 2 }}>
         <Button variant="contained" color="primary" onClick={handleLogMeal} fullWidth>
           Log Meal
-        </Button>
-      </Box>
-
-      {/* Version history link */}
-      <Box>
-        <Button
-          variant="outlined"
-          color="primary"
-          size="small"
-          onClick={() => router.push(`/recipes/${recipeId}/versions`)}
-        >
-          View version history
         </Button>
       </Box>
 

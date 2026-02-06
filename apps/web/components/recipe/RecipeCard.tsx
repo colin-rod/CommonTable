@@ -9,21 +9,21 @@ import type { MouseEvent } from 'react';
 interface RecipeCardProps {
   recipe: Recipe;
   imageUrl?: string;
-  onAddToShortlist: (recipeId: RecipeId) => void;
-  isInShortlist: boolean;
+  onAddToMealPlan: (recipeId: RecipeId) => void;
+  isInMealPlan: boolean;
 }
 
-export function RecipeCard({ recipe, imageUrl, onAddToShortlist, isInShortlist }: RecipeCardProps) {
+export function RecipeCard({ recipe, imageUrl, onAddToMealPlan, isInMealPlan }: RecipeCardProps) {
   const router = useRouter();
 
   const handleCardClick = () => {
     router.push(`/recipes/${recipe.id}`);
   };
 
-  const handleAddToShortlist = (e: MouseEvent) => {
+  const handleAddToMealPlan = (e: MouseEvent) => {
     e.stopPropagation(); // Prevent card navigation
-    if (!isInShortlist) {
-      onAddToShortlist(recipe.id);
+    if (!isInMealPlan) {
+      onAddToMealPlan(recipe.id);
     }
   };
 
@@ -93,15 +93,15 @@ export function RecipeCard({ recipe, imageUrl, onAddToShortlist, isInShortlist }
 
       <CardActions sx={{ justifyContent: 'flex-end', px: 2, pb: 2 }}>
         <Button
-          variant={isInShortlist ? 'contained' : 'outlined'}
+          variant={isInMealPlan ? 'contained' : 'outlined'}
           color="primary"
           size="small"
-          onClick={handleAddToShortlist}
-          startIcon={isInShortlist ? <CheckIcon /> : undefined}
-          disabled={isInShortlist}
-          aria-label={isInShortlist ? 'Added to shortlist' : 'Add to shortlist'}
+          onClick={handleAddToMealPlan}
+          startIcon={isInMealPlan ? <CheckIcon /> : undefined}
+          disabled={isInMealPlan}
+          aria-label={isInMealPlan ? 'Added to meal plan' : 'Add to meal plan'}
         >
-          {isInShortlist ? 'Added' : 'Add to Shortlist'}
+          {isInMealPlan ? 'Added' : 'Add to Meal Plan'}
         </Button>
       </CardActions>
     </Card>

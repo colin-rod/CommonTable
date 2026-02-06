@@ -8,8 +8,8 @@ import { RecipeCard } from './RecipeCard';
 
 interface RecipeGridProps {
   recipes: Recipe[];
-  onAddToShortlist: (recipeId: RecipeId) => void;
-  shortlistedRecipeIds: RecipeId[];
+  onAddToMealPlan: (recipeId: RecipeId) => void;
+  mealPlanRecipeIds: RecipeId[];
   loading?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
@@ -17,8 +17,8 @@ interface RecipeGridProps {
 
 export function RecipeGrid({
   recipes,
-  onAddToShortlist,
-  shortlistedRecipeIds,
+  onAddToMealPlan,
+  mealPlanRecipeIds,
   loading = false,
   hasMore = false,
   onLoadMore,
@@ -71,8 +71,8 @@ export function RecipeGrid({
           <Grid key={recipe.id} size={{ xs: 12, sm: 6, md: 4 }}>
             <RecipeCard
               recipe={recipe}
-              onAddToShortlist={onAddToShortlist}
-              isInShortlist={shortlistedRecipeIds.includes(recipe.id)}
+              onAddToMealPlan={onAddToMealPlan}
+              isInMealPlan={mealPlanRecipeIds.includes(recipe.id)}
             />
           </Grid>
         ))}

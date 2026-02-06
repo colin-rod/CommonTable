@@ -198,18 +198,18 @@ export class MealRequestService extends BaseService {
   }
 
   /**
-   * Add meal request to shortlist
-   * Creates a shortlist entry and updates request status to 'planned'
+   * Add meal request to meal plan
+   * Creates a queue entry and updates request status to 'planned'
    *
    * @param id - Meal request ID
-   * @returns Object containing updated request and created shortlist entry
+   * @returns Object containing updated request and created queue entry
    * @throws {NotFoundError} If request does not exist
    * @throws {ValidationError} If request has no recipe_id
    * @throws {AppError} If database operation fails
    */
-  async addToShortlist(id: MealRequestId): Promise<{
+  async addToMealPlan(id: MealRequestId): Promise<{
     mealRequest: MealRequest;
-    shortlistEntry: {
+    queueEntry: {
       id: string;
       household_id: string;
       recipe_id: string;
@@ -224,38 +224,52 @@ export class MealRequestService extends BaseService {
 
     // Validate that request has a recipe_id
     if (!request.recipe_id) {
-      throw new ValidationError('Cannot add meal request to shortlist without a recipe_id', { id });
+      throw new ValidationError('Cannot add meal request to meal plan without a recipe_id', { id });
     }
 
-    // Create shortlist entry
-    const { data: shortlistEntry, error: insertError } = await this.supabase
-      .from('recipe_shortlists')
+    // Get next position for queue entry
+    const { count, error: countError } = await this.supabase
+      .from('recipe_queue')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      BaseService.handleSupabaseError(countError, 'MealRequestService.addToMealPlan:count', { id });
+    }
+
+    const nextPosition = count || 0;
+
+    // Create queue entry
+    const { data: queueEntry, error: insertError } = await this.supabase
+      .from('recipe_queue')
       .insert({
         recipe_id: request.recipe_id,
         household_id: request.household_id,
-        added_by_user_id: request.requested_by,
+        added_by: request.requested_by,
+        position: nextPosition,
+        status: 'queued',
+        notes: request.notes,
       })
       .select()
       .single();
 
     if (insertError) {
-      BaseService.handleSupabaseError(insertError, 'MealRequestService.addToShortlist', { id });
+      BaseService.handleSupabaseError(insertError, 'MealRequestService.addToMealPlan', { id });
     }
 
     // Update request status to 'planned'
     const updatedRequest = await this.updateStatus(id, 'planned');
 
-    // Transform shortlist entry to match expected shape
+    // Transform queue entry to match expected shape
     return {
       mealRequest: updatedRequest,
-      shortlistEntry: {
-        id: shortlistEntry.id,
-        household_id: shortlistEntry.household_id,
-        recipe_id: shortlistEntry.recipe_id,
+      queueEntry: {
+        id: queueEntry.id,
+        household_id: queueEntry.household_id,
+        recipe_id: queueEntry.recipe_id,
         meal_request_id: id,
-        added_by: shortlistEntry.added_by_user_id,
-        notes: null,
-        created_at: new Date(shortlistEntry.added_at),
+        added_by: queueEntry.added_by,
+        notes: queueEntry.notes,
+        created_at: new Date(queueEntry.created_at),
       },
     };
   }
