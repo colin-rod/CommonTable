@@ -63,12 +63,15 @@ describe('DashboardLayout', () => {
     vi.mocked(useAuth).mockReturnValue(mockAuthReturn);
     vi.mocked(useMealPlan).mockReturnValue({
       entries: [],
+      lanes: {},
       loading: false,
       error: null,
       count: 0,
       addToMealPlan: vi.fn(),
       removeFromMealPlan: vi.fn(),
+      reorder: vi.fn(),
       markAsCooked: vi.fn(),
+      refresh: vi.fn(),
       hasRecipe: () => false,
     });
   });
