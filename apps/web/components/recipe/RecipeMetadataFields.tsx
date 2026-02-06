@@ -22,6 +22,7 @@ import {
   Typography,
   Stack,
 } from '@mui/material';
+import { useState, useEffect, useRef, type Ref } from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useState, useEffect, useRef } from 'react';
 import { type Control, Controller, type FieldErrors, useWatch } from 'react-hook-form';
@@ -65,6 +66,7 @@ export interface RecipeMetadataFieldsProps {
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
   availableTags: string[];
+  titleInputRef?: Ref<HTMLInputElement>;
 }
 
 /**
@@ -203,6 +205,7 @@ export function RecipeMetadataFields({
   errors,
   disabled = false,
   availableTags,
+  titleInputRef,
 }: RecipeMetadataFieldsProps) {
   // Watch the description and notes values to determine initial visibility
   const descriptionValue = useWatch({ control, name: 'description' });
@@ -247,6 +250,44 @@ export function RecipeMetadataFields({
   );
 
   return (
+    <Grid container spacing={2}>
+      {/* Row 1: Title (full width) */}
+      <Grid item xs={12}>
+        <Controller
+          name="title"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              inputRef={titleInputRef}
+              label="Recipe Title"
+              required
+              fullWidth
+              disabled={disabled}
+              error={!!errors.title}
+              helperText={errors.title?.message}
+            />
+          )}
+        />
+      </Grid>
+
+      {/* Row 2: Description (conditional) */}
+      <Grid item xs={12}>
+        {showDescription ? (
+          <Controller
+            name="description"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                inputRef={descriptionRef}
+                label="Description"
+                multiline
+                rows={FIELD_CONFIG.description.rows}
+                fullWidth
+                disabled={disabled}
+                error={!!errors.description}
+                helperText={errors.description?.message}
     <Stack spacing={2}>
       <Accordion defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

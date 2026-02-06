@@ -6,6 +6,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Stack, Typography, TextField, IconButton, Button, Box } from '@mui/material';
 import { type Control, Controller, type FieldErrors, useFieldArray } from 'react-hook-form';
+import type { Ref } from 'react';
 
 import type { RecipeFormValues } from './RecipeMetadataFields';
 
@@ -13,6 +14,7 @@ export interface StepEditorProps {
   control: Control<RecipeFormValues>;
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
+  addButtonRef?: Ref<HTMLButtonElement>;
   showHeader?: boolean;
 }
 
@@ -35,6 +37,7 @@ export function StepEditor({
   control,
   errors,
   disabled = false,
+  addButtonRef,
   showHeader = true,
 }: StepEditorProps) {
   const { fields, append, remove, move } = useFieldArray({
@@ -149,6 +152,7 @@ export function StepEditor({
           startIcon={<AddIcon />}
           onClick={handleAddStep}
           disabled={disabled}
+          ref={addButtonRef}
         >
           Add Step
         </Button>
