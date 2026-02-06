@@ -377,6 +377,15 @@ export default function RecipeDetailPage() {
         <Typography variant="h6" sx={{ mb: 2 }}>
           Cooking History
         </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleLogMeal}
+          fullWidth
+          sx={{ mb: 2 }}
+        >
+          Log Meal
+        </Button>
         {cookingEventsLoading ? (
           <CircularProgress size={24} />
         ) : (
@@ -384,10 +393,15 @@ export default function RecipeDetailPage() {
         )}
       </Box>
 
-      {/* Primary action */}
-      <Box sx={{ pt: 2 }}>
-        <Button variant="contained" color="primary" onClick={handleLogMeal} fullWidth>
-          Log Meal
+      {/* Version history link */}
+      <Box>
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          onClick={() => router.push(`/recipes/${recipeId}/versions`)}
+        >
+          View version history
         </Button>
       </Box>
 
