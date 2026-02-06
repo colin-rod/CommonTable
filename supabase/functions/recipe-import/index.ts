@@ -11,6 +11,8 @@ import {
 } from '../_shared/errors.ts';
 import { getAuthToken, validateRequestBody } from '../_shared/validation.ts';
 
+import { enrichRecipeData } from './parsers/ai-enricher.ts';
+import type { AIEnrichmentResult } from './parsers/ai-enricher.ts';
 import { parseHtmlFallback } from './parsers/html-fallback.ts';
 import { downloadAndUploadImage } from './parsers/image-downloader.ts';
 import { parseJsonLd } from './parsers/jsonld.ts';
@@ -182,6 +184,60 @@ serve(async (req) => {
     // Normalize parsed data
     const normalized = normalizeRecipeData(rawData);
 
+    // Get household_id from user context
+    const { data: membership } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', user.id)
+      .single();
+
+    const householdId = membership?.household_id;
+
+    // AI enrichment (non-blocking)
+    let aiResult: AIEnrichmentResult = {
+      tags: [],
+      cuisine: null,
+      meal_type: null,
+      key_ingredients: [],
+      servings: null,
+      prep_time_minutes: null,
+      cook_time_minutes: null,
+      ingredients: [],
+      steps: [],
+      status: 'skipped',
+    };
+
+    if (householdId) {
+      try {
+        aiResult = await enrichRecipeData(normalized.preview, householdId, supabase);
+      } catch (error) {
+        console.error('AI enrichment failed (non-critical):', error);
+        aiResult.status = 'failed';
+        aiResult.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+    }
+
+    // Merge AI results (prefer AI-cleaned data, fallback to parser)
+    const enrichedPreview = {
+      ...normalized.preview,
+
+      // Prefer AI-cleaned data (better formatting)
+      servings: aiResult.servings ?? normalized.preview.servings,
+      prep_time_minutes: aiResult.prep_time_minutes ?? normalized.preview.prep_time_minutes,
+      cook_time_minutes: aiResult.cook_time_minutes ?? normalized.preview.cook_time_minutes,
+      ingredients:
+        aiResult.ingredients.length > 0 ? aiResult.ingredients : normalized.preview.ingredients,
+      steps: aiResult.steps.length > 0 ? aiResult.steps : normalized.preview.steps,
+
+      // Prefer AI tags if parser has none
+      tags: normalized.preview.tags.length > 0 ? normalized.preview.tags : aiResult.tags,
+
+      // Always use AI metadata (parsers never populate these)
+      cuisine: aiResult.cuisine ?? undefined,
+      meal_type: aiResult.meal_type ?? undefined,
+      key_ingredients: aiResult.key_ingredients.length > 0 ? aiResult.key_ingredients : undefined,
+    };
+
     // Try to download and upload image (non-critical)
     let coverImageStoragePath: string | null = null;
 
@@ -206,13 +262,15 @@ serve(async (req) => {
     const result: RecipeImportResponse = {
       ...normalized,
       preview: {
-        ...normalized.preview,
+        ...enrichedPreview,
         cover_image_storage_path: coverImageStoragePath || undefined,
       },
       source: {
         url: validated.url,
         parsed_via,
         fetched_at: new Date().toISOString(),
+        ai_enrichment_status: aiResult.status,
+        ai_enrichment_error: aiResult.error,
       },
     };
 

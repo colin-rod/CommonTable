@@ -62,6 +62,10 @@ export const RecipePreviewSchema = z.object({
   image_url: z.string().url().optional(),
   cover_image_storage_path: z.string().optional(), // Path to image in Supabase Storage
   tags: z.array(z.string()).default([]),
+  // NEW: AI-enriched fields
+  cuisine: z.string().optional(), // Will be validated as CuisineType in recipe creation
+  meal_type: z.string().optional(), // Will be validated as MealType in recipe creation
+  key_ingredients: z.array(z.string()).optional(),
 });
 
 export type RecipePreview = z.infer<typeof RecipePreviewSchema>;
@@ -73,6 +77,9 @@ export const SourceMetadataSchema = z.object({
   url: z.string().url(),
   parsed_via: z.enum(['jsonld', 'html-fallback']),
   fetched_at: z.string().datetime(),
+  // NEW: AI enrichment metadata
+  ai_enrichment_status: z.enum(['success', 'failed', 'skipped']).optional(),
+  ai_enrichment_error: z.string().optional(),
 });
 
 export type SourceMetadata = z.infer<typeof SourceMetadataSchema>;
