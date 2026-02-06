@@ -5,7 +5,6 @@ import type { CookingEvent, CookingEventId } from '@commontable/types';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import {
-  ListItem,
   Stack,
   Typography,
   Box,
@@ -13,6 +12,8 @@ import {
   TextField,
   Button,
   CircularProgress,
+  Card,
+  CardContent,
 } from '@mui/material';
 import { useState } from 'react';
 
@@ -68,104 +69,110 @@ export function CookingHistoryItem({ event, onUpdate }: CookingHistoryItemProps)
   };
 
   return (
-    <ListItem sx={{ py: 2 }}>
-      <Stack spacing={2} sx={{ width: '100%' }}>
-        {/* Date */}
-        <Typography variant="body2" color="text.secondary">
-          {new Date(event.cooked_at).toLocaleDateString()}
-        </Typography>
-
-        {/* Rating (read-only or editable) */}
-        {isEditing ? (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
-            {[1, 2, 3, 4, 5].map((rating) => (
-              <IconButton
-                key={rating}
-                size="small"
-                onClick={() => setEditedRating(rating)}
-                disabled={loading}
-                aria-label={`Rate ${rating} ${rating === 1 ? 'star' : 'stars'}`}
-              >
-                {editedRating && rating <= editedRating ? (
-                  <StarIcon fontSize="small" />
-                ) : (
-                  <StarBorderIcon fontSize="small" />
-                )}
-              </IconButton>
-            ))}
-          </Box>
-        ) : event.rating ? (
-          <Box sx={{ display: 'flex', gap: 0.25 }} role="img" aria-label={`${event.rating} stars`}>
-            {[1, 2, 3, 4, 5].map((rating) => (
-              <Box key={rating}>
-                {event.rating && rating <= event.rating ? (
-                  <StarIcon fontSize="small" />
-                ) : (
-                  <StarBorderIcon fontSize="small" />
-                )}
-              </Box>
-            ))}
-          </Box>
-        ) : null}
-
-        {/* Notes (read-only or editable) */}
-        {isEditing ? (
-          <TextField
-            label="Notes"
-            value={editedNotes}
-            onChange={(e) => setEditedNotes(e.target.value)}
-            multiline
-            rows={2}
-            fullWidth
-            disabled={loading}
-            placeholder="Add notes about this meal..."
-          />
-        ) : (
-          event.notes && <Typography variant="body1">{event.notes}</Typography>
-        )}
-
-        {/* Servings (read-only always) */}
-        {event.servings_made && (
+    <Card variant="outlined">
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Stack spacing={2}>
+          {/* Date */}
           <Typography variant="body2" color="text.secondary">
-            {event.servings_made} servings
+            {new Date(event.cooked_at).toLocaleDateString()}
           </Typography>
-        )}
 
-        {/* Actions */}
-        {isEditing ? (
-          <Stack direction="row" spacing={1}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="small"
-              onClick={handleSave}
-              disabled={loading}
+          {/* Rating (read-only or editable) */}
+          {isEditing ? (
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <IconButton
+                  key={rating}
+                  size="small"
+                  onClick={() => setEditedRating(rating)}
+                  disabled={loading}
+                  aria-label={`Rate ${rating} ${rating === 1 ? 'star' : 'stars'}`}
+                >
+                  {editedRating && rating <= editedRating ? (
+                    <StarIcon fontSize="small" />
+                  ) : (
+                    <StarBorderIcon fontSize="small" />
+                  )}
+                </IconButton>
+              ))}
+            </Box>
+          ) : event.rating ? (
+            <Box
+              sx={{ display: 'flex', gap: 0.25 }}
+              role="img"
+              aria-label={`${event.rating} stars`}
             >
-              {loading ? <CircularProgress size={16} /> : 'Save'}
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              size="small"
-              onClick={handleCancel}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-          </Stack>
-        ) : (
-          <Button variant="outlined" color="primary" size="small" onClick={handleEdit}>
-            Edit
-          </Button>
-        )}
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <Box key={rating}>
+                  {event.rating && rating <= event.rating ? (
+                    <StarIcon fontSize="small" />
+                  ) : (
+                    <StarBorderIcon fontSize="small" />
+                  )}
+                </Box>
+              ))}
+            </Box>
+          ) : null}
 
-        {/* Error message */}
-        {error && (
-          <Typography variant="body2" color="error">
-            {error}
-          </Typography>
-        )}
-      </Stack>
-    </ListItem>
+          {/* Notes (read-only or editable) */}
+          {isEditing ? (
+            <TextField
+              label="Notes"
+              value={editedNotes}
+              onChange={(e) => setEditedNotes(e.target.value)}
+              multiline
+              rows={2}
+              fullWidth
+              disabled={loading}
+              placeholder="Add notes about this meal..."
+            />
+          ) : (
+            event.notes && <Typography variant="body1">{event.notes}</Typography>
+          )}
+
+          {/* Servings (read-only always) */}
+          {event.servings_made && (
+            <Typography variant="body2" color="text.secondary">
+              {event.servings_made} servings
+            </Typography>
+          )}
+
+          {/* Actions */}
+          {isEditing ? (
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                onClick={handleSave}
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={16} /> : 'Save'}
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                onClick={handleCancel}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+            </Stack>
+          ) : (
+            <Button variant="outlined" color="primary" size="small" onClick={handleEdit}>
+              Edit
+            </Button>
+          )}
+
+          {/* Error message */}
+          {error && (
+            <Typography variant="body2" color="error">
+              {error}
+            </Typography>
+          )}
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }
