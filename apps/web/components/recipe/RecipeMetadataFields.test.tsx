@@ -56,6 +56,9 @@ describe('RecipeMetadataFields', () => {
     it('shows "Add description" link when description is empty', () => {
       render(<TestWrapper />);
 
+      const optionalSection = screen.getByRole('button', { name: /optional/i });
+      optionalSection.click();
+
       expect(screen.getByText(/add description/i)).toBeInTheDocument();
       expect(screen.queryByLabelText(/description/i)).not.toBeInTheDocument();
     });
@@ -63,6 +66,9 @@ describe('RecipeMetadataFields', () => {
     it('shows description field when "Add description" is clicked', async () => {
       const user = userEvent.setup();
       render(<TestWrapper />);
+
+      const optionalSection = screen.getByRole('button', { name: /optional/i });
+      await user.click(optionalSection);
 
       const addDescriptionLink = screen.getByText(/add description/i);
       await user.click(addDescriptionLink);
@@ -84,6 +90,9 @@ describe('RecipeMetadataFields', () => {
     it('shows "Add notes" link when notes is empty', () => {
       render(<TestWrapper />);
 
+      const optionalSection = screen.getByRole('button', { name: /optional/i });
+      optionalSection.click();
+
       expect(screen.getByText(/add notes/i)).toBeInTheDocument();
       expect(screen.queryByLabelText(/^notes$/i)).not.toBeInTheDocument();
     });
@@ -91,6 +100,9 @@ describe('RecipeMetadataFields', () => {
     it('shows notes field when "Add notes" is clicked', async () => {
       const user = userEvent.setup();
       render(<TestWrapper />);
+
+      const optionalSection = screen.getByRole('button', { name: /optional/i });
+      await user.click(optionalSection);
 
       const addNotesLink = screen.getByText(/add notes/i);
       await user.click(addNotesLink);
