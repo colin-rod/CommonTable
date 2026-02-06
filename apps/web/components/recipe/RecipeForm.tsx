@@ -19,7 +19,6 @@ import {
   Alert,
   Divider,
   Box,
-  Paper,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -270,82 +269,10 @@ export function RecipeForm({
     }
   };
 
-  const handleNavigateToSection = (sectionId: string) => {
-    if (sectionId === 'recipe-details-section') {
-      setExpandedSection('details');
-    }
-    if (sectionId === 'recipe-ingredients-section') {
-      setExpandedSection('ingredients');
-    }
-    if (sectionId === 'recipe-steps-section') {
-      setExpandedSection('steps');
-    }
-    const sectionElement = document.getElementById(sectionId);
-    if (sectionElement) {
-      sectionElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   return (
     <Stack component="form" onSubmit={handleSubmit(handleFormSubmit)} spacing={3}>
       {/* Page Title */}
       <Typography variant="h5">{mode === 'create' ? 'Create Recipe' : 'Edit Recipe'}</Typography>
-
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-          Jump to section
-        </Typography>
-        <Stack direction="row" spacing={2} flexWrap="wrap" alignItems="center">
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => handleNavigateToSection('recipe-details-section')}
-            >
-              Details
-            </Button>
-            <Chip
-              size="small"
-              icon={detailsComplete ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}
-              label={detailsComplete ? 'Complete' : 'Required'}
-              color={detailsComplete ? 'success' : 'default'}
-              variant="outlined"
-            />
-          </Stack>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => handleNavigateToSection('recipe-ingredients-section')}
-            >
-              Ingredients
-            </Button>
-            <Chip
-              size="small"
-              icon={completedIngredients > 0 ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}
-              label={ingredientStatusLabel}
-              color={completedIngredients > 0 ? 'success' : 'default'}
-              variant="outlined"
-            />
-          </Stack>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => handleNavigateToSection('recipe-steps-section')}
-            >
-              Steps
-            </Button>
-            <Chip
-              size="small"
-              icon={completedSteps > 0 ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}
-              label={stepStatusLabel}
-              color={completedSteps > 0 ? 'success' : 'default'}
-              variant="outlined"
-            />
-          </Stack>
-        </Stack>
-      </Paper>
 
       {/* Error Alert */}
       {error && (
