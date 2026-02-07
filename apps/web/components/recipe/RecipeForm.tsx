@@ -331,6 +331,7 @@ export function RecipeForm({
             availableTags={availableTags}
             titleInputRef={titleInputRef}
             showTitle={false}
+            showWorkflowFields={mode !== 'create'}
           />
         </AccordionDetails>
       </Accordion>

@@ -237,6 +237,7 @@ export function RecipeImportPreview({
           errors={errors}
           disabled={loading}
           availableTags={[]}
+          showWorkflowFields={false}
         />
 
         <Divider />
