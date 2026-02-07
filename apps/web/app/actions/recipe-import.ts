@@ -66,7 +66,13 @@ function decodeJwtClaims(token: string): Record<string, unknown> | null {
   }
 
   try {
-    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    // parts[1] is guaranteed to exist due to length check above
+    const payloadPart = parts[1];
+    if (!payloadPart) {
+      return null;
+    }
+
+    const payload = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
     const padded = payload.padEnd(Math.ceil(payload.length / 4) * 4, '=');
     const json = Buffer.from(padded, 'base64').toString('utf8');
     const claims = JSON.parse(json) as Record<string, unknown>;
