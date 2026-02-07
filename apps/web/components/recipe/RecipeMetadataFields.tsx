@@ -52,6 +52,7 @@ export interface RecipeMetadataFieldsProps {
   availableTags: string[];
   titleInputRef?: Ref<HTMLInputElement>;
   showTitle?: boolean;
+  showWorkflowFields?: boolean;
 }
 
 /**
@@ -140,6 +141,7 @@ export function RecipeMetadataFields({
   availableTags,
   titleInputRef,
   showTitle = true,
+  showWorkflowFields = true,
 }: RecipeMetadataFieldsProps) {
   // Watch the description and notes values to determine initial visibility
   const descriptionValue = useWatch({ control, name: 'description' });
@@ -363,59 +365,63 @@ export function RecipeMetadataFields({
         />
       </Grid>
 
-      {/* Row 5: Workflow - 3 columns */}
-      <Grid item xs={12} sm={4}>
-        <Controller
-          name="status"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth disabled={disabled} error={!!errors.status}>
-              <InputLabel id="status-label">Status</InputLabel>
-              <Select
-                {...field}
-                labelId="status-label"
-                label="Status"
-                value={field.value ?? 'suggested'}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {formatStatus(option)}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.status && <FormHelperText>{errors.status.message}</FormHelperText>}
-            </FormControl>
-          )}
-        />
-      </Grid>
-      <Grid item xs={12} sm={4}>
-        <Controller
-          name="priority"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth disabled={disabled} error={!!errors.priority}>
-              <InputLabel id="priority-label">Priority</InputLabel>
-              <Select
-                {...field}
-                labelId="priority-label"
-                label="Priority"
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {PRIORITY_OPTIONS.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.priority && <FormHelperText>{errors.priority.message}</FormHelperText>}
-            </FormControl>
-          )}
-        />
-      </Grid>
+      {showWorkflowFields && (
+        <>
+          {/* Row 5: Workflow - 3 columns */}
+          <Grid item xs={12} sm={4}>
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth disabled={disabled} error={!!errors.status}>
+                  <InputLabel id="status-label">Status</InputLabel>
+                  <Select
+                    {...field}
+                    labelId="status-label"
+                    label="Status"
+                    value={field.value ?? 'suggested'}
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {formatStatus(option)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.status && <FormHelperText>{errors.status.message}</FormHelperText>}
+                </FormControl>
+              )}
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Controller
+              name="priority"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth disabled={disabled} error={!!errors.priority}>
+                  <InputLabel id="priority-label">Priority</InputLabel>
+                  <Select
+                    {...field}
+                    labelId="priority-label"
+                    label="Priority"
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                  >
+                    <MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.priority && <FormHelperText>{errors.priority.message}</FormHelperText>}
+                </FormControl>
+              )}
+            />
+          </Grid>
+        </>
+      )}
 
       {/* Row 6: Tags (full width) */}
       <Grid item xs={12}>
