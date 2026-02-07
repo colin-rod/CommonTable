@@ -320,8 +320,10 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+[edge_runtime.secrets]
+# Keys are exposed to Edge Functions via Deno.env.get("KEY_NAME")
+ANON_KEY = "env(NEXT_PUBLIC_SUPABASE_ANON_KEY)"
+OPENAI_API_KEY = "env(OPENAI_API_KEY)"
 
 [analytics]
 enabled = true

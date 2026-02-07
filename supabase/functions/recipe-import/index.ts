@@ -83,6 +83,7 @@ serve(async (req) => {
         code: authError.code,
         status: authError.status,
         supabaseUrl: supabaseUrl, // Log to verify correct instance
+        hasAnonKey: !!supabaseAnonKey, // Verify environment variable is set
       });
     }
 
