@@ -2,6 +2,7 @@
 
 import AddIcon from '@mui/icons-material/Add';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import LinkIcon from '@mui/icons-material/Link';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import type { Route } from 'next';
@@ -47,6 +48,13 @@ export function QuickActionsDropdown({ anchorEl, open, onClose }: QuickActionsDr
           <AddIcon />
         </ListItemIcon>
         <ListItemText>Add Recipe</ListItemText>
+      </MenuItem>
+
+      <MenuItem onClick={() => handleNavigate('/recipes/import' as Route)}>
+        <ListItemIcon>
+          <LinkIcon />
+        </ListItemIcon>
+        <ListItemText>Import from URL</ListItemText>
       </MenuItem>
 
       <MenuItem onClick={() => handleNavigate('/meal-plan' as Route)}>
