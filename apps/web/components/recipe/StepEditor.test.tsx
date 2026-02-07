@@ -46,7 +46,7 @@ describe('StepEditor', () => {
 
     // Should show step text input
     await waitFor(() => {
-      expect(screen.getByLabelText(/step 1/i)).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /step 1/i })).toBeInTheDocument();
     });
   });
 
@@ -60,14 +60,14 @@ describe('StepEditor', () => {
     await user.click(addButton);
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/step 1/i)).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /step 1/i })).toBeInTheDocument();
     });
 
     // Add second step
     await user.click(addButton);
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/step 2/i)).toBeInTheDocument();
+      expect(screen.getByRole('textbox', { name: /step 2/i })).toBeInTheDocument();
     });
   });
 
@@ -136,8 +136,8 @@ describe('StepEditor', () => {
 
     // Wait for reorder and check labels
     await waitFor(() => {
-      expect(screen.getByLabelText(/step 1/i)).toHaveValue('Add pasta');
-      expect(screen.getByLabelText(/step 2/i)).toHaveValue('Boil water');
+      expect(screen.getByRole('textbox', { name: /step 1/i })).toHaveValue('Add pasta');
+      expect(screen.getByRole('textbox', { name: /step 2/i })).toHaveValue('Boil water');
     });
   });
 
@@ -207,10 +207,183 @@ describe('StepEditor', () => {
 
     render(<DisabledWrapper />);
 
-    const textInput = screen.getByLabelText(/step 1/i) as HTMLInputElement;
+    const textInput = screen.getByRole('textbox', { name: /step 1/i }) as HTMLInputElement;
     expect(textInput).toBeDisabled();
 
     const addButton = screen.getByRole('button', { name: /add step/i });
     expect(addButton).toBeDisabled();
+  });
+
+  describe('Writing Mode - Visual Layout', () => {
+    it('should render step number as h6 typography to the left of textarea', async () => {
+      const user = userEvent.setup();
+
+      render(<TestWrapper />);
+
+      const addButton = screen.getByRole('button', { name: /add step/i });
+      await user.click(addButton);
+
+      await waitFor(() => {
+        const stepNumber = screen.getByText('1');
+        expect(stepNumber.tagName).toBe('H6');
+      });
+    });
+
+    it('should render multiline textarea with minRows for growing content', async () => {
+      const user = userEvent.setup();
+
+      render(<TestWrapper />);
+
+      const addButton = screen.getByRole('button', { name: /add step/i });
+      await user.click(addButton);
+
+      await waitFor(() => {
+        const textarea = screen.getByRole('textbox', { name: /step 1/i });
+        // Verify it's a multiline textarea (minRows is a React prop, not a DOM attribute)
+        expect(textarea.tagName).toBe('TEXTAREA');
+        expect(textarea).toHaveAttribute('name', 'steps.0.text');
+      });
+    });
+
+    it('should have placeholder text in textarea', async () => {
+      const user = userEvent.setup();
+
+      render(<TestWrapper />);
+
+      const addButton = screen.getByRole('button', { name: /add step/i });
+      await user.click(addButton);
+
+      await waitFor(() => {
+        const textarea = screen.getByPlaceholderText(/describe this step/i);
+        expect(textarea).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Writing Mode - Refs and Focus Management', () => {
+    it('should assign refs to all textareas for focus management', async () => {
+      const user = userEvent.setup();
+
+      render(<TestWrapper />);
+
+      const addButton = screen.getByRole('button', { name: /add step/i });
+      await user.click(addButton);
+      await user.click(addButton);
+
+      await waitFor(() => {
+        const textareas = screen.getAllByRole('textbox');
+        expect(textareas).toHaveLength(2);
+        expect(textareas[0]).toBeInstanceOf(HTMLTextAreaElement);
+        expect(textareas[1]).toBeInstanceOf(HTMLTextAreaElement);
+      });
+    });
+
+    it('should auto-focus newly added step from Add Step button', async () => {
+      const user = userEvent.setup();
+
+      render(<TestWrapper />);
+
+      const addButton = screen.getByRole('button', { name: /add step/i });
+      await user.click(addButton);
+
+      await waitFor(() => {
+        const firstTextarea = screen.getByRole('textbox', { name: /step 1/i });
+        expect(firstTextarea).toHaveFocus();
+      });
+
+      await user.click(addButton);
+
+      await waitFor(() => {
+        const secondTextarea = screen.getByRole('textbox', { name: /step 2/i });
+        expect(secondTextarea).toHaveFocus();
+      });
+    });
+  });
+
+  describe('Writing Mode - Keyboard Shortcuts', () => {
+    it('should create new step on Cmd+Enter (Mac)', async () => {
+      const user = userEvent.setup();
+
+      render(<TestWrapper />);
+
+      const addButton = screen.getByRole('button', { name: /add step/i });
+      await user.click(addButton);
+
+      const textarea = screen.getByRole('textbox', { name: /step 1/i });
+      await user.type(textarea, 'First step');
+
+      // Press Cmd+Enter
+      await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+      // Verify new step added and focused
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /step 2/i })).toBeInTheDocument();
+        expect(screen.getByRole('textbox', { name: /step 2/i })).toHaveFocus();
+      });
+    });
+
+    it('should create new step on Ctrl+Enter (Windows/Linux)', async () => {
+      const user = userEvent.setup();
+
+      render(<TestWrapper />);
+
+      const addButton = screen.getByRole('button', { name: /add step/i });
+      await user.click(addButton);
+
+      const textarea = screen.getByRole('textbox', { name: /step 1/i });
+      await user.type(textarea, 'First step');
+
+      // Press Ctrl+Enter
+      await user.keyboard('{Control>}{Enter}{/Control}');
+
+      // Verify new step added and focused
+      await waitFor(() => {
+        expect(screen.getByRole('textbox', { name: /step 2/i })).toBeInTheDocument();
+        expect(screen.getByRole('textbox', { name: /step 2/i })).toHaveFocus();
+      });
+    });
+
+    it('should allow Enter key for newlines within step', async () => {
+      const user = userEvent.setup();
+
+      render(<TestWrapper />);
+
+      const addButton = screen.getByRole('button', { name: /add step/i });
+      await user.click(addButton);
+
+      const textarea = screen.getByRole('textbox', { name: /step 1/i });
+      await user.type(textarea, 'Line 1{Enter}Line 2');
+
+      // Verify newline added, not new step
+      expect(textarea).toHaveValue('Line 1\nLine 2');
+      expect(screen.queryByRole('textbox', { name: /step 2/i })).not.toBeInTheDocument();
+    });
+
+    it('should ignore keyboard shortcuts when disabled', async () => {
+      function DisabledWrapper() {
+        const {
+          control,
+          formState: { errors },
+        } = useForm<RecipeFormValues>({
+          defaultValues: {
+            title: '',
+            description: '',
+            notes: '',
+            ingredients: [],
+            steps: [{ position: 1, text: 'Boil water' }],
+          },
+        });
+
+        return <StepEditor control={control} errors={errors} disabled={true} />;
+      }
+
+      render(<DisabledWrapper />);
+
+      const textarea = screen.getByRole('textbox', { name: /step 1/i }) as HTMLTextAreaElement;
+      expect(textarea).toBeDisabled();
+
+      // Cannot interact with disabled textarea
+      expect(screen.queryByRole('textbox', { name: /step 2/i })).not.toBeInTheDocument();
+    });
   });
 });
