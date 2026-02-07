@@ -58,11 +58,9 @@ export default function CreateRecipePage() {
         notes: data.notes || '',
         tags: data.tags || [],
         // New metadata fields (Phase 3) - defaults for creation
-        status: 'suggested' as const,
         key_ingredients: [],
         cuisine: undefined,
         meal_type: undefined,
-        priority: undefined,
         cooking_method: undefined,
         dietary_categories: [],
         dish_category: undefined,

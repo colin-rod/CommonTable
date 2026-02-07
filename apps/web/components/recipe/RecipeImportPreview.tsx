@@ -131,11 +131,9 @@ export function RecipeImportPreview({
         steps_json: data.steps || [],
         tags: data.tags || [],
         // New metadata fields (Phase 3) - defaults for creation
-        status: 'suggested' as const,
         key_ingredients: [],
         cuisine: undefined,
         meal_type: undefined,
-        priority: undefined,
       };
 
       const result = await createImportedRecipe(input, preview.preview.image_url);
