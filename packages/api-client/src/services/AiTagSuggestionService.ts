@@ -239,7 +239,11 @@ export class AiTagSuggestionService extends BaseService {
         !('recipe_version' in item) ||
         !item.recipe_version ||
         typeof item.recipe_version !== 'object' ||
-        !('recipe' in item.recipe_version)
+        !('recipe' in item.recipe_version) ||
+        !('id' in item) ||
+        !('recipe_version_id' in item) ||
+        !('tag_id' in item) ||
+        !('tag' in item)
       ) {
         return;
       }
@@ -262,7 +266,7 @@ export class AiTagSuggestionService extends BaseService {
       const entry = groupedMap.get(recipeId);
       if (!entry) return;
 
-      const itemData = item as {
+      const itemData = item as unknown as {
         id: string;
         recipe_version_id: string;
         tag_id: string;

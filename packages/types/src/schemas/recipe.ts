@@ -154,7 +154,7 @@ export const CreateRecipeInputSchema = z.object({
     .max(50, 'Maximum 50 key ingredients allowed')
     .default([]),
   priority: z.number().int().min(1).max(5).optional(),
-  status: RecipeStatusSchema.default('suggested'),
+  status: RecipeStatusSchema.optional().default('suggested'),
 
   // Source URL for imported recipes (null for manually created)
   source_url: z.string().url('Invalid URL format').max(2000, 'URL too long').optional(),
