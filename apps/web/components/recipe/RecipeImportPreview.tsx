@@ -134,6 +134,7 @@ export function RecipeImportPreview({
         key_ingredients: [],
         cuisine: undefined,
         meal_type: undefined,
+        status: 'suggested' as const,
       };
 
       const result = await createImportedRecipe(input, preview.preview.image_url);

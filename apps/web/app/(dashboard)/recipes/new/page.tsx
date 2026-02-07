@@ -61,6 +61,7 @@ export default function CreateRecipePage() {
         key_ingredients: [],
         cuisine: undefined,
         meal_type: undefined,
+        status: 'suggested' as const,
         cooking_method: undefined,
         dietary_categories: [],
         dish_category: undefined,
