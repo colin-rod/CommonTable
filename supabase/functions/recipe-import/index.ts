@@ -19,6 +19,24 @@ import { parseJsonLd } from './parsers/jsonld.ts';
 import { normalizeRecipeData } from './parsers/normalizer.ts';
 import { RecipeImportRequestSchema, type RecipeImportResponse } from './schema.ts';
 
+function decodeJwtClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  try {
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = payload.padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    // eslint-disable-next-line no-undef
+    const json = atob(padded);
+    const claims = JSON.parse(json) as Record<string, unknown>;
+    return claims;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Recipe Import Edge Function
  *
@@ -53,6 +71,12 @@ serve(async (req) => {
   try {
     // Validate authentication token exists
     const token = getAuthToken(req);
+    const claims = decodeJwtClaims(token);
+    console.log('recipe-import auth diagnostics (edge)', {
+      tokenRef: claims?.ref ?? claims?.iss,
+      tokenExp: claims?.exp,
+      tokenIat: claims?.iat,
+    });
 
     // Create Supabase client (Edge Runtime automatically handles JWT from Authorization header)
     // Note: SUPABASE_URL and SUPABASE_ANON_KEY are auto-injected by Supabase Edge Runtime

@@ -59,6 +59,23 @@ function formatError(error: unknown): { message: string; code?: string } {
   return { message: 'An unexpected error occurred' };
 }
 
+function decodeJwtClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  try {
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = payload.padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    const json = Buffer.from(padded, 'base64').toString('utf8');
+    const claims = JSON.parse(json) as Record<string, unknown>;
+    return claims;
+  } catch {
+    return null;
+  }
+}
+
 async function parseInvokeError(error: unknown): Promise<{
   message: string;
   status?: number;
@@ -143,6 +160,16 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
         error: { message: 'Missing Supabase API key configuration', code: 'CONFIG_ERROR' },
       };
     }
+
+    const claims = decodeJwtClaims(session.access_token);
+    console.warn('recipe-import auth diagnostics (server action)', {
+      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasPublishableKey: !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      tokenRef: claims?.ref ?? claims?.iss,
+      tokenExp: claims?.exp,
+      tokenIat: claims?.iat,
+    });
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY is missing; falling back to publishable key');
