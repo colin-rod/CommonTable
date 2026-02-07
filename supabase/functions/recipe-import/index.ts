@@ -55,10 +55,9 @@ serve(async (req) => {
     const token = getAuthToken(req);
 
     // Create Supabase client (Edge Runtime automatically handles JWT from Authorization header)
-    // Note: SUPABASE_URL is auto-injected by Supabase runtime
-    // ANON_KEY is our custom secret (can't use SUPABASE_ prefix via CLI)
+    // Note: SUPABASE_URL and SUPABASE_ANON_KEY are auto-injected by Supabase Edge Runtime
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('ANON_KEY');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
     const supabaseApiKey = supabaseAnonKey;
 
     if (!supabaseUrl || !supabaseApiKey) {
