@@ -1,13 +1,6 @@
 'use client';
 
-import type {
-  CuisineType,
-  MealType,
-  RecipeStatus,
-  CookingMethod,
-  DietaryCategory,
-  DishCategory,
-} from '@commontable/types';
+import type { CuisineType, MealType, RecipeStatus } from '@commontable/types';
 import {
   Grid,
   TextField,
@@ -18,7 +11,7 @@ import {
   FormHelperText,
   Typography,
 } from '@mui/material';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type Ref } from 'react';
 import { type Control, Controller, type FieldErrors, useWatch } from 'react-hook-form';
 
 import { TagAutocomplete } from './TagAutocomplete';
@@ -50,9 +43,6 @@ export interface RecipeFormValues {
   key_ingredients?: string[];
   priority?: number | null;
   status?: RecipeStatus;
-  cooking_method?: CookingMethod | null;
-  dietary_categories?: DietaryCategory[];
-  dish_category?: DishCategory | null;
 }
 
 export interface RecipeMetadataFieldsProps {
@@ -60,6 +50,9 @@ export interface RecipeMetadataFieldsProps {
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
   availableTags: string[];
+  titleInputRef?: Ref<HTMLInputElement>;
+  showTitle?: boolean;
+  showWorkflowFields?: boolean;
 }
 
 /**
@@ -119,40 +112,6 @@ const STATUS_OPTIONS: RecipeStatus[] = ['suggested', 'to_buy', 'to_cook', 'cooke
 
 const PRIORITY_OPTIONS: number[] = [1, 2, 3, 4, 5];
 
-const COOKING_METHOD_OPTIONS: CookingMethod[] = [
-  'quick',
-  'slow_cook',
-  'instant_pot',
-  'bake',
-  'grill',
-  'stovetop',
-  'air_fryer',
-  'no_cook',
-];
-
-const DIETARY_CATEGORY_OPTIONS: DietaryCategory[] = [
-  'vegetarian',
-  'vegan',
-  'gluten_free',
-  'dairy_free',
-  'keto',
-  'paleo',
-  'low_carb',
-  'low_fat',
-  'high_protein',
-  'pescatarian',
-];
-
-const DISH_CATEGORY_OPTIONS: DishCategory[] = [
-  'main',
-  'side',
-  'appetizer',
-  'soup',
-  'salad',
-  'bread',
-  'condiment',
-];
-
 // Helper functions for formatting display labels
 function formatCuisine(cuisine: CuisineType): string {
   return cuisine
@@ -175,29 +134,14 @@ function formatStatus(status: RecipeStatus): string {
     .join(' ');
 }
 
-function formatCookingMethod(method: CookingMethod): string {
-  return method
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-function formatDietaryCategory(category: DietaryCategory): string {
-  return category
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-function formatDishCategory(category: DishCategory): string {
-  return category.charAt(0).toUpperCase() + category.slice(1);
-}
-
 export function RecipeMetadataFields({
   control,
   errors,
   disabled = false,
   availableTags,
+  titleInputRef,
+  showTitle = true,
+  showWorkflowFields = true,
 }: RecipeMetadataFieldsProps) {
   // Watch the description and notes values to determine initial visibility
   const descriptionValue = useWatch({ control, name: 'description' });
@@ -239,24 +183,26 @@ export function RecipeMetadataFields({
 
   return (
     <Grid container spacing={2}>
-      {/* Row 1: Title (full width) */}
-      <Grid item xs={12}>
-        <Controller
-          name="title"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Recipe Title"
-              required
-              fullWidth
-              disabled={disabled}
-              error={!!errors.title}
-              helperText={errors.title?.message}
-            />
-          )}
-        />
-      </Grid>
+      {showTitle && (
+        <Grid item xs={12}>
+          <Controller
+            name="title"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                inputRef={titleInputRef}
+                label="Recipe Title"
+                required
+                fullWidth
+                disabled={disabled}
+                error={!!errors.title}
+                helperText={errors.title?.message}
+              />
+            )}
+          />
+        </Grid>
+      )}
 
       {/* Row 2: Description (conditional) */}
       <Grid item xs={12}>
@@ -361,8 +307,8 @@ export function RecipeMetadataFields({
         />
       </Grid>
 
-      {/* Row 4: Classification - 4 columns on desktop, 2x2 on tablet */}
-      <Grid item xs={12} sm={6} md={3}>
+      {/* Row 4: Classification - 2 columns */}
+      <Grid item xs={12} sm={6}>
         <Controller
           name="cuisine"
           control={control}
@@ -390,7 +336,7 @@ export function RecipeMetadataFields({
           )}
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
+      <Grid item xs={12} sm={6}>
         <Controller
           name="meal_type"
           control={control}
@@ -418,149 +364,64 @@ export function RecipeMetadataFields({
           )}
         />
       </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <Controller
-          name="dietary_categories"
-          control={control}
-          defaultValue={[]}
-          render={({ field }) => (
-            <FormControl fullWidth disabled={disabled} error={!!errors.dietary_categories}>
-              <InputLabel id="dietary-categories-label">Dietary Categories</InputLabel>
-              <Select
-                {...field}
-                labelId="dietary-categories-label"
-                label="Dietary Categories"
-                multiple
-                value={field.value || []}
-                onChange={(e) => field.onChange(e.target.value)}
-              >
-                {DIETARY_CATEGORY_OPTIONS.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {formatDietaryCategory(option)}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.dietary_categories && (
-                <FormHelperText>{errors.dietary_categories.message}</FormHelperText>
-              )}
-            </FormControl>
-          )}
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <Controller
-          name="dish_category"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth disabled={disabled} error={!!errors.dish_category}>
-              <InputLabel id="dish-category-label">Dish Category</InputLabel>
-              <Select
-                {...field}
-                labelId="dish-category-label"
-                label="Dish Category"
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value || null)}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {DISH_CATEGORY_OPTIONS.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {formatDishCategory(option)}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.dish_category && (
-                <FormHelperText>{errors.dish_category.message}</FormHelperText>
-              )}
-            </FormControl>
-          )}
-        />
-      </Grid>
 
-      {/* Row 5: Workflow - 3 columns */}
-      <Grid item xs={12} sm={4}>
-        <Controller
-          name="status"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth disabled={disabled} error={!!errors.status}>
-              <InputLabel id="status-label">Status</InputLabel>
-              <Select
-                {...field}
-                labelId="status-label"
-                label="Status"
-                value={field.value ?? 'suggested'}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {formatStatus(option)}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.status && <FormHelperText>{errors.status.message}</FormHelperText>}
-            </FormControl>
-          )}
-        />
-      </Grid>
-      <Grid item xs={12} sm={4}>
-        <Controller
-          name="priority"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth disabled={disabled} error={!!errors.priority}>
-              <InputLabel id="priority-label">Priority</InputLabel>
-              <Select
-                {...field}
-                labelId="priority-label"
-                label="Priority"
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {PRIORITY_OPTIONS.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.priority && <FormHelperText>{errors.priority.message}</FormHelperText>}
-            </FormControl>
-          )}
-        />
-      </Grid>
-      <Grid item xs={12} sm={4}>
-        <Controller
-          name="cooking_method"
-          control={control}
-          render={({ field }) => (
-            <FormControl fullWidth disabled={disabled} error={!!errors.cooking_method}>
-              <InputLabel id="cooking-method-label">Cooking Method</InputLabel>
-              <Select
-                {...field}
-                labelId="cooking-method-label"
-                label="Cooking Method"
-                value={field.value ?? ''}
-                onChange={(e) => field.onChange(e.target.value || null)}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {COOKING_METHOD_OPTIONS.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {formatCookingMethod(option)}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.cooking_method && (
-                <FormHelperText>{errors.cooking_method.message}</FormHelperText>
+      {showWorkflowFields && (
+        <>
+          {/* Row 5: Workflow - 3 columns */}
+          <Grid item xs={12} sm={4}>
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth disabled={disabled} error={!!errors.status}>
+                  <InputLabel id="status-label">Status</InputLabel>
+                  <Select
+                    {...field}
+                    labelId="status-label"
+                    label="Status"
+                    value={field.value ?? 'suggested'}
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {formatStatus(option)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.status && <FormHelperText>{errors.status.message}</FormHelperText>}
+                </FormControl>
               )}
-            </FormControl>
-          )}
-        />
-      </Grid>
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Controller
+              name="priority"
+              control={control}
+              render={({ field }) => (
+                <FormControl fullWidth disabled={disabled} error={!!errors.priority}>
+                  <InputLabel id="priority-label">Priority</InputLabel>
+                  <Select
+                    {...field}
+                    labelId="priority-label"
+                    label="Priority"
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                  >
+                    <MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.priority && <FormHelperText>{errors.priority.message}</FormHelperText>}
+                </FormControl>
+              )}
+            />
+          </Grid>
+        </>
+      )}
 
       {/* Row 6: Tags (full width) */}
       <Grid item xs={12}>

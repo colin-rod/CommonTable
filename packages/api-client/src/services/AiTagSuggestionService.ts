@@ -7,6 +7,8 @@ import type {
   TagId,
   HouseholdId,
   UserId,
+  RecipeWithPendingSuggestions,
+  RecipeId,
 } from '@commontable/types';
 import { NotFoundError } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -183,5 +185,126 @@ export class AiTagSuggestionService extends BaseService {
         versionId,
       });
     }
+  }
+
+  /**
+   * Get all pending suggestions for a household, grouped by recipe
+   *
+   * Returns recipes with pending AI tag suggestions, joined with:
+   * - Tag details (name, id)
+   * - Recipe version info
+   * - Recipe title
+   *
+   * @param householdId - Household ID
+   * @returns Array of recipes with their pending suggestions
+   * @throws {AppError} If database query fails
+   */
+  async getPendingByHousehold(householdId: HouseholdId): Promise<RecipeWithPendingSuggestions[]> {
+    const { data, error } = await this.supabase
+      .from('ai_tag_suggestions')
+      .select(
+        `
+        *,
+        tag:tags(*),
+        recipe_version:recipe_versions!inner(
+          id,
+          recipe_id,
+          version_number,
+          recipe:recipes!inner(
+            id,
+            title,
+            household_id
+          )
+        )
+      `,
+      )
+      .eq('recipe_version.recipe.household_id', householdId)
+      .is('user_accepted', null)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      BaseService.handleSupabaseError(error, 'AiTagSuggestionService.getPendingByHousehold', {
+        householdId,
+      });
+    }
+
+    // Group suggestions by recipe_id
+    const groupedMap = new Map<RecipeId, RecipeWithPendingSuggestions>();
+
+    (data || []).forEach((item: unknown) => {
+      // Type guard: ensure item has expected structure
+      if (
+        !item ||
+        typeof item !== 'object' ||
+        !('recipe_version' in item) ||
+        !item.recipe_version ||
+        typeof item.recipe_version !== 'object' ||
+        !('recipe' in item.recipe_version) ||
+        !('id' in item) ||
+        !('recipe_version_id' in item) ||
+        !('tag_id' in item) ||
+        !('tag' in item)
+      ) {
+        return;
+      }
+
+      const recipeData = item.recipe_version as {
+        id: string;
+        recipe: { id: string; title: string };
+      };
+      const recipeId = recipeData.recipe.id as RecipeId;
+
+      if (!groupedMap.has(recipeId)) {
+        groupedMap.set(recipeId, {
+          recipe_id: recipeId,
+          recipe_title: recipeData.recipe.title,
+          recipe_version_id: recipeData.id as RecipeVersionId,
+          suggestions: [],
+        });
+      }
+
+      const entry = groupedMap.get(recipeId);
+      if (!entry) return;
+
+      const itemData = item as unknown as {
+        id: string;
+        recipe_version_id: string;
+        tag_id: string;
+        confidence_score: number;
+        user_accepted: boolean | null;
+        accepted_at: string | null;
+        model_version: string;
+        created_at: string;
+        tag: {
+          id: string;
+          household_id: string;
+          name: string;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+      };
+
+      entry.suggestions.push({
+        id: itemData.id as AiTagSuggestionId,
+        recipe_version_id: itemData.recipe_version_id as RecipeVersionId,
+        tag_id: itemData.tag_id as TagId,
+        confidence_score: itemData.confidence_score,
+        user_accepted: itemData.user_accepted,
+        accepted_at: itemData.accepted_at ? new Date(itemData.accepted_at) : null,
+        model_version: itemData.model_version,
+        created_at: new Date(itemData.created_at),
+        tag: {
+          id: itemData.tag.id as TagId,
+          household_id: itemData.tag.household_id as HouseholdId,
+          name: itemData.tag.name,
+          created_by: itemData.tag.created_by as UserId,
+          created_at: new Date(itemData.tag.created_at),
+          updated_at: new Date(itemData.tag.updated_at),
+        },
+      });
+    });
+
+    return Array.from(groupedMap.values());
   }
 }

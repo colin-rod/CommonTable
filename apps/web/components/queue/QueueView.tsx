@@ -102,7 +102,7 @@ export function QueueView() {
 
       {!hasEntries && (
         <Typography variant="body2" color="text.secondary">
-          No recipes in queue. Add recipes from your shortlist to get started.
+          No recipes in meal plan. Add recipes to get started.
         </Typography>
       )}
 

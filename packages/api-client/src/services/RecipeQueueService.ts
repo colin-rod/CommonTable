@@ -1,4 +1,4 @@
-import { NotFoundError, type LaneType, type QueueStatus } from '@commontable/types';
+import { AppError, NotFoundError, type LaneType, type QueueStatus } from '@commontable/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import { BaseService } from './BaseService';
@@ -82,6 +82,10 @@ export class RecipeQueueService extends BaseService {
    * @throws {AppError} If database operation fails
    */
   async add(recipeId: string): Promise<QueueEntry> {
+    // Get household ID and user ID for RLS policy
+    const householdId = await this.getCurrentHouseholdId();
+    const userId = await this.getCurrentUserId();
+
     // Get next position (count existing entries)
     const { count, error: countError } = await this.supabase
       .from('recipe_queue')
@@ -93,15 +97,16 @@ export class RecipeQueueService extends BaseService {
 
     const nextPosition = count || 0;
 
-    // Insert entry with auto-assigned position
+    // Insert entry with required fields for RLS
     const { data, error } = await this.supabase
       .from('recipe_queue')
       .insert({
         recipe_id: recipeId,
+        household_id: householdId,
+        added_by: userId,
         position: nextPosition,
         status: 'queued',
-        // household_id and added_by are handled by RLS/triggers
-      } as never)
+      })
       .select()
       .single();
 
@@ -253,15 +258,6 @@ export class RecipeQueueService extends BaseService {
         case 'cuisine':
           laneKey = recipe.cuisine || 'uncategorized';
           break;
-        case 'cooking_method':
-          laneKey = recipe.cooking_method || 'uncategorized';
-          break;
-        case 'dietary':
-          laneKey = recipe.dietary_categories?.[0] || 'uncategorized';
-          break;
-        case 'dish_category':
-          laneKey = recipe.dish_category || 'uncategorized';
-          break;
         default:
           laneKey = 'uncategorized';
       }
@@ -273,5 +269,40 @@ export class RecipeQueueService extends BaseService {
     }
 
     return lanes;
+  }
+
+  /**
+   * Get current household ID from authenticated context via RLS function
+   *
+   * @returns Current user's household ID
+   * @throws {AppError} If user is not authenticated or has no household
+   */
+  private async getCurrentHouseholdId(): Promise<string> {
+    const { data, error } = await this.supabase.rpc('get_user_household_id');
+
+    if (error || !data) {
+      throw new AppError('Failed to get current household ID', 'AUTH_ERROR', 401);
+    }
+
+    return data as string;
+  }
+
+  /**
+   * Get current user ID from auth context
+   *
+   * @returns Current authenticated user ID
+   * @throws {AppError} If user is not authenticated
+   */
+  private async getCurrentUserId(): Promise<string> {
+    const {
+      data: { user },
+      error,
+    } = await this.supabase.auth.getUser();
+
+    if (error || !user) {
+      throw new AppError('User not authenticated', 'AUTH_ERROR', 401);
+    }
+
+    return user.id;
   }
 }

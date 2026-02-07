@@ -3,6 +3,7 @@
 import type { CreateRecipeInput } from '@commontable/api-client';
 import { IngredientInputSchema, StepInputSchema } from '@commontable/types';
 import { zodResolver } from '@hookform/resolvers/zod';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
   Stack,
   Typography,
@@ -12,6 +13,9 @@ import {
   Paper,
   Box,
   CircularProgress,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -127,14 +131,10 @@ export function RecipeImportPreview({
         steps_json: data.steps || [],
         tags: data.tags || [],
         // New metadata fields (Phase 3) - defaults for creation
-        status: 'suggested' as const,
         key_ingredients: [],
         cuisine: undefined,
         meal_type: undefined,
-        priority: undefined,
-        cooking_method: undefined,
-        dietary_categories: [],
-        dish_category: undefined,
+        status: 'suggested' as const,
       };
 
       const result = await createImportedRecipe(input, preview.preview.image_url);
@@ -236,17 +236,39 @@ export function RecipeImportPreview({
           errors={errors}
           disabled={loading}
           availableTags={[]}
+          showWorkflowFields={false}
         />
 
         <Divider />
 
         {/* Ingredient Editor Section */}
-        <IngredientEditor control={control} errors={errors} disabled={loading} />
-
-        <Divider />
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="h3" variant="h6">
+              Ingredients
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <IngredientEditor
+              control={control}
+              errors={errors}
+              disabled={loading}
+              showHeader={false}
+            />
+          </AccordionDetails>
+        </Accordion>
 
         {/* Step Editor Section */}
-        <StepEditor control={control} errors={errors} disabled={loading} />
+        <Accordion defaultExpanded>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="h3" variant="h6">
+              Steps
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <StepEditor control={control} errors={errors} disabled={loading} showHeader={false} />
+          </AccordionDetails>
+        </Accordion>
 
         {/* Action Buttons */}
         <Stack direction="row" spacing={2} justifyContent="flex-end">

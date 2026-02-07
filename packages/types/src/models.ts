@@ -2,25 +2,10 @@
 
 // Import recipe metadata enum types from schemas to avoid duplication
 import type { MealSlot } from './schemas/calendar';
-import type {
-  CuisineType,
-  MealType,
-  RecipeStatus,
-  CookingMethod,
-  DietaryCategory,
-  DishCategory,
-} from './schemas/recipe';
+import type { CuisineType, MealType, RecipeStatus } from './schemas/recipe';
 
 // Re-export to maintain backward compatibility
-export type {
-  CuisineType,
-  MealType,
-  RecipeStatus,
-  CookingMethod,
-  DietaryCategory,
-  DishCategory,
-  MealSlot,
-};
+export type { CuisineType, MealType, RecipeStatus, MealSlot };
 
 // Branded ID types
 export type RecipeId = string & { __brand: 'RecipeId' };
@@ -54,15 +39,14 @@ export interface Recipe {
   created_by: UserId;
   created_at: Date;
   updated_at: Date;
-  // New metadata fields
+  // Metadata fields
   cuisine: CuisineType | null;
   meal_type: MealType | null;
   key_ingredients: string[];
   priority: number | null;
   status: RecipeStatus;
-  cooking_method: CookingMethod | null;
-  dietary_categories: DietaryCategory[] | null;
-  dish_category: DishCategory | null;
+  // Import source (null for manually created recipes)
+  source_url: string | null;
 }
 
 // Recipe with its current version data (for detail view)
@@ -173,6 +157,14 @@ export interface AiTagSuggestionWithTag extends AiTagSuggestion {
   tag: Tag;
 }
 
+// Recipe with pending AI suggestions (for review page)
+export interface RecipeWithPendingSuggestions {
+  recipe_id: RecipeId;
+  recipe_title: string;
+  recipe_version_id: RecipeVersionId;
+  suggestions: AiTagSuggestionWithTag[];
+}
+
 // Tag with usage count (from get_household_tags function)
 export interface TagWithUsageCount {
   tag_name: string;
@@ -274,19 +266,4 @@ export interface RecipeSuggestion {
   score: number; // Computed suggestion score (0.0 to 1.0+)
   badge: SuggestionBadge; // Badge to display ('Favorite', 'Top Rated', etc.)
   matchingTags: string[]; // Tags that matched the suggestion context
-}
-
-// Shortlist domain models
-
-/**
- * Shortlist item with recipe and user attribution
- */
-export interface ShortlistItem {
-  id: string;
-  recipe: Recipe;
-  addedBy: {
-    id: UserId;
-    name: string;
-  };
-  addedAt: Date;
 }

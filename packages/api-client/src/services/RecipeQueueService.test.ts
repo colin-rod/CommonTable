@@ -9,6 +9,9 @@ const createMockSupabase = () => {
   const mockSupabase = {
     from: vi.fn(),
     rpc: vi.fn(),
+    auth: {
+      getUser: vi.fn(),
+    },
   } as unknown as SupabaseClient;
 
   return mockSupabase;
@@ -107,18 +110,32 @@ describe('RecipeQueueService', () => {
   });
 
   describe('add', () => {
-    it('should add recipe to queue with auto-assigned position', async () => {
+    it('should add recipe to queue with household_id and added_by from context', async () => {
+      const mockHouseholdId = 'household-123';
+      const mockUserId = 'user-456';
       const mockEntry = {
         id: 'entry-1',
-        household_id: 'household-1',
+        household_id: mockHouseholdId,
         recipe_id: 'recipe-1',
-        added_by: 'user-1',
+        added_by: mockUserId,
         position: 0,
         status: 'queued',
         notes: null,
         created_at: '2026-02-03T10:00:00Z',
         updated_at: '2026-02-03T10:00:00Z',
       };
+
+      // Mock RPC call to get household ID
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: mockHouseholdId,
+        error: null,
+      } as any);
+
+      // Mock auth.getUser to get user ID
+      vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+        data: { user: { id: mockUserId } },
+        error: null,
+      } as any);
 
       // Mock count query (for calculating next position)
       const mockCountQuery = {
@@ -128,8 +145,9 @@ describe('RecipeQueueService', () => {
       };
 
       // Mock insert query
+      const mockInsertFn = vi.fn().mockReturnThis();
       const mockInsertQuery = {
-        insert: vi.fn().mockReturnThis(),
+        insert: mockInsertFn,
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: mockEntry, error: null }),
       };
@@ -140,15 +158,73 @@ describe('RecipeQueueService', () => {
 
       const result = await service.add('recipe-1' as any);
 
+      // Verify household_id and added_by are passed in insert
+      expect(mockInsertFn).toHaveBeenCalledWith({
+        recipe_id: 'recipe-1',
+        household_id: mockHouseholdId,
+        added_by: mockUserId,
+        position: 0,
+        status: 'queued',
+      });
       expect(result.recipe_id).toBe('recipe-1');
+      expect(result.household_id).toBe(mockHouseholdId);
+      expect(result.added_by).toBe(mockUserId);
       expect(result.position).toBe(0);
       expect(result.status).toBe('queued');
     });
 
+    it('should throw error when user is not authenticated', async () => {
+      // Mock RPC call to get household ID - succeeds
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: 'household-123',
+        error: null,
+      } as any);
+
+      // Mock auth.getUser - fails
+      vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+        data: { user: null },
+        error: { message: 'Not authenticated' },
+      } as any);
+
+      await expect(service.add('recipe-1' as any)).rejects.toThrow('User not authenticated');
+    });
+
+    it('should throw error when user has no household', async () => {
+      // Mock RPC call to get household ID - fails
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: null,
+        error: { message: 'No household' },
+      } as any);
+
+      await expect(service.add('recipe-1' as any)).rejects.toThrow(
+        'Failed to get current household ID',
+      );
+    });
+
     it('should throw error when adding duplicate recipe', async () => {
+      const mockHouseholdId = 'household-123';
+      const mockUserId = 'user-456';
       const mockError = { code: '23505', message: 'duplicate key value' };
 
-      vi.mocked(mockSupabase.from).mockReturnValue({
+      // Mock RPC and auth calls
+      vi.mocked(mockSupabase.rpc).mockResolvedValue({
+        data: mockHouseholdId,
+        error: null,
+      } as any);
+      vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+        data: { user: { id: mockUserId } },
+        error: null,
+      } as any);
+
+      // Mock count query
+      vi.mocked(mockSupabase.from).mockReturnValueOnce({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ count: 0, error: null }),
+      } as any);
+
+      // Mock insert with duplicate error
+      vi.mocked(mockSupabase.from).mockReturnValueOnce({
         insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({ data: null, error: mockError }),

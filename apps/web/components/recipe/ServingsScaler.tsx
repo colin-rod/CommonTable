@@ -97,97 +97,95 @@ export function ServingsScaler({
   }, [targetServings]);
 
   return (
-    <Stack spacing={2}>
+    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
       {/* Servings adjuster */}
-      <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          onClick={handleDecrement}
+          disabled={targetServings <= 1}
+          aria-label="Decrease servings"
+          sx={{ minWidth: 36, px: 1 }}
+        >
+          <RemoveIcon fontSize="small" />
+        </Button>
+
+        {isEditing ? (
+          <TextField
+            value={inputValue}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            size="small"
+            type="number"
+            inputProps={{ min: 1, style: { textAlign: 'center', width: 48 } }}
+            autoFocus
+          />
+        ) : (
           <Button
             variant="outlined"
             color="primary"
             size="small"
-            onClick={handleDecrement}
-            disabled={targetServings <= 1}
-            aria-label="Decrease servings"
-            sx={{ minWidth: 36, px: 1 }}
+            onClick={handleStartEditing}
+            sx={{ minWidth: 64 }}
           >
-            <RemoveIcon fontSize="small" />
-          </Button>
-
-          {isEditing ? (
-            <TextField
-              value={inputValue}
-              onChange={handleInputChange}
-              onBlur={handleInputBlur}
-              onKeyDown={handleInputKeyDown}
-              size="small"
-              type="number"
-              inputProps={{ min: 1, style: { textAlign: 'center', width: 48 } }}
-              autoFocus
-            />
-          ) : (
-            <Button
-              variant="outlined"
-              color="primary"
-              size="small"
-              onClick={handleStartEditing}
-              sx={{ minWidth: 64 }}
-            >
-              {targetServings}
-            </Button>
-          )}
-
-          <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            onClick={handleIncrement}
-            aria-label="Increase servings"
-            sx={{ minWidth: 36, px: 1 }}
-          >
-            <AddIcon fontSize="small" />
-          </Button>
-
-          <Typography variant="body2" color="text.secondary">
-            servings
-          </Typography>
-        </Stack>
-
-        {/* Quick scale buttons */}
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            onClick={() => handleQuickScale(0.5)}
-          >
-            0.5x
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            onClick={() => handleQuickScale(1)}
-            disabled={!isScaled}
-          >
-            1x
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            size="small"
-            onClick={() => handleQuickScale(2)}
-          >
-            2x
-          </Button>
-        </Stack>
-
-        {/* Reset button (only shown when scaled) */}
-        {isScaled && (
-          <Button variant="outlined" color="primary" size="small" onClick={handleReset}>
-            Reset
+            {targetServings}
           </Button>
         )}
+
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          onClick={handleIncrement}
+          aria-label="Increase servings"
+          sx={{ minWidth: 36, px: 1 }}
+        >
+          <AddIcon fontSize="small" />
+        </Button>
+
+        <Typography variant="body2" color="text.secondary">
+          servings
+        </Typography>
       </Stack>
+
+      {/* Quick scale buttons */}
+      <Stack direction="row" spacing={1}>
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          onClick={() => handleQuickScale(0.5)}
+        >
+          0.5x
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          onClick={() => handleQuickScale(1)}
+          disabled={!isScaled}
+        >
+          1x
+        </Button>
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          onClick={() => handleQuickScale(2)}
+        >
+          2x
+        </Button>
+      </Stack>
+
+      {/* Reset button (only shown when scaled) */}
+      {isScaled && (
+        <Button variant="outlined" color="primary" size="small" onClick={handleReset}>
+          Reset
+        </Button>
+      )}
 
       {/* Unit system toggle */}
       <Stack direction="row" spacing={1} alignItems="center">

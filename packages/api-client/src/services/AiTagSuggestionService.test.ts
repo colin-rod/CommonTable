@@ -352,4 +352,236 @@ describe('AiTagSuggestionService', () => {
       );
     });
   });
+
+  describe('getPendingByHousehold', () => {
+    it('should return recipes grouped by recipe_id with pending suggestions', async () => {
+      const householdId = 'household-123' as HouseholdId;
+
+      // Mock Supabase response with nested joins
+      const mockData = [
+        {
+          id: 'suggestion-1',
+          recipe_version_id: 'version-1',
+          tag_id: 'tag-1',
+          confidence_score: 0.95,
+          user_accepted: null,
+          accepted_at: null,
+          model_version: 'gpt-4o-mini',
+          created_at: '2026-01-20T10:00:00Z',
+          tag: {
+            id: 'tag-1',
+            household_id: 'household-123',
+            name: 'pasta',
+            created_by: 'user-1',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+          recipe_version: {
+            id: 'version-1',
+            recipe_id: 'recipe-1',
+            version_number: 1,
+            recipe: {
+              id: 'recipe-1',
+              title: 'Pasta Carbonara',
+              household_id: 'household-123',
+            },
+          },
+        },
+        {
+          id: 'suggestion-2',
+          recipe_version_id: 'version-1',
+          tag_id: 'tag-2',
+          confidence_score: 0.88,
+          user_accepted: null,
+          accepted_at: null,
+          model_version: 'gpt-4o-mini',
+          created_at: '2026-01-20T10:00:00Z',
+          tag: {
+            id: 'tag-2',
+            household_id: 'household-123',
+            name: 'italian',
+            created_by: 'user-1',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+          recipe_version: {
+            id: 'version-1',
+            recipe_id: 'recipe-1',
+            version_number: 1,
+            recipe: {
+              id: 'recipe-1',
+              title: 'Pasta Carbonara',
+              household_id: 'household-123',
+            },
+          },
+        },
+      ];
+
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockIsNull = vi.fn().mockReturnThis();
+      const mockOrder = vi.fn().mockResolvedValue({
+        data: mockData,
+        error: null,
+      });
+
+      vi.mocked(mockSupabase.from).mockReturnValue({
+        select: mockSelect,
+        eq: mockEq,
+        is: mockIsNull,
+        order: mockOrder,
+      } as any);
+
+      const result = await service.getPendingByHousehold(householdId);
+
+      expect(mockSupabase.from).toHaveBeenCalledWith('ai_tag_suggestions');
+      expect(mockSelect).toHaveBeenCalledWith(
+        expect.stringContaining('recipe_version:recipe_versions'),
+      );
+      expect(mockEq).toHaveBeenCalledWith('recipe_version.recipe.household_id', householdId);
+      expect(mockIsNull).toHaveBeenCalledWith('user_accepted', null);
+      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false });
+
+      // Verify grouped result
+      expect(result).toHaveLength(1); // One recipe
+      expect(result[0]?.recipe_id).toBe('recipe-1');
+      expect(result[0]?.recipe_title).toBe('Pasta Carbonara');
+      expect(result[0]?.recipe_version_id).toBe('version-1');
+      expect(result[0]?.suggestions).toHaveLength(2); // Two tags for this recipe
+      expect(result[0]?.suggestions[0]?.tag.name).toBe('pasta');
+      expect(result[0]?.suggestions[1]?.tag.name).toBe('italian');
+    });
+
+    it('should return empty array when no pending suggestions', async () => {
+      const householdId = 'household-123' as HouseholdId;
+
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockIsNull = vi.fn().mockReturnThis();
+      const mockOrder = vi.fn().mockResolvedValue({
+        data: [],
+        error: null,
+      });
+
+      vi.mocked(mockSupabase.from).mockReturnValue({
+        select: mockSelect,
+        eq: mockEq,
+        is: mockIsNull,
+        order: mockOrder,
+      } as any);
+
+      const result = await service.getPendingByHousehold(householdId);
+
+      expect(result).toEqual([]);
+    });
+
+    it('should handle database errors', async () => {
+      const householdId = 'household-123' as HouseholdId;
+      const dbError = { message: 'Database error', code: 'PGRST301' };
+
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockIsNull = vi.fn().mockReturnThis();
+      const mockOrder = vi.fn().mockResolvedValue({
+        data: null,
+        error: dbError,
+      });
+
+      vi.mocked(mockSupabase.from).mockReturnValue({
+        select: mockSelect,
+        eq: mockEq,
+        is: mockIsNull,
+        order: mockOrder,
+      } as any);
+
+      await expect(service.getPendingByHousehold(householdId)).rejects.toThrow('Database error');
+    });
+
+    it('should group multiple recipes correctly', async () => {
+      const householdId = 'household-123' as HouseholdId;
+
+      // Mock data with two different recipes
+      const mockData = [
+        {
+          id: 'suggestion-1',
+          recipe_version_id: 'version-1',
+          tag_id: 'tag-1',
+          confidence_score: 0.95,
+          user_accepted: null,
+          accepted_at: null,
+          model_version: 'gpt-4o-mini',
+          created_at: '2026-01-20T10:00:00Z',
+          tag: {
+            id: 'tag-1',
+            household_id: 'household-123',
+            name: 'pasta',
+            created_by: 'user-1',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+          recipe_version: {
+            id: 'version-1',
+            recipe_id: 'recipe-1',
+            version_number: 1,
+            recipe: {
+              id: 'recipe-1',
+              title: 'Pasta Carbonara',
+              household_id: 'household-123',
+            },
+          },
+        },
+        {
+          id: 'suggestion-2',
+          recipe_version_id: 'version-2',
+          tag_id: 'tag-2',
+          confidence_score: 0.9,
+          user_accepted: null,
+          accepted_at: null,
+          model_version: 'gpt-4o-mini',
+          created_at: '2026-01-20T09:00:00Z',
+          tag: {
+            id: 'tag-2',
+            household_id: 'household-123',
+            name: 'chicken',
+            created_by: 'user-1',
+            created_at: '2026-01-01T00:00:00Z',
+            updated_at: '2026-01-01T00:00:00Z',
+          },
+          recipe_version: {
+            id: 'version-2',
+            recipe_id: 'recipe-2',
+            version_number: 1,
+            recipe: {
+              id: 'recipe-2',
+              title: 'Chicken Stir-Fry',
+              household_id: 'household-123',
+            },
+          },
+        },
+      ];
+
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockIsNull = vi.fn().mockReturnThis();
+      const mockOrder = vi.fn().mockResolvedValue({
+        data: mockData,
+        error: null,
+      });
+
+      vi.mocked(mockSupabase.from).mockReturnValue({
+        select: mockSelect,
+        eq: mockEq,
+        is: mockIsNull,
+        order: mockOrder,
+      } as any);
+
+      const result = await service.getPendingByHousehold(householdId);
+
+      expect(result).toHaveLength(2); // Two recipes
+      expect(result[0]?.recipe_id).toBe('recipe-1');
+      expect(result[0]?.suggestions).toHaveLength(1);
+      expect(result[1]?.recipe_id).toBe('recipe-2');
+      expect(result[1]?.suggestions).toHaveLength(1);
+    });
+  });
 });

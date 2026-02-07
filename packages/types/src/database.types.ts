@@ -583,45 +583,6 @@ export type Database = {
           },
         ];
       };
-      recipe_shortlists: {
-        Row: {
-          added_at: string;
-          added_by_user_id: string;
-          household_id: string;
-          id: string;
-          recipe_id: string;
-        };
-        Insert: {
-          added_at?: string;
-          added_by_user_id: string;
-          household_id: string;
-          id?: string;
-          recipe_id: string;
-        };
-        Update: {
-          added_at?: string;
-          added_by_user_id?: string;
-          household_id?: string;
-          id?: string;
-          recipe_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'recipe_shortlists_household_id_fkey';
-            columns: ['household_id'];
-            isOneToOne: false;
-            referencedRelation: 'households';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'recipe_shortlists_recipe_id_fkey';
-            columns: ['recipe_id'];
-            isOneToOne: false;
-            referencedRelation: 'recipes';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       recipe_version_tags: {
         Row: {
           created_at: string;
@@ -730,6 +691,7 @@ export type Database = {
           priority: number | null;
           rolling_score: number | null;
           search_vector: unknown;
+          source_url: string | null;
           status: Database['public']['Enums']['recipe_status'];
           title: string;
           updated_at: string;
@@ -752,6 +714,7 @@ export type Database = {
           priority?: number | null;
           rolling_score?: number | null;
           search_vector?: unknown;
+          source_url?: string | null;
           status?: Database['public']['Enums']['recipe_status'];
           title: string;
           updated_at?: string;
@@ -774,6 +737,7 @@ export type Database = {
           priority?: number | null;
           rolling_score?: number | null;
           search_vector?: unknown;
+          source_url?: string | null;
           status?: Database['public']['Enums']['recipe_status'];
           title?: string;
           updated_at?: string;
@@ -864,6 +828,7 @@ export type Database = {
           p_prep_time_minutes: number;
           p_priority?: number;
           p_servings: number;
+          p_source_url?: string;
           p_status?: Database['public']['Enums']['recipe_status'];
           p_steps_json: Json;
           p_title: string;

@@ -5,6 +5,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Stack, Typography, TextField, IconButton, Button, Box } from '@mui/material';
+import React, { useEffect, useRef, type Ref } from 'react';
 import { type Control, Controller, type FieldErrors, useFieldArray } from 'react-hook-form';
 
 import type { RecipeFormValues } from './RecipeMetadataFields';
@@ -13,6 +14,8 @@ export interface StepEditorProps {
   control: Control<RecipeFormValues>;
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
+  addButtonRef?: Ref<HTMLButtonElement>;
+  showHeader?: boolean;
 }
 
 /**
@@ -30,11 +33,26 @@ export interface StepEditorProps {
  * - IconButton for row actions
  * - Outlined button for add action
  */
-export function StepEditor({ control, errors, disabled = false }: StepEditorProps) {
+export function StepEditor({
+  control,
+  errors,
+  disabled = false,
+  addButtonRef,
+  showHeader = true,
+}: StepEditorProps) {
   const { fields, append, remove, move } = useFieldArray({
     control,
     name: 'steps',
   });
+  const textareaRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
+
+  // Auto-focus when new step added
+  useEffect(() => {
+    const lastIndex = fields.length - 1;
+    if (lastIndex >= 0 && textareaRefs.current[lastIndex]) {
+      textareaRefs.current[lastIndex]?.focus();
+    }
+  }, [fields.length]);
 
   const handleAddStep = () => {
     // Position will be auto-calculated based on array index
@@ -53,30 +71,62 @@ export function StepEditor({ control, errors, disabled = false }: StepEditorProp
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Ignore if disabled
+    if (disabled) return;
+
+    // Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission
+      e.stopPropagation(); // Prevent bubbling to form
+
+      // Add new step
+      append({ position: fields.length + 1, text: '' });
+
+      // Auto-focus is handled by useEffect watching fields.length
+    }
+  };
+
   return (
     <Stack spacing={2}>
       {/* Section Header */}
-      <Typography variant="h6">Steps</Typography>
+      {showHeader && (
+        <Typography component="h3" variant="h6">
+          Steps
+        </Typography>
+      )}
 
       {/* Step Rows */}
       {fields.map((field, index) => (
         <Box key={field.id}>
           <Stack direction="row" spacing={2} alignItems="flex-start">
-            {/* Step Number + Text */}
+            {/* Step Number Badge */}
+            <Typography variant="h6" color="text.secondary" sx={{ minWidth: '2rem', pt: 2 }}>
+              {index + 1}
+            </Typography>
+
+            {/* Step Text */}
             <Controller
               name={`steps.${index}.text`}
               control={control}
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label={`Step ${index + 1}`}
+                  placeholder="Describe this step..."
                   required
                   multiline
-                  rows={2}
+                  minRows={2}
                   fullWidth
                   disabled={disabled}
                   error={!!errors.steps?.[index]?.text}
-                  helperText={errors.steps?.[index]?.text?.message}
+                  helperText={errors.steps?.[index]?.text?.message || 'Required'}
+                  inputProps={{
+                    'aria-label': `Step ${index + 1}`,
+                  }}
+                  inputRef={(el: HTMLTextAreaElement | null) => {
+                    textareaRefs.current[index] = el;
+                  }}
+                  onKeyDown={handleKeyDown}
                 />
               )}
             />
@@ -139,6 +189,7 @@ export function StepEditor({ control, errors, disabled = false }: StepEditorProp
           startIcon={<AddIcon />}
           onClick={handleAddStep}
           disabled={disabled}
+          ref={addButtonRef}
         >
           Add Step
         </Button>

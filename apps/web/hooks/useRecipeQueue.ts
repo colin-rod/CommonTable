@@ -60,15 +60,6 @@ export function useRecipeQueue(laneType?: LaneType): UseRecipeQueueReturn {
             case 'cuisine':
               laneKey = entry.recipe.cuisine || 'uncategorized';
               break;
-            case 'cooking_method':
-              laneKey = entry.recipe.cooking_method || 'uncategorized';
-              break;
-            case 'dietary':
-              laneKey = entry.recipe.dietary_categories?.[0] || 'uncategorized';
-              break;
-            case 'dish_category':
-              laneKey = entry.recipe.dish_category || 'uncategorized';
-              break;
             default:
               laneKey = 'uncategorized';
           }
@@ -90,14 +81,28 @@ export function useRecipeQueue(laneType?: LaneType): UseRecipeQueueReturn {
         setEntries(entriesWithRecipes);
       } else {
         // Load all entries without grouping
-        const queueEntries = await queueService.list();
+        const queueEntries = await queueService.list({ status: 'queued' });
 
-        const entriesWithRecipes = await Promise.all(
-          queueEntries.map(async (entry) => {
-            const recipe = await recipeService.getById(entry.recipe_id as RecipeId);
-            return { ...entry, recipe };
-          }),
+        const results = await Promise.allSettled(
+          queueEntries.map((entry) => recipeService.getById(entry.recipe_id as RecipeId)),
         );
+
+        const entriesWithRecipes = results
+          .map((result, index) => {
+            const entry = queueEntries[index];
+            if (!entry) return null;
+
+            if (result.status === 'fulfilled') {
+              return { ...entry, recipe: result.value };
+            }
+
+            console.error(
+              `Failed to load recipe ${entry.recipe_id} for queue entry ${entry.id}:`,
+              result.reason,
+            );
+            return null;
+          })
+          .filter((entry): entry is QueueEntryWithRecipe => entry !== null);
 
         setEntries(entriesWithRecipes);
         setLanes({});

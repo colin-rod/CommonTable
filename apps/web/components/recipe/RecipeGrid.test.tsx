@@ -28,9 +28,7 @@ const createMockRecipe = (id: string, title: string): Recipe => ({
   key_ingredients: [],
   priority: null,
   status: 'suggested',
-  cooking_method: null,
-  dietary_categories: null,
-  dish_category: null,
+  source_url: null,
 });
 
 const mockRecipes: Recipe[] = [
@@ -52,72 +50,70 @@ describe('RecipeGrid', () => {
 
   describe('Basic Rendering', () => {
     it('should render empty state when no recipes provided', () => {
-      render(<RecipeGrid recipes={[]} onAddToShortlist={vi.fn()} shortlistedRecipeIds={[]} />);
+      render(<RecipeGrid recipes={[]} onAddToMealPlan={vi.fn()} mealPlanRecipeIds={[]} />);
 
       expect(screen.getByText(/no recipes found/i)).toBeInTheDocument();
     });
 
     it('should render grid of recipe cards', () => {
-      render(
-        <RecipeGrid recipes={mockRecipes} onAddToShortlist={vi.fn()} shortlistedRecipeIds={[]} />,
-      );
+      render(<RecipeGrid recipes={mockRecipes} onAddToMealPlan={vi.fn()} mealPlanRecipeIds={[]} />);
 
       expect(screen.getByText('Recipe 1')).toBeInTheDocument();
       expect(screen.getByText('Recipe 2')).toBeInTheDocument();
       expect(screen.getByText('Recipe 3')).toBeInTheDocument();
     });
 
-    it('should render recipe cards with shortlist state', () => {
+    it('should render recipe cards with meal plan state', () => {
       render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={vi.fn()}
-          shortlistedRecipeIds={['recipe-1' as RecipeId]}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={['recipe-1' as RecipeId]}
         />,
       );
 
       // First card should show "Added" button
-      const buttons = screen.getAllByRole('button', { name: /shortlist/i });
+      const buttons = screen.getAllByRole('button', { name: /meal plan/i });
       expect(buttons[0]).toHaveTextContent(/added/i);
-      expect(buttons[1]).toHaveTextContent(/add to shortlist/i);
+      expect(buttons[1]).toHaveTextContent(/add to meal plan/i);
     });
   });
 
-  describe('Shortlist Actions', () => {
-    it('should call onAddToShortlist when card button clicked', async () => {
+  describe('Meal Plan Actions', () => {
+    it('should call onAddToMealPlan when card button clicked', async () => {
       const user = userEvent.setup();
-      const onAddToShortlist = vi.fn();
+      const onAddToMealPlan = vi.fn();
 
       render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={onAddToShortlist}
-          shortlistedRecipeIds={[]}
+          onAddToMealPlan={onAddToMealPlan}
+          mealPlanRecipeIds={[]}
         />,
       );
 
-      const buttons = screen.getAllByRole('button', { name: /add to shortlist/i });
+      const buttons = screen.getAllByRole('button', { name: /add to meal plan/i });
       await user.click(buttons[0]!);
 
-      expect(onAddToShortlist).toHaveBeenCalledWith('recipe-1' as RecipeId);
+      expect(onAddToMealPlan).toHaveBeenCalledWith('recipe-1' as RecipeId);
     });
 
-    it('should not call onAddToShortlist for already shortlisted recipes', async () => {
+    it('should not call onAddToMealPlan for already added recipes', async () => {
       const user = userEvent.setup({ pointerEventsCheck: 0 });
-      const onAddToShortlist = vi.fn();
+      const onAddToMealPlan = vi.fn();
 
       render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={onAddToShortlist}
-          shortlistedRecipeIds={['recipe-1' as RecipeId]}
+          onAddToMealPlan={onAddToMealPlan}
+          mealPlanRecipeIds={['recipe-1' as RecipeId]}
         />,
       );
 
       const addedButton = screen.getByRole('button', { name: /added/i });
       await user.click(addedButton);
 
-      expect(onAddToShortlist).not.toHaveBeenCalled();
+      expect(onAddToMealPlan).not.toHaveBeenCalled();
     });
   });
 
@@ -126,8 +122,8 @@ describe('RecipeGrid', () => {
       render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={vi.fn()}
-          shortlistedRecipeIds={[]}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={[]}
           loading={true}
         />,
       );
@@ -139,8 +135,8 @@ describe('RecipeGrid', () => {
       render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={vi.fn()}
-          shortlistedRecipeIds={[]}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={[]}
           loading={false}
         />,
       );
@@ -152,8 +148,8 @@ describe('RecipeGrid', () => {
       const { container } = render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={vi.fn()}
-          shortlistedRecipeIds={[]}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={[]}
           hasMore={true}
         />,
       );
@@ -167,8 +163,8 @@ describe('RecipeGrid', () => {
       const { container } = render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={vi.fn()}
-          shortlistedRecipeIds={[]}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={[]}
           hasMore={false}
         />,
       );
@@ -183,8 +179,8 @@ describe('RecipeGrid', () => {
       render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={vi.fn()}
-          shortlistedRecipeIds={[]}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={[]}
           hasMore={true}
           onLoadMore={onLoadMore}
         />,
@@ -207,8 +203,8 @@ describe('RecipeGrid', () => {
       render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={vi.fn()}
-          shortlistedRecipeIds={[]}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={[]}
           hasMore={true}
           loading={true}
           onLoadMore={onLoadMore}
@@ -229,7 +225,7 @@ describe('RecipeGrid', () => {
   describe('Responsive Grid', () => {
     it('should use Material UI Grid for layout', () => {
       const { container } = render(
-        <RecipeGrid recipes={mockRecipes} onAddToShortlist={vi.fn()} shortlistedRecipeIds={[]} />,
+        <RecipeGrid recipes={mockRecipes} onAddToMealPlan={vi.fn()} mealPlanRecipeIds={[]} />,
       );
 
       // Check for MUI Grid classes or data attributes
@@ -238,9 +234,7 @@ describe('RecipeGrid', () => {
     });
 
     it('should render recipe cards in grid items', () => {
-      render(
-        <RecipeGrid recipes={mockRecipes} onAddToShortlist={vi.fn()} shortlistedRecipeIds={[]} />,
-      );
+      render(<RecipeGrid recipes={mockRecipes} onAddToMealPlan={vi.fn()} mealPlanRecipeIds={[]} />);
 
       // All recipe cards should be rendered
       const cards = screen.getAllByRole('article');
@@ -253,8 +247,8 @@ describe('RecipeGrid', () => {
       render(
         <RecipeGrid
           recipes={mockRecipes}
-          onAddToShortlist={vi.fn()}
-          shortlistedRecipeIds={[]}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={[]}
           loading={true}
         />,
       );
@@ -264,7 +258,7 @@ describe('RecipeGrid', () => {
     });
 
     it('should have accessible empty state', () => {
-      render(<RecipeGrid recipes={[]} onAddToShortlist={vi.fn()} shortlistedRecipeIds={[]} />);
+      render(<RecipeGrid recipes={[]} onAddToMealPlan={vi.fn()} mealPlanRecipeIds={[]} />);
 
       const emptyMessage = screen.getByText(/no recipes found/i);
       expect(emptyMessage).toBeInTheDocument();

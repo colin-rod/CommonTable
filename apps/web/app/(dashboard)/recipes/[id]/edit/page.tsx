@@ -141,6 +141,7 @@ export default function EditRecipePage() {
             error={
               error || new Error('No household found. Please join or create a household first.')
             }
+            draftStorageKey={`recipe:draft:${recipeId}`}
           />
         </Box>
       </Container>
@@ -159,6 +160,7 @@ export default function EditRecipePage() {
             onCancel={handleCancel}
             loading={loading}
             error={error}
+            draftStorageKey={`recipe:draft:${recipeId}`}
           />
 
           <Divider />

@@ -209,7 +209,6 @@ describe('recipe-import server actions', () => {
         tags: [],
         status: 'suggested',
         key_ingredients: [],
-        dietary_categories: [],
       });
 
       // Assert: Service should be called with auth.users.id, NOT profiles.id

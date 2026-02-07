@@ -5,9 +5,13 @@ import { DashboardLayout } from './DashboardLayout';
 
 import { useAuth } from '@/hooks/useAuth';
 import type { UseAuthReturn } from '@/hooks/useAuth';
+import { useMealPlan } from '@/hooks/useMealPlan';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
-// Mock useAuth hook
+// Mock hooks
 vi.mock('@/hooks/useAuth');
+vi.mock('@/hooks/useMealPlan');
+vi.mock('@/hooks/useOnboarding');
 
 // Mock next/navigation
 vi.mock('next/navigation', () => {
@@ -59,6 +63,26 @@ describe('DashboardLayout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useAuth).mockReturnValue(mockAuthReturn);
+    vi.mocked(useMealPlan).mockReturnValue({
+      entries: [],
+      lanes: {},
+      loading: false,
+      error: null,
+      count: 0,
+      addToMealPlan: vi.fn(),
+      removeFromMealPlan: vi.fn(),
+      reorder: vi.fn(),
+      markAsCooked: vi.fn(),
+      refresh: vi.fn(),
+      hasRecipe: () => false,
+    });
+    vi.mocked(useOnboarding).mockReturnValue({
+      showWelcome: false, // CRITICAL: prevent WelcomeDialog from showing
+      isOnboardingComplete: true,
+      completeOnboarding: vi.fn(),
+      skipOnboarding: vi.fn(),
+      resetOnboarding: vi.fn(),
+    });
   });
 
   describe('Navigation', () => {
@@ -98,6 +122,39 @@ describe('DashboardLayout', () => {
       );
 
       expect(screen.getByText('Test Content')).toBeInTheDocument();
+    });
+
+    it('should render meal plan FAB', () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      // Find the FAB specifically (it has MuiFab-root class)
+      const buttons = screen.getAllByRole('button', { name: 'Meal Plan' });
+      const fab = buttons.find((button) => button.classList.contains('MuiFab-root'));
+      expect(fab).toBeInTheDocument();
+    });
+
+    it('should open meal plan drawer when FAB is clicked', async () => {
+      render(
+        <DashboardLayout>
+          <div>Test Content</div>
+        </DashboardLayout>,
+      );
+
+      expect(screen.queryByRole('heading', { name: /^meal plan/i })).not.toBeInTheDocument();
+
+      // Find the FAB specifically (it has MuiFab-root class)
+      const buttons = screen.getAllByRole('button', { name: 'Meal Plan' });
+      const fab = buttons.find((button) => button.classList.contains('MuiFab-root'));
+      if (!fab) throw new Error('FAB not found');
+      fireEvent.click(fab);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: /^meal plan/i })).toBeInTheDocument();
+      });
     });
 
     it('should render badge on Tags when pending count > 0', async () => {

@@ -1,5 +1,5 @@
 import type { RecipeWithVersion, RecipeImage } from '@commontable/types';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -76,9 +76,7 @@ describe('RecipeDetailView Component', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
-    cooking_method: null,
-    dietary_categories: null,
-    dish_category: null,
+    source_url: null,
     current_version: {
       id: 'version-1' as any,
       recipe_id: 'recipe-123' as any,
@@ -116,6 +114,41 @@ describe('RecipeDetailView Component', () => {
       render(<RecipeDetailView recipe={recipeWithoutDescription} />);
 
       expect(screen.queryByText(/classic italian/i)).not.toBeInTheDocument();
+    });
+
+    it('should render source URL link for imported recipes', () => {
+      const importedRecipe = {
+        ...mockRecipe,
+        source_url: 'https://www.allrecipes.com/recipe/12345/pasta-carbonara',
+      };
+      render(<RecipeDetailView recipe={importedRecipe} />);
+
+      const link = screen.getByRole('link', { name: /allrecipes\.com/i });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute(
+        'href',
+        'https://www.allrecipes.com/recipe/12345/pasta-carbonara',
+      );
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(screen.getByText(/imported from/i)).toBeInTheDocument();
+    });
+
+    it('should not render source URL link when source_url is null', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+
+      expect(screen.queryByText(/imported from/i)).not.toBeInTheDocument();
+    });
+
+    it('should handle invalid source URL gracefully', () => {
+      const recipeWithInvalidUrl = {
+        ...mockRecipe,
+        source_url: 'not-a-valid-url',
+      };
+      render(<RecipeDetailView recipe={recipeWithInvalidUrl} />);
+
+      // Should fall back to displaying the raw URL
+      expect(screen.getByText('not-a-valid-url')).toBeInTheDocument();
     });
 
     it('should render RecipeMetadata component', () => {
@@ -347,6 +380,34 @@ describe('RecipeDetailView Component', () => {
         const image = container.querySelector('img');
         expect(image).not.toBeInTheDocument();
       });
+    });
+  });
+
+  describe('Two-column panel layout', () => {
+    it('should render Ingredients inside a Paper panel', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+      const panel = screen.getByTestId('ingredients-panel');
+      expect(panel).toBeInTheDocument();
+      expect(within(panel).getByText('Ingredients')).toBeInTheDocument();
+    });
+
+    it('should render Steps inside a Paper panel', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+      const panel = screen.getByTestId('steps-panel');
+      expect(panel).toBeInTheDocument();
+      expect(within(panel).getByText('Steps')).toBeInTheDocument();
+    });
+
+    it('should render IngredientList inside ingredients panel', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+      const panel = screen.getByTestId('ingredients-panel');
+      expect(within(panel).getByTestId('ingredient-list')).toBeInTheDocument();
+    });
+
+    it('should render StepList inside steps panel', () => {
+      render(<RecipeDetailView recipe={mockRecipe} />);
+      const panel = screen.getByTestId('steps-panel');
+      expect(within(panel).getByTestId('step-list')).toBeInTheDocument();
     });
   });
 

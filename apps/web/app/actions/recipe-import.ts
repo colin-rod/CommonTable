@@ -194,15 +194,17 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
 }
 
 /**
- * Create a recipe from imported data with optional image from temp storage
+ * Create a recipe from imported data with optional image and source URL
  *
  * @param input - Recipe creation input (without user_id)
  * @param coverImageStoragePath - Optional path to image in temp storage
+ * @param sourceUrl - Original URL the recipe was imported from
  * @returns Created recipe or error
  */
 export async function createImportedRecipe(
-  input: Omit<CreateRecipeInput, 'user_id'>,
+  input: Omit<CreateRecipeInput, 'user_id' | 'source_url'>,
   coverImageStoragePath?: string,
+  sourceUrl?: string,
 ): Promise<ActionResult<Recipe>> {
   try {
     const supabase = await createClient();
@@ -224,6 +226,7 @@ export async function createImportedRecipe(
     const recipe = await service.create({
       ...input,
       user_id: user.id,
+      source_url: sourceUrl,
     });
 
     // If cover image provided, move from temp to permanent storage (non-critical)

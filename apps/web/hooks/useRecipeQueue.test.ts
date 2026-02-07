@@ -35,9 +35,7 @@ describe('useRecipeQueue Hook', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
-    cooking_method: 'stovetop',
-    dietary_categories: ['vegetarian'],
-    dish_category: 'main',
+    source_url: null,
   };
 
   const mockRecipe2: Recipe = {
@@ -58,9 +56,7 @@ describe('useRecipeQueue Hook', () => {
     key_ingredients: [],
     priority: null,
     status: 'suggested',
-    cooking_method: 'no_cook',
-    dietary_categories: [],
-    dish_category: 'salad',
+    source_url: null,
   };
 
   const mockQueueEntry1: QueueEntry = {
@@ -106,6 +102,19 @@ describe('useRecipeQueue Hook', () => {
   });
 
   describe('loadQueue without laneType', () => {
+    it('should filter queue entries by status="queued"', async () => {
+      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
+      mockRecipeService.getById
+        .mockResolvedValueOnce(mockRecipe1)
+        .mockResolvedValueOnce(mockRecipe2);
+
+      renderHook(() => useRecipeQueue());
+
+      await waitFor(() => {
+        expect(mockQueueService.list).toHaveBeenCalledWith({ status: 'queued' });
+      });
+    });
+
     it('should load all queue entries when no laneType specified', async () => {
       mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
       mockRecipeService.getById
@@ -156,6 +165,58 @@ describe('useRecipeQueue Hook', () => {
       // Hook preserves original error if it's an Error instance
       expect(result.current.error?.message).toBe('Failed to fetch queue');
     });
+
+    it('should gracefully handle recipe hydration failure for one entry', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
+      mockRecipeService.getById
+        .mockResolvedValueOnce(mockRecipe1)
+        .mockRejectedValueOnce(new Error('Recipe not found'));
+
+      const { result } = renderHook(() => useRecipeQueue());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should load the first recipe successfully and skip the second
+      expect(result.current.entries).toHaveLength(1);
+      expect(result.current.entries[0]?.recipe).toEqual(mockRecipe1);
+      expect(result.current.error).toBeNull();
+
+      // Should log error for failed recipe
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to load recipe'),
+        expect.any(Error),
+      );
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should continue loading when all recipes fail to hydrate', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
+      mockRecipeService.getById
+        .mockRejectedValueOnce(new Error('Recipe 1 not found'))
+        .mockRejectedValueOnce(new Error('Recipe 2 not found'));
+
+      const { result } = renderHook(() => useRecipeQueue());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Should return empty array but NO error state
+      expect(result.current.entries).toEqual([]);
+      expect(result.current.error).toBeNull();
+
+      // Should log errors for both failed recipes
+      expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe('loadQueue with laneType', () => {
@@ -194,62 +255,12 @@ describe('useRecipeQueue Hook', () => {
       expect(result.current.lanes).toHaveProperty('american');
     });
 
-    it('should group by cooking_method', async () => {
-      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
-      mockRecipeService.getById
-        .mockResolvedValueOnce(mockRecipe1)
-        .mockResolvedValueOnce(mockRecipe2);
-
-      const { result } = renderHook(() => useRecipeQueue('cooking_method'));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.lanes).toHaveProperty('stovetop');
-      expect(result.current.lanes).toHaveProperty('no_cook');
-    });
-
-    it('should group by dietary', async () => {
-      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
-      mockRecipeService.getById
-        .mockResolvedValueOnce(mockRecipe1)
-        .mockResolvedValueOnce(mockRecipe2);
-
-      const { result } = renderHook(() => useRecipeQueue('dietary'));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.lanes).toHaveProperty('vegetarian');
-      expect(result.current.lanes).toHaveProperty('uncategorized');
-    });
-
-    it('should group by dish_category', async () => {
-      mockQueueService.list.mockResolvedValue([mockQueueEntry1, mockQueueEntry2]);
-      mockRecipeService.getById
-        .mockResolvedValueOnce(mockRecipe1)
-        .mockResolvedValueOnce(mockRecipe2);
-
-      const { result } = renderHook(() => useRecipeQueue('dish_category'));
-
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
-
-      expect(result.current.lanes).toHaveProperty('main');
-      expect(result.current.lanes).toHaveProperty('salad');
-    });
-
     it('should handle recipes without categorization', async () => {
       const uncategorizedRecipe: Recipe = {
         ...mockRecipe1,
         meal_type: null,
         cuisine: null,
-        cooking_method: null,
-        dietary_categories: null,
-        dish_category: null,
+        source_url: null,
       };
 
       mockQueueService.list.mockResolvedValue([mockQueueEntry1]);

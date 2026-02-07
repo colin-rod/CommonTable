@@ -5,6 +5,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Stack, Typography, TextField, IconButton, Button, Box } from '@mui/material';
+import type { Ref } from 'react';
 import { type Control, Controller, type FieldErrors, useFieldArray } from 'react-hook-form';
 
 import type { RecipeFormValues } from './RecipeMetadataFields';
@@ -13,6 +14,8 @@ export interface IngredientEditorProps {
   control: Control<RecipeFormValues>;
   errors: FieldErrors<RecipeFormValues>;
   disabled?: boolean;
+  addButtonRef?: Ref<HTMLButtonElement>;
+  showHeader?: boolean;
 }
 
 /**
@@ -29,7 +32,13 @@ export interface IngredientEditorProps {
  * - IconButton for row actions
  * - Outlined button for add action
  */
-export function IngredientEditor({ control, errors, disabled = false }: IngredientEditorProps) {
+export function IngredientEditor({
+  control,
+  errors,
+  disabled = false,
+  addButtonRef,
+  showHeader = true,
+}: IngredientEditorProps) {
   const { fields, append, remove, move } = useFieldArray({
     control,
     name: 'ingredients',
@@ -54,7 +63,11 @@ export function IngredientEditor({ control, errors, disabled = false }: Ingredie
   return (
     <Stack spacing={2}>
       {/* Section Header */}
-      <Typography variant="h6">Ingredients</Typography>
+      {showHeader && (
+        <Typography component="h3" variant="h6">
+          Ingredients
+        </Typography>
+      )}
 
       {/* Ingredient Rows */}
       {fields.map((field, index) => (
@@ -72,7 +85,7 @@ export function IngredientEditor({ control, errors, disabled = false }: Ingredie
                   fullWidth
                   disabled={disabled}
                   error={!!errors.ingredients?.[index]?.name}
-                  helperText={errors.ingredients?.[index]?.name?.message}
+                  helperText={errors.ingredients?.[index]?.name?.message || 'Required'}
                   sx={{ flex: 2 }}
                 />
               )}
@@ -175,6 +188,7 @@ export function IngredientEditor({ control, errors, disabled = false }: Ingredie
           startIcon={<AddIcon />}
           onClick={handleAddIngredient}
           disabled={disabled}
+          ref={addButtonRef}
         >
           Add Ingredient
         </Button>

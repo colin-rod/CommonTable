@@ -2,7 +2,7 @@
 
 import type { RecipeWithVersion, RecipeImage, UnitSystem } from '@commontable/types';
 import { scaleIngredients } from '@commontable/types';
-import { Stack, Typography, Divider, Box, Skeleton } from '@mui/material';
+import { Stack, Typography, Divider, Box, Skeleton, Paper, Link } from '@mui/material';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 
 import { IngredientList } from './IngredientList';
@@ -115,6 +115,27 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
         </Typography>
       )}
 
+      {/* Source URL - for imported recipes */}
+      {recipe.source_url && (
+        <Typography variant="body2" color="text.secondary">
+          Imported from{' '}
+          <Link
+            href={recipe.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="hover"
+          >
+            {(() => {
+              try {
+                return new URL(recipe.source_url).hostname;
+              } catch {
+                return recipe.source_url;
+              }
+            })()}
+          </Link>
+        </Typography>
+      )}
+
       {/* Metadata */}
       <RecipeMetadata
         servings={version?.servings}
@@ -146,25 +167,32 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
 
       <Divider />
 
-      {/* Ingredients */}
-      <Box>
-        <Typography variant="h6" gutterBottom>
-          Ingredients
-        </Typography>
-        <IngredientList ingredients={scaledIngredients} unitSystem={unitSystem} />
+      {/* Two-Column Content Section */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          gap: 3,
+        }}
+      >
+        {/* Ingredients Panel */}
+        <Paper elevation={1} sx={{ flex: 1, p: 2 }} data-testid="ingredients-panel">
+          <Typography variant="h6" gutterBottom>
+            Ingredients
+          </Typography>
+          <IngredientList ingredients={scaledIngredients} unitSystem={unitSystem} />
+        </Paper>
+
+        {/* Steps Panel */}
+        <Paper elevation={1} sx={{ flex: 1, p: 2 }} data-testid="steps-panel">
+          <Typography variant="h6" gutterBottom>
+            Steps
+          </Typography>
+          <StepList steps={version?.steps_json || []} />
+        </Paper>
       </Box>
 
-      <Divider />
-
-      {/* Steps */}
-      <Box>
-        <Typography variant="h6" gutterBottom>
-          Steps
-        </Typography>
-        <StepList steps={version?.steps_json || []} />
-      </Box>
-
-      {/* Notes */}
+      {/* Notes - after panels */}
       {version?.notes && (
         <>
           <Divider />

@@ -6,6 +6,8 @@ import type {
   AiTagSuggestionId,
   AiTagSuggestionWithTag,
   RecipeVersionId,
+  RecipeWithPendingSuggestions,
+  HouseholdId,
 } from '@commontable/types';
 import { AppError } from '@commontable/types';
 import { revalidatePath } from 'next/cache';
@@ -48,10 +50,11 @@ export async function acceptAiTagSuggestion(
 
     const suggestion = await service.accept(suggestionId);
 
-    // Revalidate recipe pages
+    // Revalidate recipe pages and review page
     // Note: We don't have the recipe ID here, so we revalidate the recipes list
     // Individual recipe pages will be revalidated when they load
     revalidatePath('/recipes');
+    revalidatePath('/(dashboard)/tags/review');
 
     return { success: true, data: suggestion };
   } catch (error) {
@@ -77,8 +80,9 @@ export async function rejectAiTagSuggestion(
 
     const suggestion = await service.reject(suggestionId);
 
-    // Revalidate recipe pages
+    // Revalidate recipe pages and review page
     revalidatePath('/recipes');
+    revalidatePath('/(dashboard)/tags/review');
 
     return { success: true, data: suggestion };
   } catch (error) {
@@ -104,8 +108,9 @@ export async function acceptAllAiTagSuggestions(
 
     await service.acceptAllForRecipeVersion(versionId);
 
-    // Revalidate recipe pages
+    // Revalidate recipe pages and review page
     revalidatePath('/recipes');
+    revalidatePath('/(dashboard)/tags/review');
 
     return { success: true, data: undefined };
   } catch (error) {
@@ -134,4 +139,67 @@ export async function getPendingAiTagSuggestions(
   } catch (error) {
     return { success: false, error: formatError(error) };
   }
+}
+
+/**
+ * Get all pending AI tag suggestions for the household, grouped by recipe
+ *
+ * Used by the AI Tag Review page to display all recipes with pending suggestions
+ *
+ * @returns Array of recipes with pending suggestions or error
+ */
+export async function getPendingTagSuggestionsForReview(): Promise<
+  ActionResult<RecipeWithPendingSuggestions[]>
+> {
+  try {
+    const supabase = await createClient();
+    const service = new AiTagSuggestionService(supabase);
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return {
+        success: false,
+        error: { message: 'Not authenticated', code: 'UNAUTHORIZED' },
+      };
+    }
+
+    // Get household_id from household_members
+    const { data: member } = await supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!member) {
+      return {
+        success: false,
+        error: { message: 'No household found', code: 'NOT_FOUND' },
+      };
+    }
+
+    const recipesWithSuggestions = await service.getPendingByHousehold(
+      member.household_id as HouseholdId,
+    );
+
+    return { success: true, data: recipesWithSuggestions };
+  } catch (error) {
+    return { success: false, error: formatError(error) };
+  }
+}
+
+/**
+ * Accept all AI tag suggestions for a recipe version
+ *
+ * Alias for acceptAllAiTagSuggestions with a more descriptive name for use in review page
+ *
+ * @param versionId - Recipe version ID
+ * @returns Success or error
+ */
+export async function acceptAllAiTagSuggestionsForRecipe(
+  versionId: RecipeVersionId,
+): Promise<ActionResult<void>> {
+  return acceptAllAiTagSuggestions(versionId);
 }

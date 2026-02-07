@@ -29,20 +29,21 @@ describe('QuickActionsDropdown', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('should render menu with 3 items when open', () => {
+  it('should render menu with 4 items when open', () => {
     render(<QuickActionsDropdown anchorEl={mockAnchorEl} open={true} onClose={mockOnClose} />);
 
     // Menu should be visible
     const menu = screen.getByRole('menu');
     expect(menu).toBeInTheDocument();
 
-    // Should have 3 menu items
+    // Should have 4 menu items
     const menuItems = screen.getAllByRole('menuitem');
-    expect(menuItems).toHaveLength(3);
+    expect(menuItems).toHaveLength(4);
 
     // Verify menu item labels
     expect(screen.getByRole('menuitem', { name: /add recipe/i })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: /plan this week's meals/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /import from url/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /open meal plan/i })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: /browse all recipes/i })).toBeInTheDocument();
   });
 
@@ -57,15 +58,26 @@ describe('QuickActionsDropdown', () => {
     expect(mockPush).toHaveBeenCalledWith('/recipes/new');
   });
 
-  it('should navigate to /calendar and close menu when "Plan This Week\'s Meals" is clicked', async () => {
+  it('should navigate to /meal-plan and close menu when "Open Meal Plan" is clicked', async () => {
     const user = userEvent.setup();
     render(<QuickActionsDropdown anchorEl={mockAnchorEl} open={true} onClose={mockOnClose} />);
 
-    const planMealsItem = screen.getByRole('menuitem', { name: /plan this week's meals/i });
+    const planMealsItem = screen.getByRole('menuitem', { name: /open meal plan/i });
     await user.click(planMealsItem);
 
     expect(mockOnClose).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith('/calendar');
+    expect(mockPush).toHaveBeenCalledWith('/meal-plan');
+  });
+
+  it('should navigate to /recipes/import and close menu when "Import from URL" is clicked', async () => {
+    const user = userEvent.setup();
+    render(<QuickActionsDropdown anchorEl={mockAnchorEl} open={true} onClose={mockOnClose} />);
+
+    const importRecipeItem = screen.getByRole('menuitem', { name: /import from url/i });
+    await user.click(importRecipeItem);
+
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('/recipes/import');
   });
 
   it('should navigate to /recipes and close menu when "Browse All Recipes" is clicked', async () => {

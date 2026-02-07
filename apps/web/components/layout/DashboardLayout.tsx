@@ -33,6 +33,8 @@ import type { ReactElement, ReactNode, MouseEvent } from 'react';
 import { useState } from 'react';
 
 import { QuickActionsDropdown } from '@/components/dashboard/QuickActions';
+import { MealPlanDrawer } from '@/components/meal-plan/MealPlanDrawer';
+import { MealPlanFAB } from '@/components/meal-plan/MealPlanFAB';
 import { WelcomeDialog } from '@/components/onboarding/WelcomeDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
@@ -61,8 +63,8 @@ const navItems: NavItem[] = [
     icon: <RestaurantIcon />,
   },
   {
-    label: 'Queue',
-    href: '/queue' as Route,
+    label: 'Meal Plan',
+    href: '/meal-plan' as Route,
     icon: <ListAltIcon />,
   },
   {
@@ -128,6 +130,9 @@ export function DashboardLayout({
   // User menu state
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
 
+  // Meal plan drawer state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   // Quick actions menu state
   const [quickActionsAnchor, setQuickActionsAnchor] = useState<null | HTMLElement>(null);
   const quickActionsOpen = Boolean(quickActionsAnchor);
@@ -172,6 +177,20 @@ export function DashboardLayout({
    */
   const handleQuickActionsClose = () => {
     setQuickActionsAnchor(null);
+  };
+
+  /**
+   * Open meal plan drawer
+   */
+  const handleOpenDrawer = () => {
+    setDrawerOpen(true);
+  };
+
+  /**
+   * Close meal plan drawer
+   */
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
   };
 
   /**
@@ -404,6 +423,12 @@ export function DashboardLayout({
         <Toolbar />
         {children}
       </Box>
+
+      {/* Floating Action Button: Meal Plan Access */}
+      <MealPlanFAB onClick={handleOpenDrawer} />
+
+      {/* Side Drawer: Meal Plan Management */}
+      <MealPlanDrawer open={drawerOpen} onClose={handleCloseDrawer} />
     </Box>
   );
 }

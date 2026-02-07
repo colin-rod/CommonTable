@@ -70,58 +70,6 @@ export const RecipeStatusSchema = z.enum([
 
 export type RecipeStatus = z.infer<typeof RecipeStatusSchema>;
 
-/**
- * Cooking method enum (8 options)
- * Maps to database cooking_method enum
- */
-export const CookingMethodSchema = z.enum([
-  'quick',
-  'slow_cook',
-  'instant_pot',
-  'bake',
-  'grill',
-  'stovetop',
-  'air_fryer',
-  'no_cook',
-]);
-
-export type CookingMethod = z.infer<typeof CookingMethodSchema>;
-
-/**
- * Dietary category enum (10 options)
- * Maps to database dietary_category enum
- */
-export const DietaryCategorySchema = z.enum([
-  'vegetarian',
-  'vegan',
-  'gluten_free',
-  'dairy_free',
-  'keto',
-  'paleo',
-  'low_carb',
-  'low_fat',
-  'high_protein',
-  'pescatarian',
-]);
-
-export type DietaryCategory = z.infer<typeof DietaryCategorySchema>;
-
-/**
- * Dish category enum (7 options)
- * Maps to database dish_category enum
- */
-export const DishCategorySchema = z.enum([
-  'main',
-  'side',
-  'appetizer',
-  'soup',
-  'salad',
-  'bread',
-  'condiment',
-]);
-
-export type DishCategory = z.infer<typeof DishCategorySchema>;
-
 // =============================================================================
 // Recipe Ingredient & Step Schemas
 // =============================================================================
@@ -206,15 +154,10 @@ export const CreateRecipeInputSchema = z.object({
     .max(50, 'Maximum 50 key ingredients allowed')
     .default([]),
   priority: z.number().int().min(1).max(5).optional(),
-  status: RecipeStatusSchema.default('suggested'),
+  status: RecipeStatusSchema.optional().default('suggested'),
 
-  // NEW: Additional metadata for queue lanes
-  cooking_method: CookingMethodSchema.optional(),
-  dietary_categories: z
-    .array(DietaryCategorySchema)
-    .max(10, 'Maximum 10 dietary categories allowed')
-    .default([]),
-  dish_category: DishCategorySchema.optional(),
+  // Source URL for imported recipes (null for manually created)
+  source_url: z.string().url('Invalid URL format').max(2000, 'URL too long').optional(),
 
   user_id: z.string().uuid('Invalid user ID'),
 });
@@ -257,14 +200,6 @@ export const UpdateRecipeMetadataSchema = z.object({
     .optional(),
   priority: z.number().int().min(1).max(5).nullable().optional(),
   status: RecipeStatusSchema.optional(),
-
-  // NEW: Additional metadata for queue lanes
-  cooking_method: CookingMethodSchema.nullable().optional(),
-  dietary_categories: z
-    .array(DietaryCategorySchema)
-    .max(10, 'Maximum 10 dietary categories allowed')
-    .optional(),
-  dish_category: DishCategorySchema.nullable().optional(),
 });
 
 export type UpdateRecipeMetadataInput = z.infer<typeof UpdateRecipeMetadataSchema>;
@@ -330,14 +265,6 @@ export const UpdateRecipeInputSchema = z.object({
     .optional(),
   priority: z.number().int().min(1).max(5).nullable().optional(),
   status: RecipeStatusSchema.optional(),
-
-  // NEW: Additional metadata for queue lanes (do NOT create new version)
-  cooking_method: CookingMethodSchema.nullable().optional(),
-  dietary_categories: z
-    .array(DietaryCategorySchema)
-    .max(10, 'Maximum 10 dietary categories allowed')
-    .optional(),
-  dish_category: DishCategorySchema.nullable().optional(),
 
   // Version fields (creates new version if any of these change)
   ingredients_json: z.array(IngredientInputSchema).optional(),
