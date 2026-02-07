@@ -95,17 +95,19 @@ describe('recipe-import server actions', () => {
     const result = await fetchRecipePreview(recipeUrl);
 
     expect(result).toEqual({ success: true, data: mockPreview });
+    // Should always use publishable key (new Supabase key system)
     expect(mockFunctions.invoke).toHaveBeenCalledWith('recipe-import', {
       body: { url: recipeUrl },
       headers: {
         Authorization: 'Bearer test-access-token',
-        apikey: 'test-anon-key',
+        apikey: 'test-publishable-key',
       },
     });
   });
 
-  it('falls back to publishable key when anon key is missing', async () => {
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  it('always uses publishable key regardless of anon key presence', async () => {
+    // Even with anon key set, should still use publishable key
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
     mockFunctions.invoke.mockResolvedValue({
       data: { data: mockPreview },
       error: null,
@@ -114,6 +116,7 @@ describe('recipe-import server actions', () => {
     const result = await fetchRecipePreview(recipeUrl);
 
     expect(result).toEqual({ success: true, data: mockPreview });
+    // Should use publishable key, NOT anon key
     expect(mockFunctions.invoke).toHaveBeenCalledWith('recipe-import', {
       body: { url: recipeUrl },
       headers: {

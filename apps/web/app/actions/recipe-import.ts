@@ -157,8 +157,9 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
       };
     }
 
-    const apiKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    // Always use publishable key (new Supabase key system)
+    // The Edge Function will use this key from the request headers
+    const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
     if (!apiKey) {
       return {
@@ -169,17 +170,12 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
 
     const claims = decodeJwtClaims(session.access_token);
     console.warn('recipe-import auth diagnostics (server action)', {
-      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       hasPublishableKey: !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
       tokenRef: claims?.ref ?? claims?.iss,
       tokenExp: claims?.exp,
       tokenIat: claims?.iat,
     });
-
-    if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY is missing; falling back to publishable key');
-    }
 
     // Call recipe-import Edge Function via Supabase client.
     const { data, error } = await supabase.functions.invoke('recipe-import', {

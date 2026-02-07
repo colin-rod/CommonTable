@@ -78,11 +78,21 @@ serve(async (req) => {
       tokenIat: claims?.iat,
     });
 
-    // Create Supabase client (Edge Runtime automatically handles JWT from Authorization header)
-    // Note: SUPABASE_URL and SUPABASE_ANON_KEY are auto-injected by Supabase Edge Runtime
+    // Create Supabase client
+    // Note: SUPABASE_URL is auto-injected by Supabase Edge Runtime
+    // For API key, prefer the key from request headers (sent by server action)
+    // Fall back to auto-injected SUPABASE_ANON_KEY (may be stale after key migrations)
+    // See: https://github.com/supabase/supabase/issues/37648
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-    const supabaseApiKey = supabaseAnonKey;
+    const clientApiKey = req.headers.get('apikey');
+    const envApiKey = Deno.env.get('SUPABASE_ANON_KEY');
+    const supabaseApiKey = clientApiKey || envApiKey;
+
+    console.log('API key source:', {
+      fromHeader: !!clientApiKey,
+      fromEnv: !!envApiKey,
+      usingHeader: !!clientApiKey,
+    });
 
     if (!supabaseUrl || !supabaseApiKey) {
       throw new EdgeFunctionError('Missing Supabase configuration', 500, 'CONFIG_ERROR');
@@ -106,7 +116,7 @@ serve(async (req) => {
         code: authError.code,
         status: authError.status,
         supabaseUrl: supabaseUrl, // Log to verify correct instance
-        hasAnonKey: !!supabaseAnonKey, // Verify environment variable is set
+        hasAnonKey: !!envApiKey, // Verify environment variable is set
       });
     }
 
