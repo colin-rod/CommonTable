@@ -92,10 +92,13 @@ export async function getPendingAiTagSuggestionsCount(): Promise<ActionResult<nu
     // Pending state is user_accepted IS NULL
     const { count, error } = await supabase
       .from('ai_tag_suggestions')
-      .select('id, recipe_versions!inner(recipe_id, recipes!inner(household_id))', {
-        count: 'exact',
-        head: true,
-      })
+      .select(
+        'id, recipe_versions!inner(recipe_id, recipes!recipe_versions_recipe_id_fkey(household_id))',
+        {
+          count: 'exact',
+          head: true,
+        },
+      )
       .eq('recipe_versions.recipes.household_id', householdId)
       .is('user_accepted', null);
 
