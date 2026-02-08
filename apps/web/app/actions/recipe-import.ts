@@ -171,10 +171,13 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
     const claims = decodeJwtClaims(session.access_token);
     console.warn('recipe-import auth diagnostics (server action)', {
       hasPublishableKey: !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      publishableKeyPrefix: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.substring(0, 20),
+      apiKeyLength: apiKey?.length,
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
       tokenRef: claims?.ref ?? claims?.iss,
       tokenExp: claims?.exp,
       tokenIat: claims?.iat,
+      tokenLength: session.access_token?.length,
     });
 
     // Call recipe-import Edge Function via Supabase client.

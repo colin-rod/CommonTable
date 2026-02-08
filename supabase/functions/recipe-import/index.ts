@@ -92,6 +92,11 @@ serve(async (req) => {
       fromHeader: !!clientApiKey,
       fromEnv: !!envApiKey,
       usingHeader: !!clientApiKey,
+      headerKeyPrefix: clientApiKey?.substring(0, 20),
+      headerKeyLength: clientApiKey?.length,
+      envKeyPrefix: envApiKey?.substring(0, 20),
+      envKeyLength: envApiKey?.length,
+      selectedKeyPrefix: supabaseApiKey?.substring(0, 20),
     });
 
     if (!supabaseUrl || !supabaseApiKey) {
