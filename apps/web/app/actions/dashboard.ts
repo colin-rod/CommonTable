@@ -87,12 +87,17 @@ export async function getPendingAiTagSuggestionsCount(): Promise<ActionResult<nu
     // Get user's household ID (correctly via profile)
     const householdId = await getCurrentUserHouseholdId();
 
-    // Count pending AI tag suggestions
+    // Count pending AI tag suggestions by JOINing through recipe_versions → recipes
+    // ai_tag_suggestions doesn't have household_id column
+    // Pending state is user_accepted IS NULL
     const { count, error } = await supabase
       .from('ai_tag_suggestions')
-      .select('*', { count: 'exact', head: true })
-      .eq('household_id', householdId)
-      .eq('status', 'pending');
+      .select('id, recipe_versions!inner(recipe_id, recipes!inner(household_id))', {
+        count: 'exact',
+        head: true,
+      })
+      .eq('recipe_versions.recipes.household_id', householdId)
+      .is('user_accepted', null);
 
     if (error) throw error;
 

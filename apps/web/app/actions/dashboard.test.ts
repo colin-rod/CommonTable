@@ -288,12 +288,12 @@ describe('dashboard server actions', () => {
       const mockQueryChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
       };
 
-      // First eq() for household_id, second eq() for status 'pending'
-      mockQueryChain.eq
-        .mockReturnValueOnce(mockQueryChain)
-        .mockResolvedValueOnce({ count: 5, error: null });
+      // eq() for household_id via JOIN, is() for user_accepted null
+      mockQueryChain.eq.mockReturnValueOnce(mockQueryChain);
+      mockQueryChain.is.mockResolvedValueOnce({ count: 5, error: null });
 
       mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
@@ -304,20 +304,26 @@ describe('dashboard server actions', () => {
         expect(result.data).toBe(5);
       }
 
-      expect(mockQueryChain.select).toHaveBeenCalledWith('*', { count: 'exact', head: true });
-      expect(mockQueryChain.eq).toHaveBeenCalledWith('household_id', 'household-1');
-      expect(mockQueryChain.eq).toHaveBeenCalledWith('status', 'pending');
+      expect(mockQueryChain.select).toHaveBeenCalledWith(
+        'id, recipe_versions!inner(recipe_id, recipes!inner(household_id))',
+        { count: 'exact', head: true },
+      );
+      expect(mockQueryChain.eq).toHaveBeenCalledWith(
+        'recipe_versions.recipes.household_id',
+        'household-1',
+      );
+      expect(mockQueryChain.is).toHaveBeenCalledWith('user_accepted', null);
     });
 
     it('should return 0 when no pending suggestions exist', async () => {
       const mockQueryChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
       };
 
-      mockQueryChain.eq
-        .mockReturnValueOnce(mockQueryChain)
-        .mockResolvedValueOnce({ count: null, error: null });
+      mockQueryChain.eq.mockReturnValueOnce(mockQueryChain);
+      mockQueryChain.is.mockResolvedValueOnce({ count: null, error: null });
 
       mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
@@ -357,11 +363,11 @@ describe('dashboard server actions', () => {
       const mockQueryChain = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
       };
 
-      mockQueryChain.eq
-        .mockReturnValueOnce(mockQueryChain)
-        .mockResolvedValueOnce({ count: null, error });
+      mockQueryChain.eq.mockReturnValueOnce(mockQueryChain);
+      mockQueryChain.is.mockResolvedValueOnce({ count: null, error });
 
       mockSupabaseClient.from.mockReturnValue(mockQueryChain);
 
