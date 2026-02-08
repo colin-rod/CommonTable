@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import { corsPreflightResponse } from '../_shared/cors.ts';
@@ -10,54 +11,62 @@ import {
   ValidationError,
 } from '../_shared/errors.ts';
 import { getAuthToken, validateRequestBody } from '../_shared/validation.ts';
-
-import { parseHtmlFallback } from './parsers/html-fallback.ts';
-import { downloadAndUploadImage } from './parsers/image-downloader.ts';
-import { parseJsonLd } from './parsers/jsonld.ts';
-import { normalizeRecipeData } from './parsers/normalizer.ts';
-import { RecipeImportRequestSchema, type RecipeImportResponse } from './schema.ts';
-
-function decodeJwtClaims(token: string): Record<string, unknown> | null {
-  const parts = token.split('.');
-  if (parts.length !== 3) {
-    return null;
-  }
-
-  try {
-    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = payload.padEnd(Math.ceil(payload.length / 4) * 4, '=');
-    // eslint-disable-next-line no-undef
-    const json = atob(padded);
-    const claims = JSON.parse(json) as Record<string, unknown>;
-    return claims;
-  } catch {
-    return null;
-  }
-}
+import { enrichRecipeData } from '../recipe-import/parsers/ai-enricher.ts';
+import { parseHtmlFallback } from '../recipe-import/parsers/html-fallback.ts';
+import { parseJsonLd } from '../recipe-import/parsers/jsonld.ts';
+import { normalizeRecipeData } from '../recipe-import/parsers/normalizer.ts';
 
 /**
- * Recipe Import Edge Function
+ * Request schema for complete-recipe
+ */
+const CompleteRecipeRequestSchema = z.object({
+  source_url: z
+    .string()
+    .url('Must be a valid URL')
+    .max(2000, 'URL too long')
+    .refine(
+      (url) => url.startsWith('http://') || url.startsWith('https://'),
+      'Only HTTP and HTTPS protocols are allowed',
+    ),
+  household_id: z.string().uuid('Invalid household ID'),
+});
+
+type CompleteRecipeRequest = z.infer<typeof CompleteRecipeRequestSchema>;
+
+/**
+ * Complete Recipe Edge Function
  *
- * Fetches HTML from a recipe URL and parses it into CommonTable recipe format.
- * Attempts JSON-LD parsing first, falls back to HTML pattern matching.
+ * Re-fetches HTML from source URL and applies AI enrichment to clean and enrich recipe data.
+ * Returns fully completed recipe data ready for form population.
  *
  * Usage:
- *   POST /functions/v1/recipe-import
+ *   POST /functions/v1/complete-recipe
  *   Headers:
  *     - Authorization: Bearer <token>
  *     - Content-Type: application/json
  *   Body:
  *     {
- *       "url": "https://example.com/recipe"
+ *       "source_url": "https://example.com/recipe",
+ *       "household_id": "uuid"
  *     }
  *
  * Returns:
  *   {
  *     "data": {
- *       "preview": { ... recipe data ... },
- *       "validation_errors": [ ... ],
- *       "source": { url, parsed_via, fetched_at }
- *     }
+ *       "title": "Recipe Title",
+ *       "description": "...",
+ *       "servings": 4,
+ *       "prep_time_minutes": 15,
+ *       "cook_time_minutes": 30,
+ *       "ingredients": [...],
+ *       "steps": [...],
+ *       "tags": [...],
+ *       "cuisine": "italian",
+ *       "meal_type": "main_dish",
+ *       "key_ingredients": [...]
+ *     },
+ *     "status": "success" | "failed",
+ *     "error": "..." (if failed)
  *   }
  */
 serve(async (req) => {
@@ -67,35 +76,14 @@ serve(async (req) => {
   }
 
   try {
-    // Validate authentication token exists
+    // Validate authentication token
     const token = getAuthToken(req);
-    const claims = decodeJwtClaims(token);
-    console.log('recipe-import auth diagnostics (edge)', {
-      tokenRef: claims?.ref ?? claims?.iss,
-      tokenExp: claims?.exp,
-      tokenIat: claims?.iat,
-    });
 
     // Create Supabase client
-    // Note: SUPABASE_URL is auto-injected by Supabase Edge Runtime
-    // For API key, prefer the key from request headers (sent by server action)
-    // Fall back to auto-injected SUPABASE_ANON_KEY (may be stale after key migrations)
-    // See: https://github.com/supabase/supabase/issues/37648
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const clientApiKey = req.headers.get('apikey');
     const envApiKey = Deno.env.get('SUPABASE_ANON_KEY');
     const supabaseApiKey = clientApiKey || envApiKey;
-
-    console.log('API key source:', {
-      fromHeader: !!clientApiKey,
-      fromEnv: !!envApiKey,
-      usingHeader: !!clientApiKey,
-      headerKeyPrefix: clientApiKey?.substring(0, 20),
-      headerKeyLength: clientApiKey?.length,
-      envKeyPrefix: envApiKey?.substring(0, 20),
-      envKeyLength: envApiKey?.length,
-      selectedKeyPrefix: supabaseApiKey?.substring(0, 20),
-    });
 
     if (!supabaseUrl || !supabaseApiKey) {
       throw new EdgeFunctionError('Missing Supabase configuration', 500, 'CONFIG_ERROR');
@@ -107,21 +95,11 @@ serve(async (req) => {
       },
     });
 
-    // Get authenticated user from context (Edge Runtime populates user from JWT)
+    // Validate user authentication
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser(token);
-
-    if (authError) {
-      console.error('Token validation failed:', {
-        message: authError.message,
-        code: authError.code,
-        status: authError.status,
-        supabaseUrl: supabaseUrl, // Log to verify correct instance
-        hasAnonKey: !!envApiKey, // Verify environment variable is set
-      });
-    }
 
     if (authError || !user) {
       throw new UnauthorizedError(
@@ -130,10 +108,13 @@ serve(async (req) => {
     }
 
     // Validate request body
-    const validated = await validateRequestBody(req, RecipeImportRequestSchema);
+    const validated: CompleteRecipeRequest = await validateRequestBody(
+      req,
+      CompleteRecipeRequestSchema,
+    );
 
     // Security: Validate URL scheme and prevent SSRF
-    const url = new URL(validated.url);
+    const url = new URL(validated.source_url);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
       throw new ValidationError('Only HTTP and HTTPS protocols are allowed');
     }
@@ -158,7 +139,7 @@ serve(async (req) => {
 
     let html: string;
     try {
-      const response = await fetch(validated.url, {
+      const response = await fetch(validated.source_url, {
         headers: {
           'User-Agent': 'CommonTableBot/1.0',
         },
@@ -170,7 +151,7 @@ serve(async (req) => {
       if (!response.ok) {
         throw new EdgeFunctionError(
           `Failed to fetch URL (status: ${response.status})`,
-          500,
+          response.status,
           'FETCH_ERROR',
           { status: response.status },
         );
@@ -209,55 +190,52 @@ serve(async (req) => {
     }
 
     // Parse HTML - try JSON-LD first, fall back to HTML patterns
-    let parsed_via: 'jsonld' | 'html-fallback' = 'jsonld';
     let rawData = parseJsonLd(html);
 
     if (!rawData) {
       console.log('JSON-LD parsing failed, trying HTML fallback');
-      parsed_via = 'html-fallback';
       rawData = parseHtmlFallback(html);
     }
 
     // Normalize parsed data
     const normalized = normalizeRecipeData(rawData);
 
-    // Try to download and upload image (non-critical)
-    let coverImageStoragePath: string | null = null;
+    // AI enrichment (required for this function)
+    const aiResult = await enrichRecipeData(normalized.preview, validated.household_id, supabase);
 
-    if (normalized.preview.image_url) {
-      try {
-        console.log(`Attempting to download image from: ${normalized.preview.image_url}`);
-        const imageResult = await downloadAndUploadImage(
-          normalized.preview.image_url,
-          user.id,
-          supabase,
-        );
-        if (imageResult) {
-          coverImageStoragePath = imageResult.storage_path;
-          console.log(`Successfully uploaded image to: ${coverImageStoragePath}`);
-        }
-      } catch (error) {
-        console.error('Image download failed (non-critical):', error);
-      }
+    if (aiResult.status === 'failed' || aiResult.status === 'skipped') {
+      return successResponse({
+        data: null,
+        status: aiResult.status,
+        error: aiResult.error || 'AI enrichment was skipped or unavailable',
+      });
     }
 
-    // Add source metadata
-    const result: RecipeImportResponse = {
-      ...normalized,
-      preview: {
-        ...normalized.preview,
-        cover_image_storage_path: coverImageStoragePath || undefined,
-      },
-      source: {
-        url: validated.url,
-        parsed_via,
-        fetched_at: new Date().toISOString(),
-      },
+    // Return complete enriched data
+    const completeData = {
+      // Use AI-cleaned core fields (prefer AI over parser)
+      title: normalized.preview.title || 'Untitled Recipe',
+      description: normalized.preview.description,
+      servings: aiResult.servings ?? normalized.preview.servings,
+      prep_time_minutes: aiResult.prep_time_minutes ?? normalized.preview.prep_time_minutes,
+      cook_time_minutes: aiResult.cook_time_minutes ?? normalized.preview.cook_time_minutes,
+      ingredients:
+        aiResult.ingredients.length > 0 ? aiResult.ingredients : normalized.preview.ingredients,
+      steps: aiResult.steps.length > 0 ? aiResult.steps : normalized.preview.steps,
+
+      // AI-enriched metadata
+      tags: aiResult.tags,
+      cuisine: aiResult.cuisine,
+      meal_type: aiResult.meal_type,
+      key_ingredients: aiResult.key_ingredients,
     };
 
-    console.log(`Successfully parsed recipe from ${validated.url} via ${parsed_via}`);
+    console.log(`Successfully completed recipe from ${validated.source_url} with AI enrichment`);
 
-    return successResponse(result);
+    return successResponse({
+      data: completeData,
+      status: 'success',
+    });
   } catch (error) {
     return errorResponse(error);
   }

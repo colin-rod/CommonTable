@@ -34,7 +34,7 @@ export interface RecipeImportResponse {
       text: string;
     }>;
     image_url?: string;
-    cover_image_storage_path?: string; // NEW: Path to downloaded image in temp storage
+    cover_image_storage_path?: string;
     tags: string[];
   };
   validation_errors: Array<{
@@ -46,6 +46,31 @@ export interface RecipeImportResponse {
     parsed_via: 'jsonld' | 'html-fallback';
     fetched_at: string;
   };
+}
+
+/**
+ * Complete recipe response from complete-recipe Edge Function
+ */
+export interface CompleteRecipeResponse {
+  title: string;
+  description?: string;
+  servings?: number;
+  prep_time_minutes?: number;
+  cook_time_minutes?: number;
+  ingredients: Array<{
+    name: string;
+    quantity?: number;
+    unit?: string;
+    notes?: string;
+  }>;
+  steps: Array<{
+    position: number;
+    text: string;
+  }>;
+  tags: string[];
+  cuisine: string | null;
+  meal_type: string | null;
+  key_ingredients: string[];
 }
 
 /**
@@ -344,4 +369,120 @@ async function moveImageToPermanentStorage(
 
   // 5. Optionally delete temp file (leaving it for manual cleanup as per plan)
   // await supabase.storage.from('recipe-images').remove([tempStoragePath]);
+}
+
+/**
+ * Complete recipe with AI enrichment
+ *
+ * Re-fetches source URL and applies AI cleaning + metadata extraction.
+ * Returns fully enriched recipe data ready for form population.
+ *
+ * @param sourceUrl - Original recipe URL
+ * @param householdId - Household ID for fetching household tags
+ * @returns Complete recipe data with AI enrichment or error
+ */
+export async function completeRecipePreview(
+  sourceUrl: string,
+  householdId: string,
+): Promise<ActionResult<CompleteRecipeResponse>> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user for authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: { message: 'Not authenticated', code: 'UNAUTHORIZED' },
+      };
+    }
+
+    // Get auth session to extract JWT token
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return {
+        success: false,
+        error: { message: 'No active session', code: 'UNAUTHORIZED' },
+      };
+    }
+
+    // Use publishable key
+    const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!apiKey) {
+      return {
+        success: false,
+        error: { message: 'Missing Supabase API key configuration', code: 'CONFIG_ERROR' },
+      };
+    }
+
+    // Call complete-recipe Edge Function
+    const { data, error } = await supabase.functions.invoke('complete-recipe', {
+      body: {
+        source_url: sourceUrl,
+        household_id: householdId,
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: apiKey,
+      },
+    });
+
+    if (error) {
+      const parsedError = await parseInvokeError(error);
+      const errorCode =
+        parsedError.edgeCode ||
+        (parsedError.status === 401 ? 'UNAUTHORIZED' : 'EDGE_FUNCTION_ERROR');
+
+      console.error('complete-recipe invoke failed', {
+        status: parsedError.status,
+        code: errorCode,
+        message: parsedError.message,
+      });
+
+      return {
+        success: false,
+        error: {
+          message: parsedError.message,
+          code: errorCode,
+        },
+      };
+    }
+
+    // Parse response
+    const result = data as
+      | { data: CompleteRecipeResponse; status: 'success' }
+      | { data: null; status: 'failed' | 'skipped'; error?: string }
+      | null;
+
+    if (!result) {
+      return {
+        success: false,
+        error: {
+          message: 'Invalid response from complete-recipe service',
+          code: 'INVALID_RESPONSE',
+        },
+      };
+    }
+
+    if (result.status !== 'success' || !result.data) {
+      return {
+        success: false,
+        error: {
+          message: result.error || 'AI enrichment unavailable',
+          code: 'AI_ENRICHMENT_FAILED',
+        },
+      };
+    }
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    return { success: false, error: formatError(error) };
+  }
 }

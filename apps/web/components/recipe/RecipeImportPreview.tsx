@@ -1,6 +1,7 @@
 'use client';
 
 import type { CreateRecipeInput } from '@commontable/api-client';
+import type { CuisineType, MealType } from '@commontable/types';
 import { IngredientInputSchema, StepInputSchema } from '@commontable/types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -25,7 +26,11 @@ import { IngredientEditor } from './IngredientEditor';
 import { RecipeMetadataFields, type RecipeFormValues } from './RecipeMetadataFields';
 import { StepEditor } from './StepEditor';
 
-import { createImportedRecipe, type RecipeImportResponse } from '@/app/actions/recipe-import';
+import {
+  createImportedRecipe,
+  completeRecipePreview,
+  type RecipeImportResponse,
+} from '@/app/actions/recipe-import';
 
 /**
  * Form validation schema (same as RecipeForm)
@@ -94,11 +99,15 @@ export function RecipeImportPreview({
 }: RecipeImportPreviewProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [completing, setCompleting] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
 
   // Pre-fill form with preview data
   const {
     control,
     handleSubmit,
+    reset,
+    getValues,
     formState: { errors },
   } = useForm<RecipeFormValues>({
     resolver: zodResolver(RecipeFormSchema),
@@ -113,6 +122,41 @@ export function RecipeImportPreview({
       steps: preview.preview.steps,
     },
   });
+
+  const handleCompleteWithAI = async () => {
+    setCompleting(true);
+    setCompletionError(null);
+
+    try {
+      const result = await completeRecipePreview(preview.source.url, householdId);
+
+      if (!result.success) {
+        setCompletionError(result.error.message);
+        return;
+      }
+
+      // Overwrite ALL form fields with AI-completed data
+      reset({
+        title: result.data.title,
+        description: result.data.description || '',
+        servings: result.data.servings,
+        prep_time_minutes: result.data.prep_time_minutes,
+        cook_time_minutes: result.data.cook_time_minutes,
+        notes: getValues('notes'), // Preserve user's notes
+        ingredients: result.data.ingredients,
+        steps: result.data.steps,
+        tags: result.data.tags,
+        cuisine: (result.data.cuisine as CuisineType | null) || undefined,
+        meal_type: (result.data.meal_type as MealType | null) || undefined,
+        key_ingredients: result.data.key_ingredients,
+      });
+    } catch (err) {
+      setCompletionError('Failed to complete recipe. Please try again.');
+      console.error('Recipe completion error:', err);
+    } finally {
+      setCompleting(false);
+    }
+  };
 
   const onSubmit = async (data: RecipeFormValues) => {
     setLoading(true);
@@ -130,10 +174,10 @@ export function RecipeImportPreview({
         ingredients_json: data.ingredients || [],
         steps_json: data.steps || [],
         tags: data.tags || [],
-        // New metadata fields (Phase 3) - defaults for creation
-        key_ingredients: [],
-        cuisine: undefined,
-        meal_type: undefined,
+        // New metadata fields (Phase 3)
+        key_ingredients: data.key_ingredients || [],
+        cuisine: data.cuisine || undefined,
+        meal_type: data.meal_type || undefined,
         status: 'suggested' as const,
       };
 
@@ -193,6 +237,31 @@ export function RecipeImportPreview({
         </Alert>
       )}
 
+      {/* AI Completion Section */}
+      <Stack spacing={2}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Button
+            variant="outlined"
+            onClick={handleCompleteWithAI}
+            disabled={completing || loading}
+          >
+            {completing ? <CircularProgress size={24} /> : 'Complete Recipe with AI'}
+          </Button>
+          <Typography variant="body2" color="text.secondary">
+            Uses AI to clean and enrich recipe data
+          </Typography>
+        </Stack>
+
+        {/* Completion Error Alert */}
+        {completionError && (
+          <Alert severity="error" variant="outlined" onClose={() => setCompletionError(null)}>
+            {completionError}
+          </Alert>
+        )}
+      </Stack>
+
+      <Divider />
+
       {/* Error Alert */}
       {error && (
         <Alert severity="error" variant="outlined">
@@ -234,7 +303,7 @@ export function RecipeImportPreview({
         <RecipeMetadataFields
           control={control}
           errors={errors}
-          disabled={loading}
+          disabled={loading || completing}
           availableTags={[]}
           showWorkflowFields={false}
         />
@@ -252,7 +321,7 @@ export function RecipeImportPreview({
             <IngredientEditor
               control={control}
               errors={errors}
-              disabled={loading}
+              disabled={loading || completing}
               showHeader={false}
             />
           </AccordionDetails>
@@ -266,16 +335,21 @@ export function RecipeImportPreview({
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <StepEditor control={control} errors={errors} disabled={loading} showHeader={false} />
+            <StepEditor
+              control={control}
+              errors={errors}
+              disabled={loading || completing}
+              showHeader={false}
+            />
           </AccordionDetails>
         </Accordion>
 
         {/* Action Buttons */}
         <Stack direction="row" spacing={2} justifyContent="flex-end">
-          <Button variant="outlined" onClick={onGoBack} disabled={loading}>
+          <Button variant="outlined" onClick={onGoBack} disabled={loading || completing}>
             Go Back
           </Button>
-          <Button type="submit" variant="contained" disabled={loading}>
+          <Button type="submit" variant="contained" disabled={loading || completing}>
             {loading ? <CircularProgress size={24} /> : 'Create Recipe'}
           </Button>
         </Stack>
