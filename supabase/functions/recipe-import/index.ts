@@ -224,13 +224,27 @@ serve(async (req) => {
     const normalized = normalizeRecipeData(rawData);
 
     // Get household_id from user context
+    // Note: household_members.user_id references profiles.id, not auth.users.id
+    // So we need to get the profile ID first
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id)
+      .single();
+
     const { data: membership } = await supabase
       .from('household_members')
       .select('household_id')
-      .eq('user_id', user.id)
+      .eq('user_id', profile?.id)
       .single();
 
     const householdId = membership?.household_id;
+
+    console.log('Household lookup:', {
+      authUserId: user.id,
+      profileId: profile?.id,
+      householdId,
+    });
 
     // AI enrichment (non-blocking)
     let aiResult: AIEnrichmentResult = {
