@@ -455,11 +455,15 @@ export async function completeRecipePreview(
       };
     }
 
-    // Parse response
-    const result = data as
+    // Parse response - unwrap the { data: ... } wrapper from successResponse()
+    // Edge Function returns: { data: { data: completeData, status: 'success' } }
+    const wrapped = data as { data: unknown } | null;
+    const result = wrapped?.data as
       | { data: CompleteRecipeResponse; status: 'success' }
       | { data: null; status: 'failed' | 'skipped'; error?: string }
       | null;
+
+    console.log('complete-recipe response:', JSON.stringify(data, null, 2));
 
     if (!result) {
       return {
