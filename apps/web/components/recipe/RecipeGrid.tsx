@@ -10,6 +10,7 @@ interface RecipeGridProps {
   recipes: Recipe[];
   onAddToMealPlan: (recipeId: RecipeId) => void;
   mealPlanRecipeIds: RecipeId[];
+  imageUrls?: Map<RecipeId, string>;
   loading?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
@@ -19,6 +20,7 @@ export function RecipeGrid({
   recipes,
   onAddToMealPlan,
   mealPlanRecipeIds,
+  imageUrls,
   loading = false,
   hasMore = false,
   onLoadMore,
@@ -71,6 +73,7 @@ export function RecipeGrid({
           <Grid key={recipe.id} size={{ xs: 12, sm: 6, md: 4 }}>
             <RecipeCard
               recipe={recipe}
+              imageUrl={imageUrls?.get(recipe.id)}
               onAddToMealPlan={onAddToMealPlan}
               isInMealPlan={mealPlanRecipeIds.includes(recipe.id)}
             />
