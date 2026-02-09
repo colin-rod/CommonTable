@@ -583,5 +583,36 @@ describe('AiTagSuggestionService', () => {
       expect(result[1]?.recipe_id).toBe('recipe-2');
       expect(result[1]?.suggestions).toHaveLength(1);
     });
+
+    it('should disambiguate recipe_versions -> recipes relationship using explicit FK', async () => {
+      // This test ensures the query explicitly uses the forward FK
+      // (recipe_versions.recipe_id -> recipes.id via recipe_versions_recipe_id_fkey)
+      // and not the reverse FK (recipes.current_version_id -> recipe_versions.id)
+
+      const householdId = 'household-123' as HouseholdId;
+
+      const mockSelect = vi.fn().mockReturnThis();
+      const mockEq = vi.fn().mockReturnThis();
+      const mockIsNull = vi.fn().mockReturnThis();
+      const mockOrder = vi.fn().mockResolvedValue({
+        data: [],
+        error: null,
+      });
+
+      vi.mocked(mockSupabase.from).mockReturnValue({
+        select: mockSelect,
+        eq: mockEq,
+        is: mockIsNull,
+        order: mockOrder,
+      } as any);
+
+      await service.getPendingByHousehold(householdId);
+
+      // Verify the select query includes the explicit FK name to disambiguate
+      expect(mockSupabase.from).toHaveBeenCalledWith('ai_tag_suggestions');
+      expect(mockSelect).toHaveBeenCalledWith(
+        expect.stringContaining('recipe:recipes!recipe_versions_recipe_id_fkey'),
+      );
+    });
   });
 });

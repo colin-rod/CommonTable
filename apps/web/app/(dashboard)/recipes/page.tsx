@@ -13,8 +13,8 @@ import { RecipeFilterBar } from '@/components/recipes/RecipeFilterBar';
 import { useAuth } from '@/hooks/useAuth';
 import { useMealPlan } from '@/hooks/useMealPlan';
 import { useRecipeFilters } from '@/hooks/useRecipeFilters';
-import { useRecipes } from '@/hooks/useRecipes';
 import { useRecipeSearch } from '@/hooks/useRecipeSearch';
+import { useRecipesWithImages } from '@/hooks/useRecipesWithImages';
 import { createClient } from '@/lib/supabase/client';
 
 /**
@@ -49,7 +49,7 @@ export default function RecipesPage() {
   const [status, setStatus] = useState<RecipeStatus | null>(null);
   const [priority, setPriority] = useState<number | null>(null);
 
-  const { recipes, loading: recipesLoading, error } = useRecipes();
+  const { recipes, loading: recipesLoading, error, imageUrls } = useRecipesWithImages();
   const { results: searchResults, loading: searchLoading } = useRecipeSearch(searchQuery);
   const { addToMealPlan, hasRecipe } = useMealPlan();
 
@@ -168,6 +168,7 @@ export default function RecipesPage() {
         loading={isLoading}
         onAddToMealPlan={handleAddToMealPlan}
         mealPlanRecipeIds={mealPlanRecipeIds}
+        imageUrls={imageUrls}
       />
     </Stack>
   );

@@ -166,11 +166,25 @@ export async function getPendingTagSuggestionsForReview(): Promise<
       };
     }
 
-    // Get household_id from household_members
+    // Get user's profile (profiles.id is the universal user ID)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('auth_user_id', user.id) // Map auth.users.id → profiles.id
+      .single();
+
+    if (profileError || !profile) {
+      return {
+        success: false,
+        error: { message: 'User profile not found', code: 'NOT_FOUND' },
+      };
+    }
+
+    // Get household_id from household_members (using profile.id)
     const { data: member } = await supabase
       .from('household_members')
       .select('household_id')
-      .eq('user_id', user.id)
+      .eq('user_id', profile.id) // ← profile.id, NOT user.id
       .single();
 
     if (!member) {

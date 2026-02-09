@@ -242,6 +242,26 @@ describe('RecipeGrid', () => {
     });
   });
 
+  describe('Integration with RecipeCard', () => {
+    it('should pass imageUrls to RecipeCard components', () => {
+      const imageUrls = new Map<RecipeId, string>([
+        ['recipe-1' as RecipeId, 'https://example.com/image1.jpg'],
+      ]);
+
+      render(
+        <RecipeGrid
+          recipes={mockRecipes}
+          onAddToMealPlan={vi.fn()}
+          mealPlanRecipeIds={[]}
+          imageUrls={imageUrls}
+        />,
+      );
+
+      const image = screen.getByRole('img', { name: mockRecipes[0]!.title });
+      expect(image).toHaveAttribute('src', 'https://example.com/image1.jpg');
+    });
+  });
+
   describe('Accessibility', () => {
     it('should have accessible loading indicator', () => {
       render(

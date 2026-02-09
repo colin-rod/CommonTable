@@ -34,7 +34,7 @@ export interface RecipeImportResponse {
       text: string;
     }>;
     image_url?: string;
-    cover_image_storage_path?: string; // NEW: Path to downloaded image in temp storage
+    cover_image_storage_path?: string;
     tags: string[];
   };
   validation_errors: Array<{
@@ -49,6 +49,31 @@ export interface RecipeImportResponse {
 }
 
 /**
+ * Complete recipe response from complete-recipe Edge Function
+ */
+export interface CompleteRecipeResponse {
+  title: string;
+  description?: string;
+  servings?: number;
+  prep_time_minutes?: number;
+  cook_time_minutes?: number;
+  ingredients: Array<{
+    name: string;
+    quantity?: number;
+    unit?: string;
+    notes?: string;
+  }>;
+  steps: Array<{
+    position: number;
+    text: string;
+  }>;
+  tags: string[];
+  cuisine: string | null;
+  meal_type: string | null;
+  key_ingredients: string[];
+}
+
+/**
  * Format error for client consumption
  */
 function formatError(error: unknown): { message: string; code?: string } {
@@ -57,6 +82,29 @@ function formatError(error: unknown): { message: string; code?: string } {
   }
   console.error('Unexpected error in recipe-import action:', error);
   return { message: 'An unexpected error occurred' };
+}
+
+function decodeJwtClaims(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  try {
+    // parts[1] is guaranteed to exist due to length check above
+    const payloadPart = parts[1];
+    if (!payloadPart) {
+      return null;
+    }
+
+    const payload = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = payload.padEnd(Math.ceil(payload.length / 4) * 4, '=');
+    const json = Buffer.from(padded, 'base64').toString('utf8');
+    const claims = JSON.parse(json) as Record<string, unknown>;
+    return claims;
+  } catch {
+    return null;
+  }
 }
 
 async function parseInvokeError(error: unknown): Promise<{
@@ -134,8 +182,9 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
       };
     }
 
-    const apiKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    // Always use publishable key (new Supabase key system)
+    // The Edge Function will use this key from the request headers
+    const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
     if (!apiKey) {
       return {
@@ -144,9 +193,17 @@ export async function fetchRecipePreview(url: string): Promise<ActionResult<Reci
       };
     }
 
-    if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      console.warn('NEXT_PUBLIC_SUPABASE_ANON_KEY is missing; falling back to publishable key');
-    }
+    const claims = decodeJwtClaims(session.access_token);
+    console.warn('recipe-import auth diagnostics (server action)', {
+      hasPublishableKey: !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      publishableKeyPrefix: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.substring(0, 20),
+      apiKeyLength: apiKey?.length,
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      tokenRef: claims?.ref ?? claims?.iss,
+      tokenExp: claims?.exp,
+      tokenIat: claims?.iat,
+      tokenLength: session.access_token?.length,
+    });
 
     // Call recipe-import Edge Function via Supabase client.
     const { data, error } = await supabase.functions.invoke('recipe-import', {
@@ -312,4 +369,124 @@ async function moveImageToPermanentStorage(
 
   // 5. Optionally delete temp file (leaving it for manual cleanup as per plan)
   // await supabase.storage.from('recipe-images').remove([tempStoragePath]);
+}
+
+/**
+ * Complete recipe with AI enrichment
+ *
+ * Re-fetches source URL and applies AI cleaning + metadata extraction.
+ * Returns fully enriched recipe data ready for form population.
+ *
+ * @param sourceUrl - Original recipe URL
+ * @param householdId - Household ID for fetching household tags
+ * @returns Complete recipe data with AI enrichment or error
+ */
+export async function completeRecipePreview(
+  sourceUrl: string,
+  householdId: string,
+): Promise<ActionResult<CompleteRecipeResponse>> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user for authentication
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: { message: 'Not authenticated', code: 'UNAUTHORIZED' },
+      };
+    }
+
+    // Get auth session to extract JWT token
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      return {
+        success: false,
+        error: { message: 'No active session', code: 'UNAUTHORIZED' },
+      };
+    }
+
+    // Use publishable key
+    const apiKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!apiKey) {
+      return {
+        success: false,
+        error: { message: 'Missing Supabase API key configuration', code: 'CONFIG_ERROR' },
+      };
+    }
+
+    // Call complete-recipe Edge Function
+    const { data, error } = await supabase.functions.invoke('complete-recipe', {
+      body: {
+        source_url: sourceUrl,
+        household_id: householdId,
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: apiKey,
+      },
+    });
+
+    if (error) {
+      const parsedError = await parseInvokeError(error);
+      const errorCode =
+        parsedError.edgeCode ||
+        (parsedError.status === 401 ? 'UNAUTHORIZED' : 'EDGE_FUNCTION_ERROR');
+
+      console.error('complete-recipe invoke failed', {
+        status: parsedError.status,
+        code: errorCode,
+        message: parsedError.message,
+      });
+
+      return {
+        success: false,
+        error: {
+          message: parsedError.message,
+          code: errorCode,
+        },
+      };
+    }
+
+    // Parse response - unwrap the { data: ... } wrapper from successResponse()
+    // Edge Function returns: { data: { data: completeData, status: 'success' } }
+    const wrapped = data as { data: unknown } | null;
+    const result = wrapped?.data as
+      | { data: CompleteRecipeResponse; status: 'success' }
+      | { data: null; status: 'failed' | 'skipped'; error?: string }
+      | null;
+
+    console.log('complete-recipe response:', JSON.stringify(data, null, 2));
+
+    if (!result) {
+      return {
+        success: false,
+        error: {
+          message: 'Invalid response from complete-recipe service',
+          code: 'INVALID_RESPONSE',
+        },
+      };
+    }
+
+    if (result.status !== 'success' || !result.data) {
+      return {
+        success: false,
+        error: {
+          message: result.error || 'AI enrichment unavailable',
+          code: 'AI_ENRICHMENT_FAILED',
+        },
+      };
+    }
+
+    return { success: true, data: result.data };
+  } catch (error) {
+    return { success: false, error: formatError(error) };
+  }
 }

@@ -210,7 +210,7 @@ export class AiTagSuggestionService extends BaseService {
           id,
           recipe_id,
           version_number,
-          recipe:recipes!inner(
+          recipe:recipes!recipe_versions_recipe_id_fkey(
             id,
             title,
             household_id

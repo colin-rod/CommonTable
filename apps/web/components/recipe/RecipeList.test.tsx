@@ -1,4 +1,4 @@
-import type { Recipe } from '@commontable/types';
+import type { Recipe, RecipeId } from '@commontable/types';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
@@ -182,6 +182,23 @@ describe('RecipeList Component', () => {
       // Check that recipe details are rendered (handled by RecipeListItem)
       expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
       expect(screen.getByText(/italian, pasta/i)).toBeInTheDocument();
+    });
+
+    it('should pass imageUrls to RecipeListItem components', () => {
+      const imageUrls = new Map<RecipeId, string>([
+        ['recipe-1' as RecipeId, 'https://example.com/image1.jpg'],
+      ]);
+
+      render(
+        <RecipeList
+          recipes={mockRecipes}
+          onToggleFavorite={mockOnToggleFavorite}
+          imageUrls={imageUrls}
+        />,
+      );
+
+      const image = screen.getByRole('img', { name: mockRecipes[0]!.title });
+      expect(image).toHaveAttribute('src', 'https://example.com/image1.jpg');
     });
 
     it('should pass onToggleFavorite callback to each item', async () => {
