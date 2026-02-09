@@ -300,7 +300,11 @@ export function RecipeForm({
     setAiCompletionLoading(true);
 
     try {
-      const result = await completeRecipeEdit(recipeId as RecipeId, versionId, getValues());
+      const result = await completeRecipeEdit(
+        recipeId as RecipeId,
+        versionId,
+        getValues() as unknown as Record<string, unknown>,
+      );
 
       if (!result.success) {
         alert(result.error.message || 'AI completion failed');
@@ -308,7 +312,7 @@ export function RecipeForm({
       }
 
       // Update form fields with enriched values
-      const enriched = result.data;
+      const enriched = result.data as Partial<RecipeFormValues>;
 
       if (enriched.description) setValue('description', enriched.description);
       if (enriched.servings) setValue('servings', enriched.servings);

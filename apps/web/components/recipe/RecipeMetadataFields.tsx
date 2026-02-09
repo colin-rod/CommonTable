@@ -461,12 +461,7 @@ export function RecipeMetadataFields({
               disabled={disabled}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
-                  <Chip
-                    key={`key-ingredient-${index}`}
-                    label={option}
-                    {...getTagProps({ index })}
-                    size="small"
-                  />
+                  <Chip label={option} {...getTagProps({ index })} size="small" />
                 ))
               }
               renderInput={(params) => (
