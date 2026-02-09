@@ -5,16 +5,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { RecipeDetailView } from './RecipeDetailView';
 
-// Mock child components
-vi.mock('./RecipeMetadata', () => ({
-  RecipeMetadata: ({ servings, tags }: any) => (
-    <div data-testid="recipe-metadata">
-      {servings && <span>Servings: {servings}</span>}
-      {tags.length > 0 && <span>Tags: {tags.join(', ')}</span>}
-    </div>
-  ),
-}));
-
 vi.mock('./ServingsScaler', () => ({
   ServingsScaler: ({
     originalServings,
@@ -154,7 +144,24 @@ describe('RecipeDetailView Component', () => {
     it('should render RecipeMetadata component', () => {
       render(<RecipeDetailView recipe={mockRecipe} />);
 
-      expect(screen.getByTestId('recipe-metadata')).toBeInTheDocument();
+      expect(screen.getByText(/4 servings/i)).toBeInTheDocument();
+    });
+
+    it('should render cuisine, meal type, status, and priority when present', () => {
+      const recipeWithMetadata = {
+        ...mockRecipe,
+        cuisine: 'italian',
+        meal_type: 'main_dish',
+        status: 'to_cook',
+        priority: 2,
+      };
+
+      render(<RecipeDetailView recipe={recipeWithMetadata} />);
+
+      expect(screen.getByText('Italian')).toBeInTheDocument();
+      expect(screen.getByText('Main Dish')).toBeInTheDocument();
+      expect(screen.getByText('Status: To Cook')).toBeInTheDocument();
+      expect(screen.getByText('Priority: 2')).toBeInTheDocument();
     });
 
     it('should render ServingsScaler when servings are set', () => {

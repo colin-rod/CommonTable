@@ -1,9 +1,13 @@
 'use client';
 
+import type { CuisineType, MealType, RecipeStatus } from '@commontable/types';
 import TimeIcon from '@mui/icons-material/AccessTime';
 import ServingsIcon from '@mui/icons-material/Restaurant';
 import StarIcon from '@mui/icons-material/Star';
 import { Stack, Typography, Chip, Box } from '@mui/material';
+
+import { RecipeMetadataChips } from './RecipeMetadataChips';
+import { formatStatus } from './recipeFormatters';
 
 interface RecipeMetadataProps {
   servings?: number | null;
@@ -12,6 +16,10 @@ interface RecipeMetadataProps {
   tags: string[];
   lastCookedAt?: Date | null;
   rollingScore?: number | null;
+  cuisine?: CuisineType | null;
+  mealType?: MealType | null;
+  status?: RecipeStatus | null;
+  priority?: number | null;
 }
 
 /**
@@ -37,6 +45,10 @@ export function RecipeMetadata({
   tags,
   lastCookedAt,
   rollingScore,
+  cuisine,
+  mealType,
+  status,
+  priority,
 }: RecipeMetadataProps) {
   /**
    * Format time display
@@ -69,6 +81,11 @@ export function RecipeMetadata({
 
   const hasTimeInfo = prepTimeMinutes || cookTimeMinutes;
   const totalTime = (prepTimeMinutes || 0) + (cookTimeMinutes || 0);
+  const hasCuisine = cuisine != null;
+  const hasMealType = mealType != null;
+  const hasStatus = status != null;
+  const hasPriority = priority != null;
+  const hasWorkflowMetadata = hasCuisine || hasMealType || hasStatus || hasPriority;
 
   return (
     <Stack spacing={2}>
@@ -104,6 +121,23 @@ export function RecipeMetadata({
           </Box>
         )}
       </Stack>
+
+      {/* Cuisine, Meal Type, Status, Priority */}
+      {hasWorkflowMetadata && (
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+          <RecipeMetadataChips cuisine={cuisine} mealType={mealType} size="small" />
+          {hasStatus && (
+            <Chip
+              label={`Status: ${formatStatus(status)}`}
+              size="small"
+              variant="outlined"
+            />
+          )}
+          {hasPriority && (
+            <Chip label={`Priority: ${priority}`} size="small" variant="outlined" />
+          )}
+        </Stack>
+      )}
 
       {/* Last Cooked */}
       <Typography variant="body2" color="text.secondary">

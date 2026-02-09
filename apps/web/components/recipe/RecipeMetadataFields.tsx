@@ -15,6 +15,7 @@ import { useState, useEffect, useRef, type Ref } from 'react';
 import { type Control, Controller, type FieldErrors, useWatch } from 'react-hook-form';
 
 import { TagAutocomplete } from './TagAutocomplete';
+import { formatCuisine, formatMealType, formatStatus } from './recipeFormatters';
 
 /**
  * Recipe form values structure matching CreateRecipeInput schema
@@ -111,28 +112,6 @@ const MEAL_TYPE_OPTIONS: MealType[] = [
 const STATUS_OPTIONS: RecipeStatus[] = ['suggested', 'to_buy', 'to_cook', 'cooked'];
 
 const PRIORITY_OPTIONS: number[] = [1, 2, 3, 4, 5];
-
-// Helper functions for formatting display labels
-function formatCuisine(cuisine: CuisineType): string {
-  return cuisine
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-function formatMealType(mealType: MealType): string {
-  return mealType
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-function formatStatus(status: RecipeStatus): string {
-  return status
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
 export function RecipeMetadataFields({
   control,
