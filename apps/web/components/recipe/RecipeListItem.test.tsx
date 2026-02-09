@@ -229,4 +229,47 @@ describe('RecipeListItem Component', () => {
       expect(secondaryText).toContain('·');
     });
   });
+
+  describe('Hero image', () => {
+    it('should render hero image when imageUrl provided', () => {
+      render(
+        <RecipeListItem
+          recipe={mockRecipe}
+          imageUrl="https://example.com/image.jpg"
+          onToggleFavorite={mockOnToggleFavorite}
+        />,
+      );
+
+      const image = screen.getByRole('img', { name: mockRecipe.title });
+      expect(image).toHaveAttribute('src', 'https://example.com/image.jpg');
+    });
+
+    it('should not render image when imageUrl is null', () => {
+      render(
+        <RecipeListItem
+          recipe={mockRecipe}
+          imageUrl={null}
+          onToggleFavorite={mockOnToggleFavorite}
+        />,
+      );
+
+      // No image should be present (only star icons exist)
+      const images = screen.queryAllByRole('img');
+      const recipeImage = images.find((img) => img.getAttribute('alt') === mockRecipe.title);
+      expect(recipeImage).toBeUndefined();
+    });
+
+    it('should show skeleton while image is loading', () => {
+      render(
+        <RecipeListItem
+          recipe={mockRecipe}
+          imageUrl="https://example.com/image.jpg"
+          imageLoading={true}
+          onToggleFavorite={mockOnToggleFavorite}
+        />,
+      );
+
+      expect(screen.getByTestId('image-skeleton')).toBeInTheDocument();
+    });
+  });
 });
