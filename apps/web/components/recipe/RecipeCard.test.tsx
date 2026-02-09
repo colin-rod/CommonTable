@@ -109,6 +109,50 @@ describe('RecipeCard', () => {
     });
   });
 
+  describe('Metadata Rendering', () => {
+    it('should render cuisine, meal type, status, and priority when available', () => {
+      const recipeWithMetadata: Recipe = {
+        ...mockRecipe,
+        cuisine: 'italian',
+        meal_type: 'main_dish',
+        status: 'to_cook',
+        priority: 2,
+      };
+
+      render(
+        <RecipeCard recipe={recipeWithMetadata} onAddToMealPlan={vi.fn()} isInMealPlan={false} />,
+      );
+
+      expect(screen.getByText('Italian')).toBeInTheDocument();
+      expect(screen.getByText('Main Dish')).toBeInTheDocument();
+      expect(screen.getByText('Status: To Cook')).toBeInTheDocument();
+      expect(screen.getByText('Priority: 2')).toBeInTheDocument();
+    });
+
+    it('should omit metadata labels when values are missing', () => {
+      const recipeWithoutMetadata = {
+        ...mockRecipe,
+        cuisine: null,
+        meal_type: null,
+        priority: null,
+        status: null,
+      } as Recipe;
+
+      render(
+        <RecipeCard
+          recipe={recipeWithoutMetadata}
+          onAddToMealPlan={vi.fn()}
+          isInMealPlan={false}
+        />,
+      );
+
+      expect(screen.queryByText('Italian')).not.toBeInTheDocument();
+      expect(screen.queryByText('Main Dish')).not.toBeInTheDocument();
+      expect(screen.queryByText(/status:/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/priority:/i)).not.toBeInTheDocument();
+    });
+  });
+
   describe('Meal Plan Button', () => {
     it('should render "Add to Meal Plan" button when not in meal plan', () => {
       render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
