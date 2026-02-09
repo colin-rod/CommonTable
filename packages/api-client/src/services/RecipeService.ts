@@ -6,6 +6,7 @@ import {
   type RecipeVersion,
   type RecipeWithVersion,
   type RecipeImage,
+  type RecipeImageId,
   type RecipeSearchResult,
   type VersionHistoryEntry,
   type CreateRecipeInput,
@@ -640,8 +641,22 @@ export class RecipeService extends BaseService {
 
     // Build Map for O(1) lookup by recipe ID
     const imageMap = new Map<RecipeId, RecipeImage>();
-    (data || []).forEach((image) => {
-      imageMap.set(image.recipe_id as RecipeId, image as RecipeImage);
+    (data || []).forEach((row) => {
+      const image: RecipeImage = {
+        id: row.id as RecipeImageId,
+        recipe_id: row.recipe_id as RecipeId,
+        storage_path: row.storage_path,
+        alt_text: row.alt_text,
+        display_order: row.display_order,
+        is_primary: row.is_primary,
+        is_public: row.is_public,
+        width: row.width,
+        height: row.height,
+        file_size_bytes: row.file_size_bytes,
+        created_by: row.created_by as UserId,
+        created_at: new Date(row.created_at),
+      };
+      imageMap.set(image.recipe_id, image);
     });
 
     return imageMap;
