@@ -461,3 +461,94 @@ export async function logCookingEvent(recipeId: RecipeId): Promise<ActionResult<
     return { success: false, error: formatError(error) };
   }
 }
+
+/**
+ * Complete recipe metadata using AI
+ *
+ * Applies AI enrichment to existing recipe form values.
+ * Fills missing fields and enhances existing content.
+ *
+ * @param recipeId - Recipe ID
+ * @param versionId - Recipe version ID
+ * @param formValues - Current form values from edit page
+ * @returns Enriched form values or error
+ */
+export async function completeRecipeEdit(
+  recipeId: RecipeId,
+  versionId: string,
+  formValues: Record<string, unknown>,
+): Promise<ActionResult<Record<string, unknown>>> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return { success: false, error: { message: 'Not authenticated', code: 'UNAUTHORIZED' } };
+    }
+
+    // Call Edge Function
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      return {
+        success: false,
+        error: { message: 'Supabase URL not configured', code: 'CONFIG_ERROR' },
+      };
+    }
+
+    // eslint-disable-next-line no-undef
+    const response = await fetch(`${supabaseUrl}/functions/v1/complete-recipe-edit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        recipe_id: recipeId,
+        version_id: versionId,
+        form_values: formValues,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return {
+        success: false,
+        error: {
+          message: errorData.error || 'AI completion failed',
+          code: errorData.code || 'AI_ERROR',
+        },
+      };
+    }
+
+    const result = await response.json();
+
+    // Handle skipped or failed AI enrichment
+    if (result.data.status === 'failed') {
+      return {
+        success: false,
+        error: {
+          message: result.data.error || 'AI completion failed',
+          code: 'AI_FAILED',
+        },
+      };
+    }
+
+    if (result.data.status === 'skipped') {
+      return {
+        success: false,
+        error: {
+          message: 'AI service unavailable. Set OPENAI_API_KEY.',
+          code: 'AI_UNAVAILABLE',
+        },
+      };
+    }
+
+    // Return enriched values
+    return { success: true, data: result.data.enriched_values };
+  } catch (error) {
+    console.error('completeRecipeEdit error:', error);
+    return { success: false, error: formatError(error) };
+  }
+}

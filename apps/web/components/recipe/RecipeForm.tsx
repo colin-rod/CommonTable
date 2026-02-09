@@ -7,8 +7,10 @@ import {
   CuisineTypeSchema,
   MealTypeSchema,
   RecipeStatusSchema,
+  type RecipeId,
 } from '@commontable/types';
 import { zodResolver } from '@hookform/resolvers/zod';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -24,6 +26,8 @@ import {
   AccordionDetails,
   Chip,
   TextField,
+  IconButton,
+  CircularProgress,
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState, type RefObject, type SyntheticEvent } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -32,6 +36,8 @@ import { z } from 'zod';
 import { IngredientEditor } from './IngredientEditor';
 import { RecipeMetadataFields, type RecipeFormValues } from './RecipeMetadataFields';
 import { StepEditor } from './StepEditor';
+
+import { completeRecipeEdit } from '@/app/actions/recipe';
 
 /**
  * Form-specific validation schema (without household_id which is added server-side)
@@ -92,6 +98,8 @@ export interface RecipeFormProps {
   loading?: boolean;
   error?: Error | null;
   draftStorageKey?: string;
+  recipeId?: string;
+  versionId?: string;
 }
 
 /**
@@ -116,12 +124,17 @@ export function RecipeForm({
   loading = false,
   error = null,
   draftStorageKey,
+  recipeId,
+  versionId,
 }: RecipeFormProps) {
   const {
     control,
     handleSubmit,
     reset,
     formState: { errors },
+    setValue,
+    getValues,
+    trigger,
   } = useForm<RecipeFormValues>({
     resolver: zodResolver(RecipeFormSchema),
     defaultValues: initialValues,
@@ -133,6 +146,7 @@ export function RecipeForm({
   const [expandedSection, setExpandedSection] = useState<
     'details' | 'ingredients' | 'steps' | null
   >('details');
+  const [aiCompletionLoading, setAiCompletionLoading] = useState(false);
   const detailsSummaryRef = useRef<HTMLDivElement>(null);
   const ingredientsSummaryRef = useRef<HTMLDivElement>(null);
   const stepsSummaryRef = useRef<HTMLDivElement>(null);
@@ -269,6 +283,50 @@ export function RecipeForm({
     }
   };
 
+  /**
+   * Handle AI completion button click
+   * Calls server action to enrich recipe metadata with AI
+   */
+  const handleAiCompletion = async () => {
+    if (!recipeId || !versionId) return;
+
+    setAiCompletionLoading(true);
+
+    try {
+      const result = await completeRecipeEdit(recipeId as RecipeId, versionId, getValues());
+
+      if (!result.success) {
+        alert(result.error.message || 'AI completion failed');
+        return;
+      }
+
+      // Update form fields with enriched values
+      const enriched = result.data;
+
+      if (enriched.description) setValue('description', enriched.description);
+      if (enriched.servings) setValue('servings', enriched.servings);
+      if (enriched.prep_time_minutes) setValue('prep_time_minutes', enriched.prep_time_minutes);
+      if (enriched.cook_time_minutes) setValue('cook_time_minutes', enriched.cook_time_minutes);
+      if (enriched.cuisine) setValue('cuisine', enriched.cuisine);
+      if (enriched.meal_type) setValue('meal_type', enriched.meal_type);
+      if (enriched.tags && enriched.tags.length > 0) setValue('tags', enriched.tags);
+      if (enriched.ingredients && enriched.ingredients.length > 0)
+        setValue('ingredients', enriched.ingredients);
+      if (enriched.steps && enriched.steps.length > 0) setValue('steps', enriched.steps);
+
+      // Trigger validation
+      await trigger();
+
+      // Show success message
+      alert('Recipe completed with AI');
+    } catch (err) {
+      console.error('AI completion failed:', err);
+      alert('AI completion failed. Try again.');
+    } finally {
+      setAiCompletionLoading(false);
+    }
+  };
+
   return (
     <Stack component="form" onSubmit={handleSubmit(handleFormSubmit)} spacing={3}>
       {/* Page Title */}
@@ -312,7 +370,7 @@ export function RecipeForm({
           id="recipe-details-header"
           ref={detailsSummaryRef}
         >
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%' }}>
             <Typography variant="h6">Details</Typography>
             <Chip
               size="small"
@@ -321,6 +379,20 @@ export function RecipeForm({
               color={detailsComplete ? 'success' : 'default'}
               variant="outlined"
             />
+            {mode === 'edit' && recipeId && versionId && (
+              <IconButton
+                onClick={(e) => {
+                  e.stopPropagation(); // Don't toggle accordion
+                  handleAiCompletion();
+                }}
+                disabled={aiCompletionLoading}
+                size="small"
+                aria-label="Complete with AI"
+                sx={{ marginLeft: 'auto' }}
+              >
+                {aiCompletionLoading ? <CircularProgress size={20} /> : <AutoFixHighIcon />}
+              </IconButton>
+            )}
           </Stack>
         </AccordionSummary>
         <AccordionDetails>

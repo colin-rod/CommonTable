@@ -385,3 +385,96 @@ export const ForkRecipeInputSchema = z.object({
 });
 
 export type ForkRecipeInput = z.infer<typeof ForkRecipeInputSchema>;
+
+// =============================================================================
+// Recipe AI Completion Schemas (Edit Mode)
+// =============================================================================
+
+/**
+ * Input for AI recipe completion in edit mode
+ * Used to enrich existing recipe form values with AI-generated metadata
+ */
+export const CompleteRecipeEditInputSchema = z.object({
+  recipe_id: RecipeIdSchema,
+  version_id: RecipeVersionIdSchema,
+  form_values: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    servings: z.number().optional(),
+    prep_time_minutes: z.number().optional(),
+    cook_time_minutes: z.number().optional(),
+    cuisine: CuisineTypeSchema.nullable().optional(),
+    meal_type: MealTypeSchema.nullable().optional(),
+    tags: z.array(z.string()).optional(),
+    notes: z.string().optional(),
+    ingredients: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          name: z.string(),
+          quantity: z.number().optional(),
+          unit: z.string().optional(),
+          notes: z.string().optional(),
+        }),
+      )
+      .optional(),
+    steps: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          position: z.number().int().positive(),
+          text: z.string(),
+        }),
+      )
+      .optional(),
+    status: RecipeStatusSchema.optional(),
+    priority: z.number().nullable().optional(),
+    key_ingredients: z.array(z.string()).optional(),
+  }),
+});
+
+export type CompleteRecipeEditInput = z.infer<typeof CompleteRecipeEditInputSchema>;
+
+/**
+ * Response from AI recipe completion
+ */
+export const CompleteRecipeEditResponseSchema = z.object({
+  enriched_values: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    servings: z.number().optional(),
+    prep_time_minutes: z.number().optional(),
+    cook_time_minutes: z.number().optional(),
+    cuisine: CuisineTypeSchema.nullable().optional(),
+    meal_type: MealTypeSchema.nullable().optional(),
+    tags: z.array(z.string()).optional(),
+    notes: z.string().optional(),
+    ingredients: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          name: z.string(),
+          quantity: z.number().optional(),
+          unit: z.string().optional(),
+          notes: z.string().optional(),
+        }),
+      )
+      .optional(),
+    steps: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          position: z.number().int().positive(),
+          text: z.string(),
+        }),
+      )
+      .optional(),
+    status: RecipeStatusSchema.optional(),
+    priority: z.number().nullable().optional(),
+    key_ingredients: z.array(z.string()).optional(),
+  }),
+  status: z.enum(['success', 'failed', 'skipped']),
+  error: z.string().optional(),
+});
+
+export type CompleteRecipeEditResponse = z.infer<typeof CompleteRecipeEditResponseSchema>;
