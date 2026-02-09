@@ -35,7 +35,8 @@ jobs:
           CHANGED_FILES=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} || echo "")
 
           # Extract unique function names from changed files in supabase/functions/
-          CHANGED_FUNCTIONS=$(echo "$CHANGED_FILES" | grep '^supabase/functions/' | cut -d'/' -f3 | grep -v '^_shared$' | sort -u || echo "")
+          # Filter for directories only (functions must be in subdirectories)
+          CHANGED_FUNCTIONS=$(echo "$CHANGED_FILES" | grep '^supabase/functions/[^/]*/[^/]*' | cut -d'/' -f3 | grep -v '^_shared$' | sort -u || echo "")
 
           if [ -z "$CHANGED_FUNCTIONS" ]; then
             echo "No Edge Function changes detected"
