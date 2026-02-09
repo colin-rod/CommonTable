@@ -2,14 +2,13 @@
 
 import type { CookingEventWithRecipeAndProfile } from '@commontable/types';
 import {
-  List,
-  ListItem,
-  ListItemText,
   Typography,
   Rating,
   CircularProgress,
   Box,
   Button,
+  Card,
+  CardContent,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
@@ -50,30 +49,44 @@ export function HouseholdActivityFeed({ events, loading = false }: HouseholdActi
   }
 
   return (
-    <List>
+    <Box
+      sx={{
+        display: 'flex',
+        gap: 2,
+        overflowX: 'auto',
+        scrollSnapType: 'x mandatory',
+        pb: 1,
+      }}
+      aria-label="Household cooking activity carousel"
+    >
       {events.map((event) => (
-        <ListItem key={event.id} disablePadding>
-          <ListItemText
-            primary={event.recipe_title}
-            secondary={
-              <>
-                {event.rating && (
-                  <Rating
-                    value={event.rating}
-                    readOnly
-                    size="small"
-                    aria-label={`Rated ${event.rating} out of 5 stars`}
-                    sx={{ display: 'block', mb: 0.5 }}
-                  />
-                )}
-                <Typography variant="body2" color="text.secondary" component="span">
-                  Cooked {formatRelativeDate(event.cooked_at)}
-                </Typography>
-              </>
-            }
-          />
-        </ListItem>
+        <Card
+          key={event.id}
+          variant="outlined"
+          sx={{
+            minWidth: 220,
+            scrollSnapAlign: 'start',
+          }}
+        >
+          <CardContent>
+            <Typography variant="subtitle1" component="div">
+              {event.recipe_title}
+            </Typography>
+            {event.rating && (
+              <Rating
+                value={event.rating}
+                readOnly
+                size="small"
+                aria-label={`Rated ${event.rating} out of 5 stars`}
+                sx={{ display: 'inline-flex', mb: 0.5 }}
+              />
+            )}
+            <Typography variant="body2" color="text.secondary">
+              Cooked {formatRelativeDate(event.cooked_at)}
+            </Typography>
+          </CardContent>
+        </Card>
       ))}
-    </List>
+    </Box>
   );
 }
