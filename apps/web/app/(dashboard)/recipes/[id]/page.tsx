@@ -336,6 +336,15 @@ export default function RecipeDetailPage() {
         </Box>
 
         <Stack direction="row" spacing={1}>
+          <Button
+            variant={isInMealPlan ? 'outlined' : 'contained'}
+            color="primary"
+            onClick={handleAddToMealPlan}
+            disabled={isInMealPlan}
+            aria-label={isInMealPlan ? 'Added to meal plan' : 'Add to meal plan'}
+          >
+            {isInMealPlan ? 'Added' : 'Add to Meal Plan'}
+          </Button>
           <Button variant="outlined" color="primary" startIcon={<EditIcon />} onClick={handleEdit}>
             Edit
           </Button>
@@ -391,16 +400,6 @@ export default function RecipeDetailPage() {
         <Stack spacing={1} sx={{ mb: 2 }}>
           <Button variant="contained" color="primary" onClick={handleLogMeal} fullWidth>
             Log Meal
-          </Button>
-          <Button
-            variant={isInMealPlan ? 'outlined' : 'contained'}
-            color="primary"
-            onClick={handleAddToMealPlan}
-            fullWidth
-            disabled={isInMealPlan}
-            aria-label={isInMealPlan ? 'Added to meal plan' : 'Add to meal plan'}
-          >
-            {isInMealPlan ? 'Added' : 'Add to Meal Plan'}
           </Button>
         </Stack>
         {cookingEventsLoading ? (
