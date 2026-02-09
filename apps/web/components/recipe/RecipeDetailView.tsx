@@ -159,6 +159,10 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
         tags={recipe.tags}
         lastCookedAt={recipe.last_cooked_at}
         rollingScore={recipe.rolling_score}
+        cuisine={recipe.cuisine}
+        mealType={recipe.meal_type}
+        status={recipe.status}
+        priority={recipe.priority}
       />
 
       {/* Additional Metadata - cuisine, meal_type, key_ingredients, priority */}
