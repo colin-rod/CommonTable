@@ -16,8 +16,8 @@ import {
 import { useRouter } from 'next/navigation';
 import type { MouseEvent } from 'react';
 
-import { RecipeMetadataChips } from './RecipeMetadataChips';
 import { formatPriorityLabel, formatStatusLabel } from './recipeFormatters';
+import { RecipeMetadataChips } from './RecipeMetadataChips';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -89,11 +89,15 @@ export function RecipeCard({ recipe, imageUrl, onAddToMealPlan, isInMealPlan }: 
 
         {hasMetadata && (
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
-            <RecipeMetadataChips cuisine={recipe.cuisine} mealType={recipe.meal_type} size="small" />
+            <RecipeMetadataChips
+              cuisine={recipe.cuisine}
+              mealType={recipe.meal_type}
+              size="small"
+            />
             {hasStatus && (
               <Chip label={formatStatusLabel(recipe.status)} size="small" variant="outlined" />
             )}
-            {hasPriority && (
+            {hasPriority && recipe.priority !== null && (
               <Chip label={formatPriorityLabel(recipe.priority)} size="small" variant="outlined" />
             )}
           </Stack>

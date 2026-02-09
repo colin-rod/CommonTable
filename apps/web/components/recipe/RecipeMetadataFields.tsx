@@ -16,8 +16,8 @@ import {
 import { useState, useEffect, useRef, type Ref } from 'react';
 import { type Control, Controller, type FieldErrors, useWatch } from 'react-hook-form';
 
-import { TagAutocomplete } from './TagAutocomplete';
 import { formatCuisine, formatMealType, formatStatus } from './recipeFormatters';
+import { TagAutocomplete } from './TagAutocomplete';
 
 /**
  * Recipe form values structure matching CreateRecipeInput schema

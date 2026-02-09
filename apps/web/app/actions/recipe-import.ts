@@ -463,7 +463,7 @@ export async function completeRecipePreview(
       | { data: null; status: 'failed' | 'skipped'; error?: string }
       | null;
 
-    console.log('complete-recipe response:', JSON.stringify(data, null, 2));
+    console.error('complete-recipe response:', JSON.stringify(data, null, 2));
 
     if (!result) {
       return {

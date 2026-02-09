@@ -130,13 +130,13 @@ describe('RecipeCard', () => {
     });
 
     it('should omit metadata labels when values are missing', () => {
-      const recipeWithoutMetadata = {
+      const recipeWithoutMetadata: Recipe = {
         ...mockRecipe,
         cuisine: null,
         meal_type: null,
         priority: null,
-        status: null,
-      } as Recipe;
+        status: 'suggested', // status is required, use default
+      };
 
       render(
         <RecipeCard

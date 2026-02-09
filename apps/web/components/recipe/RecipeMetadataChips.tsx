@@ -1,7 +1,6 @@
+import type { CuisineType, MealType } from '@commontable/types';
 import { Public as CuisineIcon, RestaurantMenu as MealTypeIcon } from '@mui/icons-material';
 import { Stack, Chip } from '@mui/material';
-
-import type { CuisineType, MealType } from '@commontable/types';
 
 import { formatCuisine, formatMealType } from './recipeFormatters';
 interface RecipeMetadataChipsProps {

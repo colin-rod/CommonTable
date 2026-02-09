@@ -148,11 +148,11 @@ describe('RecipeDetailView Component', () => {
     });
 
     it('should render cuisine, meal type, status, and priority when present', () => {
-      const recipeWithMetadata = {
+      const recipeWithMetadata: RecipeWithVersion = {
         ...mockRecipe,
-        cuisine: 'italian',
-        meal_type: 'main_dish',
-        status: 'to_cook',
+        cuisine: 'italian' as const,
+        meal_type: 'main_dish' as const,
+        status: 'to_cook' as const,
         priority: 2,
       };
 

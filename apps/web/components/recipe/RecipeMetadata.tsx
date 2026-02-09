@@ -6,8 +6,8 @@ import ServingsIcon from '@mui/icons-material/Restaurant';
 import StarIcon from '@mui/icons-material/Star';
 import { Stack, Typography, Chip, Box } from '@mui/material';
 
-import { RecipeMetadataChips } from './RecipeMetadataChips';
 import { formatPriorityLabel, formatStatusLabel } from './recipeFormatters';
+import { RecipeMetadataChips } from './RecipeMetadataChips';
 
 interface RecipeMetadataProps {
   servings?: number | null;
@@ -126,13 +126,7 @@ export function RecipeMetadata({
       {hasWorkflowMetadata && (
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
           <RecipeMetadataChips cuisine={cuisine} mealType={mealType} size="small" />
-          {hasStatus && (
-            <Chip
-              label={formatStatusLabel(status)}
-              size="small"
-              variant="outlined"
-            />
-          )}
+          {hasStatus && <Chip label={formatStatusLabel(status)} size="small" variant="outlined" />}
           {hasPriority && (
             <Chip label={formatPriorityLabel(priority)} size="small" variant="outlined" />
           )}
