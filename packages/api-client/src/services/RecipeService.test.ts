@@ -1875,6 +1875,88 @@ describe('RecipeService', () => {
       expect(result).toBeInstanceOf(Map);
       expect(result.size).toBe(0);
     });
+
+    it('should fetch primary images for multiple recipes', async () => {
+      const mockImages = [
+        {
+          id: 'img-1',
+          recipe_id: 'recipe-1',
+          storage_path: 'path/to/image1.jpg',
+          is_primary: true,
+          is_public: false,
+          display_order: 0,
+          created_at: new Date().toISOString(),
+        },
+        {
+          id: 'img-2',
+          recipe_id: 'recipe-2',
+          storage_path: 'path/to/image2.jpg',
+          is_primary: true,
+          is_public: false,
+          display_order: 0,
+          created_at: new Date().toISOString(),
+        },
+      ];
+
+      vi.mocked(mockSupabase.from).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: mockImages, error: null }),
+      } as any);
+
+      const result = await service.getPrimaryImagesForRecipes([
+        'recipe-1' as RecipeId,
+        'recipe-2' as RecipeId,
+      ]);
+
+      expect(result.size).toBe(2);
+      expect(result.get('recipe-1' as RecipeId)?.id).toBe('img-1');
+      expect(result.get('recipe-2' as RecipeId)?.id).toBe('img-2');
+    });
+
+    it('should handle recipes without primary images', async () => {
+      const mockImages = [
+        {
+          id: 'img-1',
+          recipe_id: 'recipe-with-image',
+          storage_path: 'path/to/image.jpg',
+          is_primary: true,
+          is_public: false,
+          display_order: 0,
+          created_at: new Date().toISOString(),
+        },
+      ];
+
+      vi.mocked(mockSupabase.from).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ data: mockImages, error: null }),
+      } as any);
+
+      const result = await service.getPrimaryImagesForRecipes([
+        'recipe-with-image' as RecipeId,
+        'recipe-without-image' as RecipeId,
+      ]);
+
+      expect(result.size).toBe(1);
+      expect(result.has('recipe-with-image' as RecipeId)).toBe(true);
+      expect(result.has('recipe-without-image' as RecipeId)).toBe(false);
+    });
+
+    it('should handle database errors', async () => {
+      vi.mocked(mockSupabase.from).mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'Database error', code: 'PGRST500' } as any,
+        }),
+      } as any);
+
+      await expect(service.getPrimaryImagesForRecipes(['recipe-1' as RecipeId])).rejects.toThrow(
+        AppError,
+      );
+    });
   });
 
   // =============================================================================
