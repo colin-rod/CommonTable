@@ -9,6 +9,8 @@ interface RecipeListProps {
   recipes: Recipe[];
   loading?: boolean;
   onToggleFavorite: (id: RecipeId) => void;
+  imageUrls?: Map<RecipeId, string>;
+  imagesLoading?: boolean;
 }
 
 /**
@@ -24,7 +26,13 @@ interface RecipeListProps {
  * - CircularProgress for loading
  * - Calm, neutral empty state message
  */
-export function RecipeList({ recipes, loading = false, onToggleFavorite }: RecipeListProps) {
+export function RecipeList({
+  recipes,
+  loading = false,
+  onToggleFavorite,
+  imageUrls,
+  imagesLoading = false,
+}: RecipeListProps) {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -49,7 +57,13 @@ export function RecipeList({ recipes, loading = false, onToggleFavorite }: Recip
   return (
     <List>
       {recipes.map((recipe) => (
-        <RecipeListItem key={recipe.id} recipe={recipe} onToggleFavorite={onToggleFavorite} />
+        <RecipeListItem
+          key={recipe.id}
+          recipe={recipe}
+          onToggleFavorite={onToggleFavorite}
+          imageUrl={imageUrls?.get(recipe.id) ?? null}
+          imageLoading={imagesLoading}
+        />
       ))}
     </List>
   );
