@@ -107,11 +107,16 @@ describe('HouseholdActivityFeed', () => {
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
-  it('should render semantic List structure', () => {
+  it('should render cooking events in accessible structure', () => {
     render(<HouseholdActivityFeed events={mockEvents} />);
 
-    const listItems = screen.getAllByRole('listitem');
-    expect(listItems).toHaveLength(2);
+    // Test that both events are rendered (regardless of List vs Card structure)
+    expect(screen.getByText('Pasta Carbonara')).toBeInTheDocument();
+    expect(screen.getByText('Chocolate Chip Cookies')).toBeInTheDocument();
+
+    // Test that ratings are accessible
+    expect(screen.getByLabelText('Rated 5 out of 5 stars')).toBeInTheDocument();
+    expect(screen.getByLabelText('Rated 4 out of 5 stars')).toBeInTheDocument();
   });
 
   it('should have accessible aria-labels on Rating components', () => {

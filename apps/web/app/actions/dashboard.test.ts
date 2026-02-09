@@ -305,7 +305,7 @@ describe('dashboard server actions', () => {
       }
 
       expect(mockQueryChain.select).toHaveBeenCalledWith(
-        'id, recipe_versions!inner(recipe_id, recipes!inner(household_id))',
+        'id, recipe_versions!inner(recipe_id, recipes!recipe_versions_recipe_id_fkey(household_id))',
         { count: 'exact', head: true },
       );
       expect(mockQueryChain.eq).toHaveBeenCalledWith(
