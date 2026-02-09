@@ -3,7 +3,15 @@
 import type { Recipe, RecipeId } from '@commontable/types';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import { ListItem, ListItemButton, ListItemText, IconButton, Stack } from '@mui/material';
+import {
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  IconButton,
+  Stack,
+  Box,
+  Skeleton,
+} from '@mui/material';
 import { useRouter } from 'next/navigation';
 import type { MouseEvent } from 'react';
 
@@ -13,6 +21,8 @@ import { RecipeStatusChip } from './RecipeStatusChip';
 interface RecipeListItemProps {
   recipe: Recipe;
   onToggleFavorite: (id: RecipeId) => void;
+  imageUrl?: string | null;
+  imageLoading?: boolean;
 }
 
 /**
@@ -31,7 +41,12 @@ interface RecipeListItemProps {
  * - Material UI Chips for status and metadata display
  * - No emojis, calm neutral tone
  */
-export function RecipeListItem({ recipe, onToggleFavorite }: RecipeListItemProps) {
+export function RecipeListItem({
+  recipe,
+  onToggleFavorite,
+  imageUrl,
+  imageLoading = false,
+}: RecipeListItemProps) {
   const router = useRouter();
 
   const handleClick = () => {
@@ -78,15 +93,54 @@ export function RecipeListItem({ recipe, onToggleFavorite }: RecipeListItemProps
         </IconButton>
       }
     >
-      <ListItemButton onClick={handleClick}>
-        <Stack spacing={1} sx={{ width: '100%', mr: 6 }}>
-          <ListItemText primary={recipe.title} secondary={secondaryParts.join(' · ')} />
-          <Stack direction="row" spacing={1}>
-            <RecipeStatusChip status={recipe.status} />
-            <RecipeMetadataChips cuisine={recipe.cuisine} mealType={recipe.meal_type} />
+      <Stack spacing={0} sx={{ width: '100%' }}>
+        {/* Hero Image */}
+        {(imageUrl || imageLoading) && (
+          <Box
+            sx={{
+              width: '100%',
+              maxHeight: 200,
+              borderRadius: 1,
+              overflow: 'hidden',
+              bgcolor: 'background.default',
+              mb: 1,
+            }}
+          >
+            {imageLoading ? (
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height={200}
+                data-testid="image-skeleton"
+                aria-label="Loading image"
+              />
+            ) : imageUrl ? (
+              <Box
+                component="img"
+                src={imageUrl}
+                alt={recipe.title}
+                sx={{
+                  width: '100%',
+                  maxHeight: 200,
+                  objectFit: 'cover',
+                  display: 'block',
+                }}
+              />
+            ) : null}
+          </Box>
+        )}
+
+        {/* Existing Content */}
+        <ListItemButton onClick={handleClick}>
+          <Stack spacing={1} sx={{ width: '100%', mr: 6 }}>
+            <ListItemText primary={recipe.title} secondary={secondaryParts.join(' · ')} />
+            <Stack direction="row" spacing={1}>
+              <RecipeStatusChip status={recipe.status} />
+              <RecipeMetadataChips cuisine={recipe.cuisine} mealType={recipe.meal_type} />
+            </Stack>
           </Stack>
-        </Stack>
-      </ListItemButton>
+        </ListItemButton>
+      </Stack>
     </ListItem>
   );
 }
