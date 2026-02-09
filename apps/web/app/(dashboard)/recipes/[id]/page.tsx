@@ -12,6 +12,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   ContentCopy as ForkIcon,
+  History as HistoryIcon,
+  Restaurant as RestaurantIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
 } from '@mui/icons-material';
@@ -342,6 +344,7 @@ export default function RecipeDetailPage() {
             onClick={handleAddToMealPlan}
             disabled={isInMealPlan}
             aria-label={isInMealPlan ? 'Added to meal plan' : 'Add to meal plan'}
+            startIcon={<RestaurantIcon />}
           >
             {isInMealPlan ? 'Added' : 'Add to Meal Plan'}
           </Button>
@@ -359,6 +362,7 @@ export default function RecipeDetailPage() {
           <Button
             variant="outlined"
             color="primary"
+            startIcon={<HistoryIcon />}
             onClick={() => router.push(`/recipes/${recipeId}/versions`)}
           >
             View version history
@@ -415,6 +419,7 @@ export default function RecipeDetailPage() {
           variant="outlined"
           color="primary"
           size="small"
+          startIcon={<HistoryIcon />}
           onClick={() => router.push(`/recipes/${recipeId}/versions`)}
         >
           View version history
