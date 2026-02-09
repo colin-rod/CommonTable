@@ -18,3 +18,11 @@ export function formatMealType(mealType: MealType): string {
 export function formatStatus(status: RecipeStatus): string {
   return formatEnumLabel(status);
 }
+
+export function formatStatusLabel(status: RecipeStatus): string {
+  return `Status: ${formatStatus(status)}`;
+}
+
+export function formatPriorityLabel(priority: number): string {
+  return `Priority: ${priority}`;
+}

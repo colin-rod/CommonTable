@@ -2,9 +2,22 @@
 
 import type { Recipe, RecipeId } from '@commontable/types';
 import { Star as StarIcon, Check as CheckIcon } from '@mui/icons-material';
-import { Card, CardMedia, CardContent, CardActions, Button, Typography, Box } from '@mui/material';
+import {
+  Card,
+  CardMedia,
+  CardContent,
+  CardActions,
+  Button,
+  Typography,
+  Box,
+  Chip,
+  Stack,
+} from '@mui/material';
 import { useRouter } from 'next/navigation';
 import type { MouseEvent } from 'react';
+
+import { RecipeMetadataChips } from './RecipeMetadataChips';
+import { formatPriorityLabel, formatStatusLabel } from './recipeFormatters';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -41,6 +54,11 @@ export function RecipeCard({ recipe, imageUrl, onAddToMealPlan, isInMealPlan }: 
 
   const displayTags = recipe.tags.slice(0, 3).join(', ');
   const displayImage = imageUrl || '/images/recipe-placeholder.png';
+  const hasCuisine = recipe.cuisine != null;
+  const hasMealType = recipe.meal_type != null;
+  const hasStatus = recipe.status != null;
+  const hasPriority = recipe.priority != null;
+  const hasMetadata = hasCuisine || hasMealType || hasStatus || hasPriority;
 
   return (
     <Card
@@ -68,6 +86,18 @@ export function RecipeCard({ recipe, imageUrl, onAddToMealPlan, isInMealPlan }: 
         <Typography variant="body1" component="h2" gutterBottom>
           {recipe.title}
         </Typography>
+
+        {hasMetadata && (
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1 }}>
+            <RecipeMetadataChips cuisine={recipe.cuisine} mealType={recipe.meal_type} size="small" />
+            {hasStatus && (
+              <Chip label={formatStatusLabel(recipe.status)} size="small" variant="outlined" />
+            )}
+            {hasPriority && (
+              <Chip label={formatPriorityLabel(recipe.priority)} size="small" variant="outlined" />
+            )}
+          </Stack>
+        )}
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           {recipe.rolling_score !== null && (

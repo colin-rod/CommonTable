@@ -7,7 +7,7 @@ import StarIcon from '@mui/icons-material/Star';
 import { Stack, Typography, Chip, Box } from '@mui/material';
 
 import { RecipeMetadataChips } from './RecipeMetadataChips';
-import { formatStatus } from './recipeFormatters';
+import { formatPriorityLabel, formatStatusLabel } from './recipeFormatters';
 
 interface RecipeMetadataProps {
   servings?: number | null;
@@ -128,13 +128,13 @@ export function RecipeMetadata({
           <RecipeMetadataChips cuisine={cuisine} mealType={mealType} size="small" />
           {hasStatus && (
             <Chip
-              label={`Status: ${formatStatus(status)}`}
+              label={formatStatusLabel(status)}
               size="small"
               variant="outlined"
             />
           )}
           {hasPriority && (
-            <Chip label={`Priority: ${priority}`} size="small" variant="outlined" />
+            <Chip label={formatPriorityLabel(priority)} size="small" variant="outlined" />
           )}
         </Stack>
       )}
