@@ -56,7 +56,7 @@ export function RecipeCard({ recipe, imageUrl, onAddToMealPlan, isInMealPlan }: 
   const displayImage = imageUrl || '/images/recipe-placeholder.png';
   const hasCuisine = recipe.cuisine != null;
   const hasMealType = recipe.meal_type != null;
-  const hasStatus = recipe.status != null;
+  const hasStatus = recipe.status != null && recipe.status !== 'suggested';
   const hasPriority = recipe.priority != null;
   const hasMetadata = hasCuisine || hasMealType || hasStatus || hasPriority;
 
