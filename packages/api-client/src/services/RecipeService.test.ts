@@ -1865,6 +1865,19 @@ describe('RecipeService', () => {
   });
 
   // =============================================================================
+  // getPrimaryImagesForRecipes
+  // =============================================================================
+
+  describe('getPrimaryImagesForRecipes', () => {
+    it('should return empty map when no recipe IDs provided', async () => {
+      const result = await service.getPrimaryImagesForRecipes([]);
+
+      expect(result).toBeInstanceOf(Map);
+      expect(result.size).toBe(0);
+    });
+  });
+
+  // =============================================================================
   // getAllTags (Issue 4.3 - Tag Filter)
   // =============================================================================
 
