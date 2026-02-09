@@ -181,7 +181,11 @@ export function RecipeImportPreview({
         status: 'suggested' as const,
       };
 
-      const result = await createImportedRecipe(input, preview.preview.image_url);
+      const result = await createImportedRecipe(
+        input,
+        preview.preview.cover_image_storage_path,
+        preview.source.url,
+      );
 
       if (!result.success) {
         setError(result.error.message);
