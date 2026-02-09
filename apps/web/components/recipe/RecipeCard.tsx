@@ -6,6 +6,9 @@ import { Card, CardMedia, CardContent, CardActions, Button, Typography, Box } fr
 import { useRouter } from 'next/navigation';
 import type { MouseEvent } from 'react';
 
+import { RecipeMetadataChips } from './RecipeMetadataChips';
+import { formatStatus } from './recipeMetadataFormatters';
+
 interface RecipeCardProps {
   recipe: Recipe;
   imageUrl?: string;
@@ -41,6 +44,13 @@ export function RecipeCard({ recipe, imageUrl, onAddToMealPlan, isInMealPlan }: 
 
   const displayTags = recipe.tags.slice(0, 3).join(', ');
   const displayImage = imageUrl || '/images/recipe-placeholder.png';
+  const hasCuisine = recipe.cuisine != null;
+  const hasMealType = recipe.meal_type != null;
+  const hasStatus = recipe.status != null;
+  const hasPriority = recipe.priority != null;
+  const statusLabel = hasStatus ? formatStatus(recipe.status) : null;
+  const priorityLabel = hasPriority ? `Priority ${recipe.priority}` : null;
+  const hasMetadataRow = hasCuisine || hasMealType || hasStatus || hasPriority;
 
   return (
     <Card
@@ -68,6 +78,26 @@ export function RecipeCard({ recipe, imageUrl, onAddToMealPlan, isInMealPlan }: 
         <Typography variant="body1" component="h2" gutterBottom>
           {recipe.title}
         </Typography>
+
+        {hasMetadataRow && (
+          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+            <RecipeMetadataChips cuisine={recipe.cuisine} mealType={recipe.meal_type} />
+            {(statusLabel || priorityLabel) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {statusLabel && (
+                  <Typography variant="body2" color="text.secondary">
+                    Status: {statusLabel}
+                  </Typography>
+                )}
+                {priorityLabel && (
+                  <Typography variant="body2" color="text.secondary">
+                    {priorityLabel}
+                  </Typography>
+                )}
+              </Box>
+            )}
+          </Box>
+        )}
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           {recipe.rolling_score !== null && (

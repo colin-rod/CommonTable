@@ -28,11 +28,11 @@ const mockRecipe: Recipe = {
   created_at: new Date('2026-01-15T10:00:00Z'),
   updated_at: new Date('2026-01-15T10:00:00Z'),
   // Phase 3 metadata fields
-  cuisine: null,
-  meal_type: null,
+  cuisine: 'italian',
+  meal_type: 'main_dish',
   key_ingredients: [],
-  priority: null,
-  status: 'suggested',
+  priority: 2,
+  status: 'to_cook',
   source_url: null,
 };
 
@@ -148,6 +148,40 @@ describe('RecipeCard', () => {
       await user.click(button);
 
       expect(onAddToMealPlan).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Metadata', () => {
+    it('should render cuisine, meal type, status, and priority metadata', () => {
+      render(<RecipeCard recipe={mockRecipe} onAddToMealPlan={vi.fn()} isInMealPlan={false} />);
+
+      expect(screen.getByText('Italian')).toBeInTheDocument();
+      expect(screen.getByText('Main Dish')).toBeInTheDocument();
+      expect(screen.getByText('Status: To Cook')).toBeInTheDocument();
+      expect(screen.getByText('Priority 2')).toBeInTheDocument();
+    });
+
+    it('should omit metadata when values are missing', () => {
+      const recipeMissingMetadata: Recipe = {
+        ...mockRecipe,
+        cuisine: null,
+        meal_type: null,
+        priority: null,
+        status: null as unknown as Recipe['status'],
+      };
+
+      render(
+        <RecipeCard
+          recipe={recipeMissingMetadata}
+          onAddToMealPlan={vi.fn()}
+          isInMealPlan={false}
+        />,
+      );
+
+      expect(screen.queryByText('Italian')).not.toBeInTheDocument();
+      expect(screen.queryByText('Main Dish')).not.toBeInTheDocument();
+      expect(screen.queryByText(/status:/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/priority/i)).not.toBeInTheDocument();
     });
   });
 

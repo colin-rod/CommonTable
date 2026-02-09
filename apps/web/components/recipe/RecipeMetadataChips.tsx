@@ -2,6 +2,8 @@ import type { CuisineType, MealType } from '@commontable/types';
 import { Public as CuisineIcon, RestaurantMenu as MealTypeIcon } from '@mui/icons-material';
 import { Stack, Chip } from '@mui/material';
 
+import { formatCuisine, formatMealType } from './recipeMetadataFormatters';
+
 interface RecipeMetadataChipsProps {
   cuisine?: CuisineType | null;
   mealType?: MealType | null;
@@ -54,24 +56,4 @@ export function RecipeMetadataChips({
       )}
     </Stack>
   );
-}
-
-/**
- * Format cuisine type for display (capitalize, replace underscores)
- */
-function formatCuisine(cuisine: CuisineType): string {
-  return cuisine
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-/**
- * Format meal type for display (capitalize, replace underscores)
- */
-function formatMealType(mealType: MealType): string {
-  return mealType
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
 }
