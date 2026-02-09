@@ -611,6 +611,43 @@ export class RecipeService extends BaseService {
   }
 
   /**
+   * Get primary images for multiple recipes in a single batch query
+   *
+   * Optimized for loading images for recipe lists/grids.
+   * Uses a single database query with IN clause instead of N queries.
+   *
+   * @param recipeIds - Array of recipe IDs to fetch images for
+   * @returns Map of recipe ID to primary RecipeImage (only recipes with images)
+   * @throws {AppError} If database query fails
+   */
+  async getPrimaryImagesForRecipes(recipeIds: RecipeId[]): Promise<Map<RecipeId, RecipeImage>> {
+    // Empty array optimization - no query needed
+    if (recipeIds.length === 0) {
+      return new Map();
+    }
+
+    const { data, error } = await this.supabase
+      .from('recipe_images')
+      .select('*')
+      .in('recipe_id', recipeIds)
+      .eq('is_primary', true);
+
+    if (error) {
+      BaseService.handleSupabaseError(error, 'RecipeService.getPrimaryImagesForRecipes', {
+        recipeIds,
+      });
+    }
+
+    // Build Map for O(1) lookup by recipe ID
+    const imageMap = new Map<RecipeId, RecipeImage>();
+    (data || []).forEach((image) => {
+      imageMap.set(image.recipe_id as RecipeId, image as RecipeImage);
+    });
+
+    return imageMap;
+  }
+
+  /**
    * Get all unique tags from recipes in a household (Issue 4.3 - Tag Filter)
    * MIGRATED: Now uses normalized tags from TagService
    *
