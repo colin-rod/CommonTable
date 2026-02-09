@@ -97,4 +97,49 @@ describe('useRecipesWithImages Hook', () => {
       'https://example.com/signed-url.jpg',
     );
   });
+
+  it('should handle recipes without images gracefully', async () => {
+    const recipesWithoutImages: Recipe[] = [
+      {
+        id: 'recipe-no-image' as RecipeId,
+        household_id: mockHouseholdId,
+        title: 'Simple Salad',
+        tags: [],
+        key_ingredients: [],
+        is_favorite: false,
+        status: 'active',
+        created_at: new Date(),
+        updated_at: new Date(),
+      } as Recipe,
+    ];
+
+    mockRecipeService.getByHousehold.mockResolvedValue(recipesWithoutImages);
+    mockRecipeService.getPrimaryImagesForRecipes.mockResolvedValue(new Map());
+
+    const { result } = renderHook(() => useRecipesWithImages());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.recipes).toHaveLength(1);
+    expect(result.current.imageUrls.size).toBe(0);
+    expect(result.current.imagesLoading).toBe(false);
+  });
+
+  it('should handle image URL generation failures gracefully', async () => {
+    mockRecipeService.getByHousehold.mockResolvedValue(mockRecipes);
+    mockRecipeService.getPrimaryImagesForRecipes.mockResolvedValue(mockImageMap);
+    mockImageService.getSignedUrl.mockRejectedValue(new Error('Failed to generate URL'));
+
+    const { result } = renderHook(() => useRecipesWithImages());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    // Recipe loaded successfully even though image URL failed
+    expect(result.current.recipes).toHaveLength(1);
+    expect(result.current.imageUrls.size).toBe(0); // No URL added due to error
+  });
 });
