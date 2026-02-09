@@ -176,7 +176,7 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
         }}
       >
         {/* Ingredients Panel */}
-        <Paper elevation={1} sx={{ flex: 1, p: 2 }} data-testid="ingredients-panel">
+        <Paper elevation={1} sx={{ flex: { xs: '1 1 auto', md: 1 }, p: 2 }} data-testid="ingredients-panel">
           <Typography variant="h6" gutterBottom>
             Ingredients
           </Typography>
@@ -184,7 +184,7 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
         </Paper>
 
         {/* Steps Panel */}
-        <Paper elevation={1} sx={{ flex: 1, p: 2 }} data-testid="steps-panel">
+        <Paper elevation={1} sx={{ flex: { xs: '1 1 auto', md: 2 }, p: 2 }} data-testid="steps-panel">
           <Typography variant="h6" gutterBottom>
             Steps
           </Typography>
