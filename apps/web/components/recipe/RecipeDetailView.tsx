@@ -2,13 +2,28 @@
 
 import type { RecipeWithVersion, RecipeImage, UnitSystem } from '@commontable/types';
 import { scaleIngredients } from '@commontable/types';
-import { Stack, Typography, Divider, Box, Skeleton, Paper, Link } from '@mui/material';
+import { Stack, Typography, Divider, Box, Skeleton, Paper, Link, Chip } from '@mui/material';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 
 import { IngredientList } from './IngredientList';
 import { RecipeMetadata } from './RecipeMetadata';
 import { ServingsScaler } from './ServingsScaler';
 import { StepList } from './StepList';
+
+// Helper functions for formatting metadata labels
+function formatCuisineLabel(cuisine: string): string {
+  return cuisine
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function formatMealTypeLabel(mealType: string): string {
+  return mealType
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 interface RecipeDetailViewProps {
   recipe: RecipeWithVersion;
@@ -146,6 +161,50 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
         rollingScore={recipe.rolling_score}
       />
 
+      {/* Additional Metadata - cuisine, meal_type, key_ingredients, priority */}
+      {(recipe.cuisine ||
+        recipe.meal_type ||
+        recipe.key_ingredients.length > 0 ||
+        recipe.priority) && (
+        <>
+          <Divider />
+          <Box>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Details
+            </Typography>
+            <Stack spacing={1}>
+              {recipe.cuisine && (
+                <Typography variant="body2" color="text.secondary">
+                  Cuisine: {formatCuisineLabel(recipe.cuisine)}
+                </Typography>
+              )}
+              {recipe.meal_type && (
+                <Typography variant="body2" color="text.secondary">
+                  Type: {formatMealTypeLabel(recipe.meal_type)}
+                </Typography>
+              )}
+              {recipe.key_ingredients.length > 0 && (
+                <Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Key Ingredients:
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {recipe.key_ingredients.map((ingredient, idx) => (
+                      <Chip key={idx} label={ingredient} size="small" variant="outlined" />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+              {recipe.priority && (
+                <Typography variant="body2" color="text.secondary">
+                  Priority: {recipe.priority}/5
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+        </>
+      )}
+
       <Divider />
 
       {/* Scaling controls */}
@@ -176,7 +235,11 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
         }}
       >
         {/* Ingredients Panel */}
-        <Paper elevation={1} sx={{ flex: { xs: '1 1 auto', md: 1 }, p: 2 }} data-testid="ingredients-panel">
+        <Paper
+          elevation={1}
+          sx={{ flex: { xs: '1 1 auto', md: 1 }, p: 2 }}
+          data-testid="ingredients-panel"
+        >
           <Typography variant="h6" gutterBottom>
             Ingredients
           </Typography>
@@ -184,7 +247,11 @@ export function RecipeDetailView({ recipe, primaryImage, getImageUrl }: RecipeDe
         </Paper>
 
         {/* Steps Panel */}
-        <Paper elevation={1} sx={{ flex: { xs: '1 1 auto', md: 2 }, p: 2 }} data-testid="steps-panel">
+        <Paper
+          elevation={1}
+          sx={{ flex: { xs: '1 1 auto', md: 2 }, p: 2 }}
+          data-testid="steps-panel"
+        >
           <Typography variant="h6" gutterBottom>
             Steps
           </Typography>

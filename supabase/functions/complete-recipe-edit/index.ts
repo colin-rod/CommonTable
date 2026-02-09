@@ -228,6 +228,10 @@ serve(async (req) => {
       cuisine: (aiResult.status === 'success' && aiResult.cuisine) || validated.form_values.cuisine,
       meal_type:
         (aiResult.status === 'success' && aiResult.meal_type) || validated.form_values.meal_type,
+      key_ingredients:
+        (aiResult.status === 'success' && aiResult.key_ingredients.length > 0
+          ? aiResult.key_ingredients
+          : validated.form_values.key_ingredients) || [],
       tags:
         (aiResult.status === 'success' && aiResult.tags.length > 0
           ? aiResult.tags

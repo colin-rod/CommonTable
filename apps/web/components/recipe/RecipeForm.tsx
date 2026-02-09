@@ -87,6 +87,13 @@ const RecipeFormSchema = z.object({
     .default([]),
   priority: z.number().int().min(1).max(5).nullable().optional(),
   status: RecipeStatusSchema.default('suggested'),
+  source_url: z
+    .string()
+    .url('Invalid URL format')
+    .max(2000, 'URL must be 2000 characters or less')
+    .nullable()
+    .optional()
+    .or(z.literal('')),
 });
 
 export interface RecipeFormProps {
@@ -309,6 +316,8 @@ export function RecipeForm({
       if (enriched.cook_time_minutes) setValue('cook_time_minutes', enriched.cook_time_minutes);
       if (enriched.cuisine) setValue('cuisine', enriched.cuisine);
       if (enriched.meal_type) setValue('meal_type', enriched.meal_type);
+      if (enriched.key_ingredients && enriched.key_ingredients.length > 0)
+        setValue('key_ingredients', enriched.key_ingredients);
       if (enriched.tags && enriched.tags.length > 0) setValue('tags', enriched.tags);
       if (enriched.ingredients && enriched.ingredients.length > 0)
         setValue('ingredients', enriched.ingredients);

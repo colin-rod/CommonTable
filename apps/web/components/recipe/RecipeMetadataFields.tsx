@@ -10,6 +10,8 @@ import {
   MenuItem,
   FormHelperText,
   Typography,
+  Autocomplete,
+  Chip,
 } from '@mui/material';
 import { useState, useEffect, useRef, type Ref } from 'react';
 import { type Control, Controller, type FieldErrors, useWatch } from 'react-hook-form';
@@ -43,6 +45,7 @@ export interface RecipeFormValues {
   key_ingredients?: string[];
   priority?: number | null;
   status?: RecipeStatus;
+  source_url?: string | null;
 }
 
 export interface RecipeMetadataFieldsProps {
@@ -442,7 +445,65 @@ export function RecipeMetadataFields({
         />
       </Grid>
 
-      {/* Row 7: Notes (conditional) */}
+      {/* Row 7: Key Ingredients (full width) */}
+      <Grid item xs={12}>
+        <Controller
+          name="key_ingredients"
+          control={control}
+          defaultValue={[]}
+          render={({ field }) => (
+            <Autocomplete
+              multiple
+              freeSolo
+              options={[]}
+              value={field.value || []}
+              onChange={(_event, newValue) => field.onChange(newValue)}
+              disabled={disabled}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => (
+                  <Chip
+                    key={`key-ingredient-${index}`}
+                    label={option}
+                    {...getTagProps({ index })}
+                    size="small"
+                  />
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Key Ingredients"
+                  helperText={errors.key_ingredients?.message || 'Press Enter to add ingredients'}
+                  error={!!errors.key_ingredients}
+                />
+              )}
+            />
+          )}
+        />
+      </Grid>
+
+      {/* Row 8: Source URL (full width) */}
+      <Grid item xs={12}>
+        <Controller
+          name="source_url"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Source URL"
+              type="url"
+              fullWidth
+              disabled={disabled}
+              error={!!errors.source_url}
+              helperText={errors.source_url?.message || 'Link to original recipe (optional)'}
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(e.target.value || null)}
+            />
+          )}
+        />
+      </Grid>
+
+      {/* Row 9: Notes (conditional) */}
       <Grid item xs={12}>
         {showNotes ? (
           <Controller

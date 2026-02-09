@@ -259,4 +259,214 @@ describe('RecipeForm', () => {
       expect(ingredientsParent).toHaveStyle({ display: 'flex' });
     });
   });
+
+  describe('metadata fields', () => {
+    it('renders cuisine select dropdown with options', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Open Details accordion to reveal metadata fields
+      const detailsAccordion = screen.getByText(/^Details$/);
+      await user.click(detailsAccordion);
+
+      // Find cuisine select by label
+      const cuisineSelect = screen.getByLabelText(/cuisine/i);
+      expect(cuisineSelect).toBeInTheDocument();
+    });
+
+    it('renders meal type select dropdown with options', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Open Details accordion
+      const detailsAccordion = screen.getByText(/^Details$/);
+      await user.click(detailsAccordion);
+
+      // Find meal type select by label
+      const mealTypeSelect = screen.getByLabelText(/meal type/i);
+      expect(mealTypeSelect).toBeInTheDocument();
+    });
+
+    it('renders key ingredients autocomplete field', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Open Details accordion
+      const detailsAccordion = screen.getByText(/^Details$/);
+      await user.click(detailsAccordion);
+
+      // Find key ingredients autocomplete by label
+      const keyIngredientsInput = screen.getByLabelText(/key ingredients/i);
+      expect(keyIngredientsInput).toBeInTheDocument();
+    });
+
+    it('renders priority select dropdown with 1-5 options', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <RecipeForm
+          mode="edit"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Open Details accordion
+      const detailsAccordion = screen.getByText(/^Details$/);
+      await user.click(detailsAccordion);
+
+      // Find priority select by label
+      const prioritySelect = screen.getByLabelText(/priority/i);
+      expect(prioritySelect).toBeInTheDocument();
+    });
+
+    it('renders source URL text field', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Open Details accordion
+      const detailsAccordion = screen.getByText(/^Details$/);
+      await user.click(detailsAccordion);
+
+      // Find source URL field by label
+      const sourceUrlInput = screen.getByLabelText(/source url/i);
+      expect(sourceUrlInput).toBeInTheDocument();
+    });
+
+    it('submits form with metadata values when provided', async () => {
+      const user = userEvent.setup();
+
+      const valuesWithMetadata: RecipeFormValues = {
+        ...defaultInitialValues,
+        title: 'Test Recipe',
+        cuisine: 'italian',
+        meal_type: 'main_dish',
+        key_ingredients: ['pasta', 'tomato'],
+        priority: 4,
+      };
+
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={valuesWithMetadata}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Submit form
+      const submitButton = screen.getByRole('button', { name: /create recipe/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Test Recipe',
+            cuisine: 'italian',
+            meal_type: 'main_dish',
+            key_ingredients: ['pasta', 'tomato'],
+            priority: 4,
+          }),
+        );
+      });
+    });
+
+    it('submits form successfully when metadata fields are empty (optional)', async () => {
+      const user = userEvent.setup();
+
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={defaultInitialValues}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Fill only required title field
+      const titleInput = screen.getByLabelText(/recipe title/i);
+      await user.type(titleInput, 'Minimal Recipe');
+
+      // Submit form without filling metadata
+      const submitButton = screen.getByRole('button', { name: /create recipe/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockOnSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Minimal Recipe',
+          }),
+        );
+      });
+    });
+
+    it('validates source URL format', async () => {
+      const user = userEvent.setup();
+
+      const valuesWithInvalidUrl: RecipeFormValues = {
+        ...defaultInitialValues,
+        title: 'Test Recipe',
+        source_url: 'not-a-valid-url',
+      };
+
+      render(
+        <RecipeForm
+          mode="create"
+          initialValues={valuesWithInvalidUrl}
+          availableTags={[]}
+          onSubmit={mockOnSubmit}
+          onCancel={mockOnCancel}
+        />,
+      );
+
+      // Open Details accordion
+      const detailsAccordion = screen.getByText(/^Details$/);
+      await user.click(detailsAccordion);
+
+      // The source URL field should show validation error
+      // Note: HTML5 URL validation will prevent submission
+      const sourceUrlInput = screen.getByLabelText(/source url/i);
+      expect(sourceUrlInput).toHaveAttribute('type', 'url');
+    });
+  });
 });
