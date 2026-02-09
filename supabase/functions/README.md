@@ -171,17 +171,66 @@ supabase functions logs <function-name> --follow
 
 ## Deployment
 
-### Deploy to Development Environment
+### Automated Deployment & JWT Configuration
+
+**CommonTable uses automated CI/CD for Edge Function deployments.** When you push Edge Function changes to the `development` branch, GitHub Actions automatically:
+
+1. ✅ Detects which functions changed
+2. ✅ Deploys changed functions to Supabase
+3. ✅ Disables "Verify JWT with legacy secret" setting automatically
+4. ✅ Verifies configuration succeeded
+
+**You no longer need to manually disable JWT verification in the Supabase dashboard after deployments.**
+
+#### GitHub Actions Workflow
+
+The automation is defined in [`.github/workflows/manage-edge-function-jwt.yml`](../../.github/workflows/manage-edge-function-jwt.yml) and runs when:
+
+- Code is pushed to `development` branch
+- Files in `supabase/functions/**` are modified
+
+#### Required GitHub Secrets
+
+For automated deployment to work, the following secrets must be configured in the GitHub repository:
+
+| Secret Name                 | Description                                 | Where to Get It                                                                   |
+| --------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------- |
+| `SUPABASE_DEV_ACCESS_TOKEN` | Supabase Management API token (development) | [Supabase Dashboard](https://app.supabase.com) → Account Settings → Access Tokens |
+| `SUPABASE_DEV_PROJECT_REF`  | Development project reference ID            | Supabase Dashboard → Project Settings → General → Reference ID                    |
+
+**Important**: Access tokens must have "Management API" scope to modify function settings.
+
+### Manual Deployment (Local Development)
+
+For local testing and manual deployments:
 
 ```bash
-# Deploy single function
+# Deploy single function (development)
 pnpm functions:deploy <function-name>
 
-# Deploy all functions
+# Deploy all functions (development)
 pnpm functions:deploy
 ```
 
+**After manual deployment**, you may need to manually disable JWT verification in the Supabase dashboard:
+
+1. Go to [Supabase Dashboard](https://app.supabase.com) → Your Project → Edge Functions
+2. Click on the deployed function
+3. Disable the "Verify JWT with legacy secret" toggle
+
+**Alternatively**, use the verification script to check and configure JWT settings:
+
+```bash
+# Verify JWT configuration for specific functions
+export SUPABASE_ACCESS_TOKEN="your-access-token"
+export SUPABASE_PROJECT_ID="your-project-ref"
+
+./scripts/verify-jwt-config.sh recipe-import suggest-tags-batch
+```
+
 ### Deploy to Production
+
+Production deployments are not yet automated. To manually deploy to production:
 
 ```bash
 # Link to production project (one-time setup)

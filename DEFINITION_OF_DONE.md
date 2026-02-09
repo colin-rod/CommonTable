@@ -13,7 +13,8 @@ A feature or task is considered **done** when ALL of the following criteria are 
 #### TDD Requirements
 
 - [ ] Written using TDD (RED → GREEN → REFACTOR)
-- [ ] All tests passing (unit, integration, E2E where applicable)
+- [ ] All tests passing for changed files (unit, integration, E2E where applicable)
+- [ ] Full test suite passes in CI pipeline
 - [ ] Test coverage meets requirements:
   - **Services**: 100% coverage
   - **Utils**: 100% coverage
@@ -104,7 +105,7 @@ A story or issue is considered **done** when ALL of the following criteria are m
 
 ### Quality Gates
 
-- [ ] No regressions introduced (all existing tests still passing)
+- [ ] No regressions introduced (CI test suite passes)
 - [ ] Performance impact assessed (no significant degradation)
 - [ ] Accessibility validated (WCAG 2.1 AA compliance for UI changes)
 

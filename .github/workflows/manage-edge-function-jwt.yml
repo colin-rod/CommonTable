@@ -1,0 +1,185 @@
+name: Manage Edge Function JWT Settings
+
+on:
+  push:
+    branches: [development]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/manage-edge-function-jwt.yml'
+
+# Cancel in-progress runs when a new workflow with the same branch is triggered
+concurrency:
+  group: edge-functions-jwt-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-and-configure-jwt:
+    name: Deploy Functions & Configure JWT
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Need full history to detect changed functions
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Detect changed Edge Functions
+        id: detect
+        run: |
+          # Get list of changed files
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} || echo "")
+
+          # Extract unique function names from changed files in supabase/functions/
+          CHANGED_FUNCTIONS=$(echo "$CHANGED_FILES" | grep '^supabase/functions/' | cut -d'/' -f3 | grep -v '^_shared$' | sort -u || echo "")
+
+          if [ -z "$CHANGED_FUNCTIONS" ]; then
+            echo "No Edge Function changes detected"
+            echo "functions_changed=false" >> $GITHUB_OUTPUT
+            echo "function_list=" >> $GITHUB_OUTPUT
+          else
+            echo "Changed functions:"
+            echo "$CHANGED_FUNCTIONS"
+
+            # Convert to comma-separated list for output
+            FUNCTION_LIST=$(echo "$CHANGED_FUNCTIONS" | tr '\n' ',' | sed 's/,$//')
+            echo "functions_changed=true" >> $GITHUB_OUTPUT
+            echo "function_list=$FUNCTION_LIST" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy Edge Functions
+        if: steps.detect.outputs.functions_changed == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_DEV_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: |
+          # Deploy all changed functions
+          FUNCTIONS="${{ steps.detect.outputs.function_list }}"
+          IFS=',' read -ra FUNCTION_ARRAY <<< "$FUNCTIONS"
+
+          for func in "${FUNCTION_ARRAY[@]}"; do
+            echo "Deploying function: $func"
+            supabase functions deploy $func \
+              --project-ref $SUPABASE_PROJECT_ID \
+              --no-verify-jwt \
+              || {
+                echo "::error::Failed to deploy function $func"
+                exit 1
+              }
+            echo "✅ Successfully deployed $func"
+          done
+
+      - name: Disable JWT Legacy Secret Verification
+        if: steps.detect.outputs.functions_changed == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_DEV_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: |
+          echo "Disabling JWT legacy secret verification for deployed functions..."
+
+          # Get list of deployed functions
+          FUNCTIONS="${{ steps.detect.outputs.function_list }}"
+          IFS=',' read -ra FUNCTION_ARRAY <<< "$FUNCTIONS"
+
+          # Disable JWT verification for each function via Management API
+          for func in "${FUNCTION_ARRAY[@]}"; do
+            echo "Configuring JWT verification for function: $func"
+
+            # Retry logic for transient failures
+            MAX_RETRIES=3
+            RETRY_COUNT=0
+            SUCCESS=false
+
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = false ]; do
+              HTTP_STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+                -X PATCH \
+                -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{"verify_jwt": false}' \
+                "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/functions/$func")
+
+              if [ "$HTTP_STATUS" = "200" ]; then
+                echo "✅ Successfully disabled JWT verification for $func"
+                SUCCESS=true
+              else
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "⚠️  Attempt $RETRY_COUNT failed with status $HTTP_STATUS"
+
+                if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                  echo "Retrying in 2 seconds..."
+                  sleep 2
+                else
+                  echo "::warning::Failed to disable JWT verification for $func after $MAX_RETRIES attempts"
+                  echo "Response: $(cat /tmp/response.json)"
+                  # Non-blocking: Log warning but don't fail the workflow
+                fi
+              fi
+            done
+          done
+
+      - name: Verify JWT Configuration
+        if: steps.detect.outputs.functions_changed == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_DEV_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+        run: |
+          echo "Verifying JWT configuration for deployed functions..."
+
+          FUNCTIONS="${{ steps.detect.outputs.function_list }}"
+          IFS=',' read -ra FUNCTION_ARRAY <<< "$FUNCTIONS"
+
+          ALL_VERIFIED=true
+
+          for func in "${FUNCTION_ARRAY[@]}"; do
+            echo "Checking JWT configuration for: $func"
+
+            HTTP_STATUS=$(curl -s -o /tmp/verify_response.json -w "%{http_code}" \
+              -X GET \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_ID/functions/$func")
+
+            if [ "$HTTP_STATUS" = "200" ]; then
+              # Extract verify_jwt field from response
+              VERIFY_JWT=$(jq -r '.verify_jwt // "not_found"' /tmp/verify_response.json)
+
+              if [ "$VERIFY_JWT" = "false" ]; then
+                echo "✅ Verified: JWT verification is disabled for $func"
+              else
+                echo "::warning::JWT verification status for $func: $VERIFY_JWT (expected: false)"
+                ALL_VERIFIED=false
+              fi
+            else
+              echo "::warning::Failed to verify configuration for $func (status: $HTTP_STATUS)"
+              ALL_VERIFIED=false
+            fi
+          done
+
+          if [ "$ALL_VERIFIED" = true ]; then
+            echo "✅ All functions verified successfully"
+          else
+            echo "::warning::Some functions may not have correct JWT configuration"
+            echo "Please check the Supabase dashboard manually"
+          fi
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "## 🚀 Edge Function Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.detect.outputs.functions_changed }}" = "true" ]; then
+            echo "**Functions deployed:** ${{ steps.detect.outputs.function_list }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Environment:** Development" >> $GITHUB_STEP_SUMMARY
+            echo "**JWT Verification:** Disabled" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status:** No Edge Function changes detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow:** \`${{ github.workflow }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY

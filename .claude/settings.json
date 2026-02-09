@@ -1,0 +1,8 @@
+{
+  "hooks": {
+    "pre-commit": {
+      "command": "npx tsc --noEmit && npx eslint . --ext .ts,.tsx --quiet",
+      "description": "Type-check and lint before committing"
+    }
+  }
+}

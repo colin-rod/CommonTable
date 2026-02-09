@@ -155,19 +155,21 @@ The following skills are invoked AUTOMATICALLY without explicit request:
 
 #### The Process (Non-Negotiable)
 
+**Recommended**: Use `pnpm test:watch` during development - vitest automatically runs tests as you change files.
+
 1. **RED**: Write a failing test first
    - Test must fail for the right reason (not syntax errors)
    - Test describes the desired behavior
-   - Run test suite: verify it fails
+   - Vitest watch mode auto-runs the test: verify it fails
 
 2. **GREEN**: Write minimal code to make the test pass
    - Only write enough code to pass the current test
    - No gold-plating, no "while I'm here" changes
-   - Run test suite: verify it passes
+   - Vitest watch mode auto-runs: verify it passes
 
 3. **REFACTOR**: Improve code quality without changing behavior
    - Extract functions, improve naming, remove duplication
-   - Run test suite after each refactor: verify still green
+   - Vitest watch mode continuously validates: verify still green
 
 #### What Requires Tests FIRST
 
@@ -212,7 +214,7 @@ describe('RecipeService', () => {
   });
 });
 
-// Run test: FAILS (RecipeService.create doesn't exist yet)
+// Vitest watch mode auto-runs: FAILS (RecipeService.create doesn't exist yet)
 
 // 2. GREEN: Minimal implementation
 class RecipeService {
@@ -241,7 +243,7 @@ class RecipeService {
   }
 }
 
-// Run test: PASSES
+// Vitest watch mode auto-runs: PASSES
 
 // 3. REFACTOR: Improve without changing behavior
 class RecipeService {
@@ -265,7 +267,7 @@ class RecipeService {
   }
 }
 
-// Run test: STILL PASSES
+// Vitest watch mode auto-runs: STILL PASSES
 ```
 
 #### Test Coverage Requirements
@@ -282,6 +284,23 @@ class RecipeService {
 - PRs cannot merge if tests fail
 - PRs must include tests for new features
 - Code review checklist includes "Tests written first?"
+
+---
+
+## Workflow Rules
+
+### Pre-Commit Checklist
+
+**CRITICAL**: After any code change, always run the full TypeScript build (`pnpm type-check`) AND tests before committing. Never commit without verifying both pass.
+
+**Pre-Commit Requirements**:
+
+- [ ] TypeScript build passes (`pnpm type-check`)
+- [ ] All tests pass (`pnpm test` or `pnpm test:watch`)
+- [ ] No TypeScript errors
+- [ ] No test failures
+
+**Rationale**: Committing broken code wastes time for the entire team. Always validate locally before pushing.
 
 ---
 
@@ -432,6 +451,15 @@ Use Zod schemas for:
 - API request/response validation
 - Edge Function input validation
 
+### TypeScript Error Debugging Checklist
+
+When fixing TypeScript type errors, always check for:
+
+1. **Branded types vs plain strings requiring casts**: `RecipeId` vs `string`, `UserId` vs `string` - branded types require explicit casts
+2. **Re-exports from barrel files**: Check `index.ts` and `models.ts` for re-exported types that may need to be imported from source
+3. **Null vs undefined mismatches**: Ensure optional properties match expected types (`undefined` vs `null`)
+4. **All downstream consumers**: When changing types, verify ALL production and test files that use the changed types
+
 ```typescript
 import { z } from 'zod';
 
@@ -465,6 +493,26 @@ function createRecipe(input: unknown): Promise<Recipe> {
   return recipeService.create(validated);
 }
 ```
+
+---
+
+## Refactoring Guidelines
+
+### Shared Utility Refactoring
+
+When refactoring shared utilities (error handlers, base classes, helper functions):
+
+1. **Verify identical observable behavior**: Ensure the new abstraction produces identical behavior (error messages, null vs undefined, return values) as the original code
+2. **Run affected tests immediately**: After each service migration, run tests for that service - do NOT batch test runs
+3. **Incremental migration**: Migrate one service at a time, validate, then move to the next
+4. **Document behavioral changes**: If behavior MUST change, document it explicitly and update all affected tests
+
+**Example**: When extracting `BaseService.handleSupabaseError()`:
+
+- Ensure error messages match original format exactly
+- Verify `null` vs `undefined` handling is consistent
+- Test each migrated service individually
+- Do not proceed to next service until current service passes all tests
 
 ---
 
@@ -2535,6 +2583,26 @@ Set environment variables in your deployment platform (Vercel, Netlify, etc.).
 
 The app validates required environment variables at startup using Zod schemas (`packages/api-client/src/env.ts`). Missing or invalid variables will throw errors during build/runtime.
 
+### Supabase Key System
+
+**IMPORTANT**: This project uses Supabase with Edge Functions. Understand the key system to avoid auth errors:
+
+- **Client (Browser)**: Uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (anon/publishable key)
+  - RLS policies enforced
+  - Safe to expose to client
+  - Used in `createSupabaseClient()`
+
+- **Edge Functions**: Use `SUPABASE_SECRET_KEY` (service_role key)
+  - Bypasses RLS policies
+  - SERVER-ONLY, never exposed to client
+  - Used in `createSupabaseAdminClient()`
+
+**Never confuse these two key systems when debugging auth errors.** If you see auth errors, verify:
+
+1. Which key the code is using
+2. Whether RLS policies are correctly configured
+3. Whether the key has appropriate permissions
+
 ### Local Development Infrastructure
 
 **IMPORTANT: This project does NOT use Docker for local development.**
@@ -2581,6 +2649,55 @@ curl -X POST https://<project-ref>.supabase.co/functions/v1/<function-name> \
 
 ---
 
+## Code Editing Rules
+
+### File Editing Best Practices
+
+When editing files:
+
+1. **Always read the file first**: Before making changes, use the Read tool to verify the current file contents
+2. **Verify correct line targeting**: Ensure line numbers in Edit tool calls match the actual file structure
+3. **Barrel exports**: When dealing with barrel exports (e.g., `models.ts` vs `models/` directory):
+   - Confirm the actual file structure before making changes
+   - Check if types are re-exported from an index file or defined directly
+   - Verify import paths in consuming files
+
+**Example**: Before editing `packages/types/src/models.ts`:
+
+- Read the file to see if it's a barrel export or contains actual type definitions
+- Check if types are in `packages/types/src/models/` directory
+- Verify all import paths in files that use these types
+
+---
+
+## Communication Style
+
+### Action Over Clarification
+
+**Prefer action over clarifying questions.** When the task is clear enough to start, begin implementation immediately.
+
+**Guidelines**:
+
+- Limit clarifying questions to 1-2 max before starting work
+- Only ask questions when:
+  1. Requirements are ambiguous and multiple valid approaches exist
+  2. User preferences will significantly affect implementation
+  3. Technical constraints make the request infeasible as stated
+
+**When NOT to ask**:
+
+- Task is straightforward with clear requirements
+- Multiple approaches exist but one is clearly superior based on project constraints
+- Minor details that can be inferred from context or existing patterns
+
+**Example**:
+
+❌ "Should I use TypeScript strict mode?" (Already defined in CLAUDE.md)
+❌ "Which MUI components should I use?" (Already defined in DESIGN_SYSTEM.md)
+✅ "Should favorites be per-user or household-level?" (Architectural decision with trade-offs)
+
+---
+
 ## Development Workflow
 
 ### 1. Start New Feature
@@ -2591,17 +2708,17 @@ git checkout development
 git pull origin development
 git checkout -b feat/recipe-versioning
 
+# Start watch mode (auto-runs tests as you change files)
+pnpm test:watch
+
 # Write failing test first
-# RED: test fails
-pnpm test
+# RED: vitest auto-runs and shows test fails
 
 # Implement minimal code
-# GREEN: test passes
-pnpm test
+# GREEN: vitest auto-runs and shows test passes
 
 # Refactor
-# GREEN: test still passes
-pnpm test
+# GREEN: vitest continuously validates test still passes
 
 # Commit using conventional commits
 git commit -m "test(recipe): add failing test for version creation"
@@ -2612,20 +2729,119 @@ git commit -m "refactor(recipe): extract version helper"
 ### 2. Run Tests
 
 ```bash
-# Run all tests
-pnpm test
-
-# Run tests in watch mode
+# Run tests in watch mode (recommended - auto-runs affected tests)
 pnpm test:watch
 
-# Run tests with coverage
-pnpm test:coverage
-
-# Run specific test file
+# Run tests for specific file (during TDD)
 pnpm test RecipeService.test.ts
+
+# Run tests for specific package
+pnpm --filter @commontable/api-client test
+
+# Run tests with coverage for specific areas
+pnpm test:coverage packages/api-client
+
+# Full test suite runs in CI (avoid running locally due to resource constraints)
+# pnpm test
 ```
 
-### 3. Type Checking
+### Local Testing Strategy
+
+**Recommended Workflow**: Use vitest watch mode (`pnpm test:watch`) which automatically runs tests for changed files.
+
+#### During Development (TDD Cycle)
+
+1. Start watch mode: `pnpm test:watch`
+2. Write failing test (RED)
+3. Vitest auto-runs the test and shows failure
+4. Write minimal code (GREEN)
+5. Vitest auto-runs and shows pass
+6. Refactor
+7. Vitest continuously validates changes
+
+#### Running Specific Tests
+
+```bash
+# Run tests for a specific file
+pnpm test RecipeService.test.ts
+
+# Run tests for a specific package
+pnpm --filter @commontable/api-client test
+
+# Run tests with coverage for specific areas
+pnpm test:coverage packages/api-client
+```
+
+#### Pre-Commit Validation
+
+Git hooks automatically run tests for staged files before commit. This ensures:
+
+- Only affected tests run (fast feedback)
+- No broken code is committed
+- Full suite validation happens in CI
+
+#### Full Test Suite
+
+**Do not run the full test suite locally** (`pnpm test`) due to resource constraints. The full suite:
+
+- Runs automatically in CI on every PR
+- Must pass before merging
+- Validates no regressions across entire codebase
+
+**Rationale**: Running 100+ tests locally consumes significant CPU/memory. Watch mode and targeted testing provide faster feedback during development.
+
+### 3. Edge Functions Development
+
+#### Automated JWT Configuration
+
+When you push Edge Function changes to `development`, GitHub Actions automatically:
+
+1. ✅ Detects which functions changed
+2. ✅ Deploys functions to Supabase
+3. ✅ **Disables "Verify JWT with legacy secret"** setting automatically
+4. ✅ Verifies configuration succeeded
+
+**You no longer need to manually disable JWT verification in the Supabase dashboard.**
+
+#### Required GitHub Secrets
+
+The automation requires these secrets in the GitHub repository:
+
+- `SUPABASE_DEV_ACCESS_TOKEN` - Management API token ([Get from Supabase Dashboard](https://app.supabase.com) → Account Settings → Access Tokens)
+- `SUPABASE_DEV_PROJECT_REF` - Project reference ID (found in Supabase Dashboard → Project Settings)
+
+#### Workflow Triggers
+
+The [`.github/workflows/manage-edge-function-jwt.yml`](.github/workflows/manage-edge-function-jwt.yml) workflow runs when:
+
+- Push to `development` branch
+- Files in `supabase/functions/**` are modified
+
+#### Manual Deployment (Local Development)
+
+For local testing:
+
+```bash
+# Deploy single function
+pnpm functions:deploy <function-name>
+
+# Deploy all functions
+pnpm functions:deploy
+```
+
+After manual deployment, use the verification script:
+
+```bash
+# Verify JWT configuration
+export SUPABASE_ACCESS_TOKEN="your-token"
+export SUPABASE_PROJECT_ID="your-project-ref"
+
+./scripts/verify-jwt-config.sh recipe-import suggest-tags-batch
+```
+
+For full details, see [supabase/functions/README.md](supabase/functions/README.md).
+
+### 4. Type Checking
 
 ```bash
 # Type check all packages

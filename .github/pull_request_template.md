@@ -16,7 +16,8 @@
 ### Test-Driven Development
 
 - [ ] Tests written BEFORE implementation (TDD)
-- [ ] All tests passing (`pnpm test`)
+- [ ] All tests passing in CI pipeline
+- [ ] Tests written for changed files (use `pnpm test:watch` during development)
 - [ ] Test coverage meets requirements (services 100%, components 80%+)
 
 ### Code Quality

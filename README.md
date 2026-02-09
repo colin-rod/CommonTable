@@ -58,10 +58,11 @@ pnpm build            # Build all apps and packages
 pnpm web:build        # Build web app only
 
 # Testing (TDD required - see CLAUDE.md)
-pnpm test             # Run tests in all packages
-pnpm test:watch       # Run tests in watch mode
-pnpm test:coverage    # Run tests with coverage
+pnpm test:watch       # Run tests in watch mode (recommended - auto-runs affected tests)
+pnpm test:coverage    # Run tests with coverage for specific areas
 pnpm test:integration # Run integration tests (requires local Supabase)
+# Note: Full test suite (pnpm test) runs in CI. Avoid locally due to resource constraints.
+# Pre-commit hooks run tests for staged files automatically.
 
 # Code Quality
 pnpm type-check       # Type check all packages
@@ -310,6 +311,8 @@ This project follows **strict TDD** per [CLAUDE.md](./CLAUDE.md). ALL production
 
 #### The Process (Non-Negotiable)
 
+**Recommended**: Use `pnpm test:watch` during development - vitest automatically runs tests as you change files.
+
 1. **RED**: Write a failing test first
 2. **GREEN**: Write minimal code to make the test pass
 3. **REFACTOR**: Improve code quality without changing behavior
@@ -318,6 +321,14 @@ This project follows **strict TDD** per [CLAUDE.md](./CLAUDE.md). ALL production
 
 - **Services & Utils**: 100% coverage (all branches, all edge cases)
 - **Components**: 80%+ coverage (business logic fully covered)
+
+#### Testing Workflow
+
+- **Local development**: Use `pnpm test:watch` for fast feedback on changed files
+- **Pre-commit validation**: Git hooks automatically run tests for staged files
+- **CI validation**: Full test suite runs on every PR (must pass before merging)
+
+**Note**: Do not run the full test suite locally (`pnpm test`) due to resource constraints. Use watch mode and let CI validate the full suite.
 
 See example tests:
 
@@ -407,13 +418,13 @@ Both `development` and `main` are protected:
    git pull origin development
    ```
 2. Create a feature branch: `git checkout -b feat/your-feature`
-3. Write tests first (TDD)
-4. Implement the feature
-5. Ensure all tests pass: `pnpm test:coverage`
+3. Start watch mode: `pnpm test:watch`
+4. Write tests first (TDD)
+5. Implement the feature (vitest auto-validates)
 6. Ensure linting passes: `pnpm lint`
 7. Ensure type-checking passes: `pnpm type-check`
-8. Push and create a PR
-9. CI will run automatically and must pass before merging
+8. Push and create a PR (pre-commit hooks run tests for staged files)
+9. CI will run full test suite and must pass before merging
 
 ### CI/CD Pipeline
 
