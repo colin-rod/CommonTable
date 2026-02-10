@@ -216,6 +216,14 @@ serve(async (req) => {
       console.log('JSON-LD parsing failed, trying HTML fallback');
       parsed_via = 'html-fallback';
       rawData = parseHtmlFallback(html);
+    } else {
+      console.log('Recipe parsed successfully via JSON-LD');
+    }
+
+    if (!rawData) {
+      console.error('Both JSON-LD and HTML fallback parsers failed');
+    } else {
+      console.log(`Parser used: ${parsed_via}`);
     }
 
     // Normalize parsed data

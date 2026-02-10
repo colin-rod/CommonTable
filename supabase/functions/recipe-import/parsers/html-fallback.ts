@@ -220,6 +220,45 @@ function extractImage(html: string): string | undefined {
 }
 
 /**
+ * Decode HTML entities to plain text
+ * Handles hex entities (&#x25a2;), decimal entities (&#8594;),
+ * and named entities (&amp;, &lt;, &nbsp;, etc.)
+ *
+ * Examples:
+ *   &#x25a2; → ☢ (checkbox)
+ *   &#8594; → → (arrow)
+ *   &frac12; → ½
+ *   &amp; → &
+ *   &lt; → <
+ *   &quot; → "
+ */
+function decodeHtmlEntities(text: string): string {
+  return (
+    text
+      // Hex entities (&#xHEX;)
+      .replace(/&#x([0-9A-Fa-f]+);/g, (_match, hex) => String.fromCharCode(parseInt(hex, 16)))
+      // Decimal entities (&#DEC;)
+      .replace(/&#(\d+);/g, (_match, dec) => String.fromCharCode(parseInt(dec, 10)))
+      // Named entities
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&apos;/g, "'")
+      .replace(/&frac12;/g, '½')
+      .replace(/&frac14;/g, '¼')
+      .replace(/&frac34;/g, '¾')
+      .replace(/&ldquo;/g, '\u201c') // Left double quote
+      .replace(/&rdquo;/g, '\u201d') // Right double quote
+      .replace(/&lsquo;/g, '\u2018') // Left single quote
+      .replace(/&rsquo;/g, '\u2019') // Right single quote
+      .replace(/&mdash;/g, '\u2014') // Em dash
+      .replace(/&ndash;/g, '\u2013') // En dash
+  );
+}
+
+/**
  * Extract list items (<li>) from HTML fragment
  */
 function extractListItems(htmlFragment: string): string[] {
@@ -228,8 +267,9 @@ function extractListItems(htmlFragment: string): string[] {
 
   for (const match of liMatches) {
     const text = stripHtml(match[1]).trim();
-    if (text) {
-      items.push(text);
+    const decoded = decodeHtmlEntities(text);
+    if (decoded.trim()) {
+      items.push(decoded.trim());
     }
   }
 

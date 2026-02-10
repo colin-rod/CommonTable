@@ -122,6 +122,48 @@ Deno.test('parseHtmlFallback - handles "Steps" heading', () => {
   assertEquals(result.steps.length, 2);
 });
 
+Deno.test('parseHtmlFallback - handles HTML entities in steps', () => {
+  const html = `
+    <html>
+      <body>
+        <h3>Instructions</h3>
+        <ul>
+          <li>&#x25a2; Chop cauliflower to 1½ inch size</li>
+          <li>&#x25a2; Drain &amp; rinse well</li>
+          <li>&#x25a2; Cube potatoes to ¾ inch</li>
+        </ul>
+      </body>
+    </html>
+  `;
+
+  const result = parseHtmlFallback(html);
+  assertEquals(result.steps.length, 3);
+  assertEquals(result.steps[0], '▢ Chop cauliflower to 1½ inch size');
+  assertEquals(result.steps[1], '▢ Drain & rinse well');
+  assertEquals(result.steps[2], '▢ Cube potatoes to ¾ inch');
+});
+
+Deno.test('parseHtmlFallback - handles HTML entities in ingredients', () => {
+  const html = `
+    <html>
+      <body>
+        <h2>Ingredients</h2>
+        <ul>
+          <li>2&nbsp;cups flour</li>
+          <li>1&frac12; cup sugar &amp; spice</li>
+          <li>3 eggs (&#x201c;large&#x201d;)</li>
+        </ul>
+      </body>
+    </html>
+  `;
+
+  const result = parseHtmlFallback(html);
+  assertEquals(result.ingredients.length, 3);
+  assertEquals(result.ingredients[0], '2 cups flour');
+  assertEquals(result.ingredients[1], '1½ cup sugar & spice');
+  assertEquals(result.ingredients[2], '3 eggs (“large”)');
+});
+
 Deno.test('parseHtmlFallback - extracts servings from "serves X" pattern', () => {
   const html = `
     <html>
