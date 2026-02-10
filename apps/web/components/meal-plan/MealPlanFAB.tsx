@@ -21,7 +21,18 @@ export function MealPlanFAB({ onClick }: MealPlanFABProps) {
         zIndex: 1000,
       }}
     >
-      <Badge badgeContent={count} color="error" max={9} invisible={count === 0} overlap="circular">
+      <Badge
+        badgeContent={count}
+        color="error"
+        max={9}
+        invisible={count === 0}
+        overlap="circular"
+        sx={{
+          '& .MuiBadge-badge': {
+            zIndex: 1,
+          },
+        }}
+      >
         <Fab
           color="primary"
           onClick={onClick}
