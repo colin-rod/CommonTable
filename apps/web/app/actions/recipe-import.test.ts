@@ -223,5 +223,123 @@ describe('recipe-import server actions', () => {
         }),
       );
     });
+
+    it('should save source_url when provided', async () => {
+      // Setup: Mock authenticated user
+      const authUserId = 'auth-user-123';
+      const sourceUrl = 'https://www.seriouseats.com/pasta-carbonara-recipe';
+
+      mockAuth.getUser.mockResolvedValue({
+        data: { user: { id: authUserId } },
+        error: null,
+      });
+
+      // Mock profile query
+      mockFrom.mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { id: authUserId },
+          error: null,
+        }),
+      });
+
+      // Mock RecipeService.create
+      const apiClient = await import('@commontable/api-client');
+      const { RecipeService } = apiClient;
+      const mockCreate = vi.fn().mockResolvedValue({
+        id: 'recipe-123',
+        household_id: 'household-123',
+        title: 'Test Recipe',
+        created_by: authUserId,
+        source_url: sourceUrl, // Should be saved
+      });
+      (RecipeService as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+        create: mockCreate,
+      }));
+
+      // Act: Create imported recipe WITH source URL
+      await createImportedRecipe(
+        {
+          household_id: 'household-123' as string,
+          title: 'Test Recipe',
+          ingredients_json: [],
+          steps_json: [],
+          tags: [],
+          status: 'suggested',
+          key_ingredients: [],
+        },
+        undefined, // No cover image
+        sourceUrl, // Source URL provided
+      );
+
+      // Assert: Service should be called with source_url
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source_url: sourceUrl, // Must include source URL
+        }),
+      );
+    });
+
+    it('should save null when source_url not provided', async () => {
+      // Setup: Mock authenticated user
+      const authUserId = 'auth-user-123';
+
+      mockAuth.getUser.mockResolvedValue({
+        data: { user: { id: authUserId } },
+        error: null,
+      });
+
+      // Mock profile query
+      mockFrom.mockReturnValue({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: { id: authUserId },
+          error: null,
+        }),
+      });
+
+      // Mock RecipeService.create
+      const apiClient = await import('@commontable/api-client');
+      const { RecipeService } = apiClient;
+      const mockCreate = vi.fn().mockResolvedValue({
+        id: 'recipe-123',
+        household_id: 'household-123',
+        title: 'Test Recipe',
+        created_by: authUserId,
+        source_url: null, // No source URL
+      });
+      (RecipeService as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+        create: mockCreate,
+      }));
+
+      // Act: Create imported recipe WITHOUT source URL
+      await createImportedRecipe(
+        {
+          household_id: 'household-123' as string,
+          title: 'Test Recipe',
+          ingredients_json: [],
+          steps_json: [],
+          tags: [],
+          status: 'suggested',
+          key_ingredients: [],
+        },
+        undefined, // No cover image
+        undefined, // No source URL
+      );
+
+      // Assert: Service should NOT include source_url (undefined is fine)
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: authUserId,
+          // source_url should be undefined or null
+        }),
+      );
+      // Verify source_url is NOT in the call (undefined means not passed)
+      const callArgs = mockCreate.mock.calls[0]?.[0];
+      expect(callArgs).toBeDefined();
+      expect(callArgs?.source_url).toBeUndefined();
+    });
   });
 });

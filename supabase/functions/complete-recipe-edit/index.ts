@@ -198,7 +198,13 @@ serve(async (req) => {
     };
 
     // Call AI enricher (reuse existing infrastructure)
-    const aiResult = await enrichRecipeData(recipePreview, household.household_id, supabase);
+    // No source URL for form edits - AI only extracts metadata from user input
+    const aiResult = await enrichRecipeData(
+      recipePreview,
+      household.household_id,
+      supabase,
+      undefined,
+    );
 
     // If AI enrichment failed or was skipped, return early
     if (aiResult.status === 'failed' || aiResult.status === 'skipped') {
@@ -236,26 +242,11 @@ serve(async (req) => {
         (aiResult.status === 'success' && aiResult.tags.length > 0
           ? aiResult.tags
           : validated.form_values.tags) || [],
-      ingredients:
-        aiResult.status === 'success' && aiResult.ingredients.length > 0
-          ? aiResult.ingredients.map((i) => ({
-              // eslint-disable-next-line no-undef
-              id: crypto.randomUUID(),
-              name: i.name,
-              quantity: i.quantity || undefined,
-              unit: i.unit || undefined,
-              notes: i.notes || undefined,
-            }))
-          : validated.form_values.ingredients,
-      steps:
-        aiResult.status === 'success' && aiResult.steps.length > 0
-          ? aiResult.steps.map((s) => ({
-              // eslint-disable-next-line no-undef
-              id: crypto.randomUUID(),
-              position: s.position,
-              text: s.text,
-            }))
-          : validated.form_values.steps,
+
+      // IMPORTANT: Ingredients and steps are ALWAYS preserved from form input
+      // AI never modifies these - it only extracts metadata
+      ingredients: validated.form_values.ingredients,
+      steps: validated.form_values.steps,
     };
 
     console.log(

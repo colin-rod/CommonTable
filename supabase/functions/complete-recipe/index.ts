@@ -201,7 +201,12 @@ serve(async (req) => {
     const normalized = normalizeRecipeData(rawData);
 
     // AI enrichment (required for this function)
-    const aiResult = await enrichRecipeData(normalized.preview, validated.household_id, supabase);
+    const aiResult = await enrichRecipeData(
+      normalized.preview,
+      validated.household_id,
+      supabase,
+      validated.source_url,
+    );
 
     if (aiResult.status === 'failed' || aiResult.status === 'skipped') {
       return successResponse({
@@ -213,17 +218,21 @@ serve(async (req) => {
 
     // Return complete enriched data
     const completeData = {
-      // Use AI-cleaned core fields (prefer AI over parser)
+      // Core fields from parser (title, description always from source)
       title: normalized.preview.title || 'Untitled Recipe',
       description: normalized.preview.description,
+
+      // Times/servings: Use AI if available, otherwise fallback to parser
       servings: aiResult.servings ?? normalized.preview.servings,
       prep_time_minutes: aiResult.prep_time_minutes ?? normalized.preview.prep_time_minutes,
       cook_time_minutes: aiResult.cook_time_minutes ?? normalized.preview.cook_time_minutes,
-      ingredients:
-        aiResult.ingredients.length > 0 ? aiResult.ingredients : normalized.preview.ingredients,
-      steps: aiResult.steps.length > 0 ? aiResult.steps : normalized.preview.steps,
 
-      // AI-enriched metadata
+      // IMPORTANT: Steps and ingredients ALWAYS from aiResult
+      // (which preserves original parsed content - AI never modifies these)
+      ingredients: aiResult.ingredients,
+      steps: aiResult.steps,
+
+      // AI-extracted metadata
       tags: aiResult.tags,
       cuisine: aiResult.cuisine,
       meal_type: aiResult.meal_type,

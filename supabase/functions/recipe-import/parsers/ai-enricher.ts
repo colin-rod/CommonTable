@@ -157,33 +157,32 @@ const MEAL_TYPES: MealType[] = [
   'beverage',
 ];
 
-const SYSTEM_PROMPT = `You are a recipe data cleaning and enrichment assistant. Your job is to extract and standardize recipe data from parsed HTML.
+const SYSTEM_PROMPT = `You are a recipe metadata extraction assistant. Your ONLY job is to extract metadata from parsed recipe data.
 
 CRITICAL RULES:
-- Return ONLY data that is explicitly present in the source recipe
-- DO NOT invent, estimate, or make up missing fields
-- If a field is not present in the source, return null or empty array
-- DO NOT add ingredients or steps that aren't in the original recipe
-- DO NOT estimate times if they aren't specified
+- You are extracting METADATA ONLY - not modifying recipe content
+- The ingredients and steps are provided for CONTEXT ONLY
+- DO NOT modify, clean, or reformat the ingredients or steps
+- DO NOT return ingredients or steps in your response
+- Return ONLY: tags, cuisine, meal_type, key_ingredients, servings, times
 
 Your tasks:
-1. Clean and standardize ingredient formatting
-2. Clean and standardize step formatting
-3. Extract metadata (tags, cuisine, meal_type, key_ingredients)
-4. Parse servings/times if present
+1. Extract 3-5 relevant tags from the recipe content
+2. Identify cuisine type (or null if unclear)
+3. Identify meal type (or null if unclear)
+4. Extract 3-5 primary ingredients from the ingredients list
+5. Extract servings/times if mentioned in the recipe
 
-Guidelines:
+Metadata Guidelines:
 - Tags: 3-5 lowercase tags (max 20 chars), ordered by relevance
   - Prefer existing household tags when applicable
   - Consider: cuisine, cooking method, main ingredient, dietary restriction, meal type, difficulty, occasion
 - Cuisine: Select ONE from 30-option enum (italian, mexican, asian, etc.) or null if unclear
 - Meal Type: Select ONE from 6-option enum (main_dish, side_dish, breakfast, dessert, snack, beverage) or null
-- Key Ingredients: 3-5 PRIMARY ingredients (max 50 chars), exclude common staples (salt, pepper, oil)
-- Ingredients: Standardize format to {name, quantity, unit, notes}, preserve ALL original ingredients
-- Steps: Clean up formatting, preserve ALL original steps in order
+- Key Ingredients: 3-5 PRIMARY ingredients from the provided list (max 50 chars), exclude common staples (salt, pepper, oil)
 - Servings/Times: Extract if mentioned, otherwise return null
 
-Be faithful to the source. Accuracy over completeness.`;
+IMPORTANT: You are NOT responsible for cleaning or returning ingredients/steps. Those are preserved exactly as parsed from the source.`;
 
 // =====================================================================
 // ZODS SCHEMAS FOR VALIDATION
@@ -202,20 +201,8 @@ const AIResponseSchema = z.object({
   servings: z.number().nullable(),
   prep_time_minutes: z.number().nullable(),
   cook_time_minutes: z.number().nullable(),
-  ingredients: z.array(
-    z.object({
-      name: z.string(),
-      quantity: z.number().nullable().optional(),
-      unit: z.string().nullable().optional(),
-      notes: z.string().nullable().optional(),
-    }),
-  ),
-  steps: z.array(
-    z.object({
-      position: z.number(),
-      text: z.string(),
-    }),
-  ),
+  // NOTE: ingredients and steps removed - AI only extracts metadata
+  // Original parsed ingredients/steps are always preserved from input
 });
 
 type AIResponse = z.infer<typeof AIResponseSchema>;
@@ -291,8 +278,10 @@ function createOpenAIRequest(
   ingredientsList: string,
   stepsText: string,
   existingTags: string[],
+  sourceUrl?: string,
 ): OpenAIRequestBody {
   const existingTagsText = existingTags.length > 0 ? existingTags.join(', ') : 'None';
+  const sourceText = sourceUrl || 'User-provided data';
 
   return {
     model: OPENAI_MODEL,
@@ -303,20 +292,35 @@ function createOpenAIRequest(
       },
       {
         role: 'user',
-        content: `Analyze this recipe:
+        content: `Extract metadata from this recipe:
 
-Title: ${title}
-Ingredients: ${ingredientsList}
-Steps: ${stepsText}
+Source URL: ${sourceText}
+Recipe Title: ${title}
+
+Ingredients (for context):
+${ingredientsList}
+
+Steps (for context):
+${stepsText}
+
 Existing household tags: ${existingTagsText}
 
-Provide structured metadata and cleaned recipe data.`,
+Extract ONLY metadata:
+- tags: 3-5 relevant tags
+- cuisine: cuisine type or null
+- meal_type: meal type or null
+- key_ingredients: 3-5 primary ingredients from the list above
+- servings: number if mentioned, otherwise null
+- prep_time_minutes: number if mentioned, otherwise null
+- cook_time_minutes: number if mentioned, otherwise null
+
+DO NOT modify or return the ingredients/steps - they are for context only.`,
       },
     ],
     response_format: {
       type: 'json_schema',
       json_schema: {
-        name: 'recipe_enrichment',
+        name: 'recipe_metadata_extraction',
         strict: true,
         schema: {
           type: 'object',
@@ -362,32 +366,8 @@ Provide structured metadata and cleaned recipe data.`,
               type: 'number',
               nullable: true,
             },
-            ingredients: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  name: { type: 'string' },
-                  quantity: { type: 'number', nullable: true },
-                  unit: { type: 'string', nullable: true },
-                  notes: { type: 'string', nullable: true },
-                },
-                required: ['name', 'quantity', 'unit', 'notes'],
-                additionalProperties: false,
-              },
-            },
-            steps: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  position: { type: 'number' },
-                  text: { type: 'string' },
-                },
-                required: ['position', 'text'],
-                additionalProperties: false,
-              },
-            },
+            // NOTE: ingredients and steps removed from schema
+            // AI only extracts metadata - original parsed content is preserved
           },
           required: [
             'tags',
@@ -397,8 +377,6 @@ Provide structured metadata and cleaned recipe data.`,
             'servings',
             'prep_time_minutes',
             'cook_time_minutes',
-            'ingredients',
-            'steps',
           ],
           additionalProperties: false,
         },
@@ -461,17 +439,19 @@ async function callOpenAI(requestBody: OpenAIRequestBody, apiKey: string): Promi
 
 /**
  * Enrich recipe data using AI (GPT-4o-mini)
- * Returns cleaned/enriched recipe data or gracefully degrades on failure
+ * Extracts metadata only - original steps/ingredients are always preserved
  *
  * @param recipe - Parsed recipe preview data
  * @param householdId - Household ID for fetching existing tags
  * @param supabase - Supabase client for database queries
- * @returns AIEnrichmentResult with enriched data and status
+ * @param sourceUrl - Optional source URL for context (where recipe was parsed from)
+ * @returns AIEnrichmentResult with metadata and original steps/ingredients
  */
 export async function enrichRecipeData(
   recipe: RecipePreview,
   householdId: string,
   supabase: any,
+  sourceUrl?: string,
 ): Promise<AIEnrichmentResult> {
   // 1. Validate API key
   const apiKey = Deno.env.get('OPENAI_API_KEY');
@@ -501,7 +481,13 @@ export async function enrichRecipeData(
     const stepsText = truncate(formatSteps(recipe.steps || []), MAX_TEXT_LENGTH);
 
     // 4. Build OpenAI request
-    const requestBody = createOpenAIRequest(title, ingredientsList, stepsText, householdTags);
+    const requestBody = createOpenAIRequest(
+      title,
+      ingredientsList,
+      stepsText,
+      householdTags,
+      sourceUrl,
+    );
 
     // 5. Call OpenAI API
     const aiResponse = await callOpenAI(requestBody, apiKey);
@@ -509,16 +495,10 @@ export async function enrichRecipeData(
     // 6. Extract tag names (drop confidence scores)
     const tags = aiResponse.tags.map((t) => t.name);
 
-    // 7. Convert ingredients (remove null, convert to undefined)
-    const ingredients: IngredientPreview[] = aiResponse.ingredients.map((ing) => ({
-      name: ing.name,
-      quantity: ing.quantity ?? undefined,
-      unit: ing.unit ?? undefined,
-      notes: ing.notes ?? undefined,
-    }));
-
-    // 8. Return enriched data
+    // 7. Return metadata from AI + original steps/ingredients from input
+    // IMPORTANT: AI never modifies steps/ingredients - only extracts metadata
     return {
+      // Metadata from AI
       tags,
       cuisine: aiResponse.cuisine,
       meal_type: aiResponse.meal_type,
@@ -526,8 +506,11 @@ export async function enrichRecipeData(
       servings: aiResponse.servings,
       prep_time_minutes: aiResponse.prep_time_minutes,
       cook_time_minutes: aiResponse.cook_time_minutes,
-      ingredients,
-      steps: aiResponse.steps,
+
+      // ALWAYS preserve original parsed content (never use AI output)
+      ingredients: recipe.ingredients || [],
+      steps: recipe.steps || [],
+
       status: 'success',
     };
   } catch (error) {
